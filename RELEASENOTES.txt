@@ -1,0 +1,69 @@
+SmartRank Release Notes
+=======================
+
+SmartRank allows DNA database searches for individuals whose profiles lead to high LRs in favor of 
+the prosecution hypothesis through a fast and user-friendly GUI.
+
+Version ${project.version}
+Release date: ${buildTimestamp}
+-------------------------
+SMARTRANK-184: Added the ability to load search criteria from a file.
+SMARTRANK-185: If search criteria are loaded from a file (see SMARTRANK-184) and the file contains an output folder name, 
+               the report is automatically generated and the matching profiles are exported to the specified location.
+SMARTRANK-187: Added ability to connect to a DNA database through JDBC.
+SMARTRANK-204: Added possibility to limit the number of reported profiles.
+
+Version 1.0.1
+Release date: 2016-07-11
+-------------------------
+SMARTRANK-56: Added database statistics in the Database tab, logfile and report.
+SMARTRANK-60: Fixed layout of signature information in case log.
+SMARTRANK-61: Fixed signature information in About panel.
+SMARTRANK-77: Added error message when a Codis XML file could not be read.
+SMARTRANK-103: Properly clear the Database Filename field on the Database tab if a read error occurs.
+SMARTRANK-133: To reduce time required to calculate Pr(E|Hd), implemented frequency coalescing for alleles unobserved in the samples and profiles. 
+
+Version 1.0.0
+Release date: 2016/03/18
+-------------------------
+SMARTRANK-27: Locus names are now normalized to all capitals. Non-alphanumeric characters are removed (e.g. 'Penta D' and 'PENTA-D' are both converted to PENTAD)
+SMARTRANK-28: Skipped records are now reported in the case log (max 50 profile ids are logged). Overall statistics are reported in the report and GUI.
+SMARTRANK-48: Fixed a problem where the logfile could not be shown if a search was aborted during Pr(E|Hd) calculation. 
+SMARTRANK-49: Fixed a problem where errors in a number of adjacent database records were not always fully reported.
+SMARTRANK-51: Validation of the database is now stricter to catch more malformed records (not enough or too many fields). 
+SMARTRANK-52: If the time required for an operation exceeds the estimate, the time display now shows the cycling '-' instead of a negative time. 
+SMARTRANK-53: If Hd has 0 contributors, or Hp and Hd have an unequal number of contributors, a warning is displayed.
+SMARTRANK-54: Improved reporting of out-of-memory errors.
+SMARTRANK-55: Parameter estimation button enabled by default, max dropout set to 0.99 and number of cached results set to 250. 
+SMARTRANK-57: Improved performance for databases that contain many format problems.
+SMARTRANK-58: Added overall LR to the profile detail dialog.
+
+Version: 0.0.11
+Release date: 2016/03/11
+-------------------------
+SMARTRANK-17: Made the Open Manual menu option functional.
+SMARTRANK-31: Added a check for Read-only drives when saving a logfile or report.
+SMARTRANK-35: Added ability to export a report when no matches were found.
+SMARTRANK-37: Added a button to display the logfile of a search.
+SMARTRANK-39: When settings are changed, the displayed results are cleared from the GUI.
+SMARTRANK-42: Fixed handling of loci containing only invalid (non-null) alleles.
+SMARTRANK-46: Fixed the formatting of the LRs in the final results table.
+SMARTRANK-47: Reduced memory footprint and added memory information to the About tab.
+
+Version: 0.0.10
+Release date: 2016/02/12
+-------------------------
+SMARTRANK-34: Fixed problem where the progress display is sometimes not shown when loading the database.
+SMARTRANK-36: Made status output more verbose.
+
+Version: 0.0.9
+Release date:  2016/02/08
+-------------------------
+SMARTRANK-19: SmartRank GUI sometimes gets stuck in Running mode.
+SMARTRANK-23: Number of iterations for dropout estimation should be configurable.
+SMARTRANK-24: Add comparisons of match specimens with stains.
+SMARTRANK-25: If dropout for the candidate is set to 0, samples requiring dropout should be ignored.
+SMARTRANK-26: Improve performance of LazySampleIterator.
+SMARTRANK-29: Properly report if dropout estimation results in invalid value.
+SMARTRANK-30: Lines in the case log sometimes appear out of sequence.
+SMARTRANK-33: The order of loci for known individuals is wrong.
