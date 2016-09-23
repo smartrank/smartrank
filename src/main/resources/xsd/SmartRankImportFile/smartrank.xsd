@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="urn:SmartRankImportFile-schema" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="urn:SmartRankImportFile-schema" elementFormDefault="qualified">
+    <xsd:element name="SmartRankImportFile">
+        <xsd:complexType>
+            <xsd:sequence id="SeqImportFile">
+                <xsd:element name="CaseFolder" type="xsd:string" />
+                <xsd:element name="userid" type="xsd:string" />
+                <xsd:element name="dateTime" type="xsd:dateTime" />
+                <xsd:element name="Replicates" type="ReplicatesType" />
+                <xsd:element name="Dropin" type="DropinType" />
+                <xsd:element name="Theta" type="ThetaType" />
+                <xsd:element name="LrThreshold" type="LrThresholdType" />
+                <xsd:element name="MaximumNumberOfResults" type="MaximumNumberOfResultsType" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="RareAlleleFrequency" type="AlleleFrequencyType" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="HP" type="HPType" />
+                <xsd:element name="HD" type="HDType" />
+                <xsd:element name="Specimen" type="SpecimenType" minOccurs="1" maxOccurs="unbounded" />
+                <xsd:element name="Statistics" type="StatisticsType" minOccurs="0" maxOccurs="1" />
+            </xsd:sequence>
+            <xsd:attribute name="version" type="FileVersionType" />
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:simpleType name="FileVersionType">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:totalDigits value="2" />
+            <xsd:fractionDigits value="1" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="DropoutType">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="(0?\.[0-9]{2}|automatic)"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="DropinType">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:totalDigits value="3" />
+            <xsd:fractionDigits value="2" />
+            <xsd:maxExclusive value="1.00" />
+            <xsd:minInclusive value="0.00" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="ThetaType">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:totalDigits value="3" />
+            <xsd:fractionDigits value="2" />
+            <xsd:maxExclusive value="1.00" />
+            <xsd:minInclusive value="0.00" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="LrThresholdType">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="MaximumNumberOfResultsType">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="\d+"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="AlleleFrequencyType">
+        <xsd:restriction base="xsd:double">
+            <xsd:maxExclusive value="1" />
+            <xsd:minInclusive value="0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="AlleleValueType">
+        <xsd:restriction base="xsd:string">
+            <xsd:maxLength value="10" />
+            <xsd:minLength value="1" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="UnknownsCountType">
+        <xsd:restriction base="xsd:integer">
+            <xsd:minInclusive value="0" />
+            <xsd:maxExclusive value="5" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:complexType name="ReplicatesType">
+        <xsd:sequence id="SeqReplicates">
+            <xsd:element name="Replicate" type="ReplicateType" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="ReplicateType">
+        <xsd:attribute name="name" use="required"/>
+    </xsd:complexType>
+    
+    <xsd:complexType name="ContributorsType">
+        <xsd:sequence id="SeqContributors">
+            <xsd:element name="Contributor" type="ContributorType" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="NonContributorsType">
+        <xsd:sequence id="SeqNonContributors">
+            <xsd:element name="NonContributor" type="ContributorType" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="ContributorType">
+        <xsd:attribute name="name" type="xsd:string" use="required" />
+        <xsd:attribute name="dropout" type="DropoutType" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="HDType">
+        <xsd:sequence id="SeqHd">
+            <xsd:element name="Contributors" type="ContributorsType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="NonContributors" type="NonContributorsType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="Unknowns" type="UnknownsType" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="HPType">
+        <xsd:sequence id="SeqHp">
+            <xsd:element name="Contributors" type="ContributorsType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="NonContributors" type="NonContributorsType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="Unknowns" type="UnknownsType" />
+        </xsd:sequence>
+        <xsd:attribute name="candidateDropout" type="DropoutType" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="UnknownsType">
+        <xsd:attribute name="count" use="required" type="UnknownsCountType" />
+        <xsd:attribute name="dropout" use="required" type="DropoutType" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="SpecimenType">
+        <xsd:sequence id="SeqSpecimen">
+            <xsd:element name="Locus" type="LocusType" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="name" use="required"/>
+    </xsd:complexType>
+    
+    <xsd:complexType name="LocusType">
+        <xsd:sequence id="SeqLocus">
+            <xsd:element name="Allele" type="AlleleType" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="name" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="AlleleType">
+        <xsd:attribute name="value" use="required"/>
+    </xsd:complexType>
+    
+    <xsd:complexType name="LocusStatisticsType">
+        <xsd:sequence id="SeqLocusStatistics">
+            <xsd:element name="Allele" type="AlleleStatisticsType" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="name" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="AlleleStatisticsType">
+        <xsd:attribute name="value" use="required"/>
+        <xsd:attribute name="probability" type="AlleleFrequencyType" use="required"/>
+    </xsd:complexType>
+    
+    <xsd:complexType name="StatisticsType">
+        <xsd:sequence id="SeqStatstics">
+            <xsd:element name="Locus" type="LocusStatisticsType"  minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="rareAlleleFrequency" type="AlleleFrequencyType" />
+    </xsd:complexType>
+</xsd:schema>

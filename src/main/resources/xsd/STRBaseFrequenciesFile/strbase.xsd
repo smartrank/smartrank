@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="2.1">
+    <xs:element name="frequencies" type="FrequenciesDataObject" />
+    
+    <!-- Definition of a FrequenciesDataObject -->
+    <xs:complexType name="FrequenciesDataObject">
+        <xs:sequence>
+            <xs:element name="marker" type="MarkerDataObject" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:appinfo>
+                        <jaxb:property name="markers" />
+                    </xs:appinfo>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>  
+        <xs:attribute name="created_timestamp" type="xs:string" />
+        <xs:attribute name="validity" type="xs:string" />
+    </xs:complexType>
+    
+    <!-- Definition of a MarkerDataObject -->
+    <xs:complexType name="MarkerDataObject">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="alleles" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="origin" type="OriginDataObject" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:appinfo>
+                        <jaxb:property name="origins" />
+                    </xs:appinfo>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <!-- Definition of a OriginDataObject -->
+    <xs:complexType name="OriginDataObject">
+        <xs:sequence>
+            <xs:element name="frequency" type="FrequencyDataObject" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:appinfo>
+                        <jaxb:property name="frequencies" />
+                    </xs:appinfo>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="n" type="xs:int" use="required" />
+    </xs:complexType>
+    
+    <!-- Definition of a FrequencyDataObject -->
+    <xs:complexType name="FrequencyDataObject">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="allele" type="xs:double" use="required" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+</xs:schema>
