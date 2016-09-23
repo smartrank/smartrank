@@ -31,8 +31,7 @@ public class DNADatabaseTest {
             {"database_codis_3records_1error.csv", "CODIS", "SHA-1/3B148EABD20354C6B9316F38F6DBAEE2A69F6EA6", 3, 3, 1},
             {"database_codis_4records_1error_1empty.csv", "CODIS", "SHA-1/D3D7CB622A7C5C816D776D6D69C40E32FC5AD4C0", 4, 4, 1},
             {"database_codis_5002records_lowerascii.csv", "CODIS", "SHA-1/909188332F754E8622882E73F3BFC777401EFE16", 5002, 5002, 0},
-            {"database_codis_2records_utf8withBOM.csv", "CODIS", "SHA-1/7FD3192E2532CCCD7147894DF491408F1C74770B", 2, 2, 0},
-            {"database_codis_generated_300000.csv", "CODIS", "SHA-1/79F4D9A81857EE250B937036F68EEE873A3E28CD", 300000, 299534, 138932}
+            {"database_codis_2records_utf8withBOM.csv", "CODIS", "SHA-1/7FD3192E2532CCCD7147894DF491408F1C74770B", 2, 2, 0}
         });
     }
 
