@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -76,7 +77,7 @@ public class ResultsCollectorTest {
         when(_cancelledFuture.get()).thenThrow(new CancellationException());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testRunNull() {
         final ResultsCollector instance = new ResultsCollector(null);
         instance.run();
@@ -126,7 +127,7 @@ public class ResultsCollectorTest {
 
     @Test
     public void testGetLikelihoods() {
-        final ResultsCollector instance = new ResultsCollector(null);
+        final ResultsCollector instance = new ResultsCollector(new ArrayList<Future<LocusProbability>>());
         final LocusLikelihoods result = instance.getLikelihoods();
         assertNotNull(result);
         assertNotNull(result.getLoci());
