@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import nl.minvenj.nfi.smartrank.domain.LocusLikelihoods;
 import nl.minvenj.nfi.smartrank.messages.status.ErrorStringMessage;
 import nl.minvenj.nfi.smartrank.messages.status.PercentReadyMessage;
+import nl.minvenj.nfi.smartrank.raven.NullUtils;
 import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 
 /**
@@ -47,7 +48,7 @@ public class ResultsCollector extends Thread {
      * @param futures a collection of Futures representing the calculation jobs.
      */
     public ResultsCollector(final Collection<Future<LocusProbability>> futures, final boolean reportProgress) {
-        _futures = futures;
+        _futures = NullUtils.argNotNull(futures, "futures");
         _reportProgress = reportProgress;
         _likelihoods = new LocusLikelihoods();
         setName("ResultsCollector");
