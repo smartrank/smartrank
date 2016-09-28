@@ -105,8 +105,6 @@ public class JasperDataSource implements JRDataSource {
     public static final String LR_99_PERCENT = "LR99Percent";
     public static final String RESULTS_PER_NUMBER_OF_LOCI = "ResultsPerNumberOfLoci";
 
-    public static final String REMARKS = "Remarks";
-
     private final AtomicBoolean _hasNext = new AtomicBoolean(true);
 
     private static final ArrayList<JRField> FIELDS = new ArrayList<>();
@@ -143,7 +141,6 @@ public class JasperDataSource implements JRDataSource {
         FIELDS.add(new JasperField(DEFENSE_CONTRIBUTORS, "The contributors according to the defense hypothesis", Collection.class));
         FIELDS.add(new JasperField(DEFENSE_UNKNOWNS_DROPOUT_PROBABILITY, "The probability of Drop-Out for the unknowns according to the defense hypothesis", Double.class));
 
-        FIELDS.add(new JasperField(REMARKS, "Any remarks that the reporting officer chooses to add to the report", String.class));
         FIELDS.add(new JasperField(RESULTS, "A collection of Likelihood Ratios representing the profiles with an LR > 1", Collection.class));
 
         FIELDS.add(new JasperField(NUMBEROFCALCULATEDLRS, "A collection of Likelihood Ratios representing the profiles with an LR > 1", Collection.class));
