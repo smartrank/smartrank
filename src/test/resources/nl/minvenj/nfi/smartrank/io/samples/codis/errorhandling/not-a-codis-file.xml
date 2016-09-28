@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rootnode>
+    <name>some name</name>
+    <description>some description</description>
+    <subnode attr1="1" attr2="2">
+        <subsubnode>
+            <subsubsubnode1>Some String 001</subsubsubnode1>
+            <subsubsubnode2>Some String 002</subsubsubnode2>
+            <subsubsubnode3>Some String 003</subsubsubnode3>
+        </subsubnode>
+        <subsubnode>
+            <subsubsubnode1>Some String 001</subsubsubnode1>
+            <subsubsubnode2>Some String 002</subsubsubnode2>
+            <subsubsubnode3>Some String 003</subsubsubnode3>
+        </subsubnode>
+        <subsubnode>
+            <subsubsubnode1>Some String 001</subsubsubnode1>
+            <subsubsubnode2>Some String 002</subsubsubnode2>
+            <subsubsubnode3>Some String 003</subsubsubnode3>
+        </subsubnode>
+    </subnode>
+</rootnode>
