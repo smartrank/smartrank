@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.junit.Before;
@@ -16,14 +17,19 @@ import org.mockito.runners.MockitoJUnitRunner;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JRField;
 import nl.minvenj.nfi.smartrank.analysis.SearchResults;
+import nl.minvenj.nfi.smartrank.domain.AnalysisParameters;
+import nl.minvenj.nfi.smartrank.domain.DNADatabase;
 import nl.minvenj.nfi.smartrank.domain.DefenseHypothesis;
 import nl.minvenj.nfi.smartrank.domain.LikelihoodRatio;
 import nl.minvenj.nfi.smartrank.domain.PopulationStatistics;
 import nl.minvenj.nfi.smartrank.domain.ProsecutionHypothesis;
 import nl.minvenj.nfi.smartrank.domain.Ratio;
 import nl.minvenj.nfi.smartrank.domain.Sample;
+import nl.minvenj.nfi.smartrank.messages.data.AnalysisParametersMessage;
 import nl.minvenj.nfi.smartrank.messages.data.CrimeSceneProfilesMessage;
+import nl.minvenj.nfi.smartrank.messages.data.DatabaseMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DefenseHypothesisMessage;
+import nl.minvenj.nfi.smartrank.messages.data.KnownProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.LikelihoodRatiosMessage;
 import nl.minvenj.nfi.smartrank.messages.data.PopulationStatisticsMessage;
 import nl.minvenj.nfi.smartrank.messages.data.ProsecutionHypothesisMessage;
@@ -60,6 +66,12 @@ public class JasperDataSourceTest {
     @Mock
     private SearchResults _results;
 
+    @Mock
+    private AnalysisParameters _parms;
+
+    @Mock
+    private DNADatabase _db;
+
     @Before
     public void setUp() throws Exception {
         when(_crimesceneProfile1.getName()).thenReturn("CrimesceneProfileRep1");
@@ -68,13 +80,18 @@ public class JasperDataSourceTest {
         when(_lr1.getOverallRatio()).thenReturn(new Ratio("Locus1", 0.1, 0.05));
         when(_lr2.getOverallRatio()).thenReturn(new Ratio("Locus1", 0.3, 0.35));
         when(_stats.getFileName()).thenReturn("Placeholder for Statistics Filename");
+        when(_results.getParameters()).thenReturn(_parms);
+        when(_parms.getLrThreshold()).thenReturn(1000);
 
         MessageBus.getInstance().send("JasperDataSourceTest", new LikelihoodRatiosMessage(Arrays.asList(_lr1, _lr2)));
         MessageBus.getInstance().send("JasperDataSourceTest", new SearchResultsMessage(_results));
         MessageBus.getInstance().send("JasperDataSourceTest", new CrimeSceneProfilesMessage(Arrays.asList(_crimesceneProfile1, _crimesceneProfile2, _crimesceneProfile3)));
+        MessageBus.getInstance().send("JasperDataSourceTest", new KnownProfilesMessage(new ArrayList<Sample>()));
         MessageBus.getInstance().send("JasperDataSourceTest", new DefenseHypothesisMessage(_hd));
         MessageBus.getInstance().send("JasperDataSourceTest", new ProsecutionHypothesisMessage(_hp));
         MessageBus.getInstance().send("JasperDataSourceTest", new PopulationStatisticsMessage(_stats));
+        MessageBus.getInstance().send("JasperDataSourceTest", new AnalysisParametersMessage(_parms));
+        MessageBus.getInstance().send("JasperDataSourceTest", new DatabaseMessage(_db));
     }
 
     @Test
