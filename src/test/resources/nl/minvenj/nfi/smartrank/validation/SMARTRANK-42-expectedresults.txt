@@ -1,0 +1,3 @@
+# Expected results for regression test of SMARTRANK-42
+LVDZ0000ES#16 1.2799E+17
+QHOL0000BE#23 2.9062E+06
