@@ -6,21 +6,19 @@ public class ExcludedProfile {
 
     private final String _sampleName;
     private final ExclusionReason _reason;
-    private final int _recordNumber;
     private final Object _additionalData;
 
     public ExcludedProfile(final Sample candidateSample, final ExclusionReason reason) {
-        this(candidateSample.getName(), -1, reason, null);
+        this(candidateSample.getName(), reason, null);
     }
 
-    public ExcludedProfile(final String sampleName, final int recordNumber, final ExclusionReason reason) {
-        this(sampleName, recordNumber, reason, null);
+    public ExcludedProfile(final String sampleName, final ExclusionReason reason) {
+        this(sampleName, reason, null);
     }
 
-    public ExcludedProfile(final String sampleName, final int recordNumber, final ExclusionReason unexpectedNumberOfFields, final Object additionalData) {
+    public ExcludedProfile(final String sampleName, final ExclusionReason reason, final Object additionalData) {
         _sampleName = sampleName;
-        _recordNumber = recordNumber;
-        _reason = unexpectedNumberOfFields;
+        _reason = reason;
         _additionalData = additionalData;
     }
 
@@ -37,8 +35,9 @@ public class ExcludedProfile {
         return obj instanceof ExcludedProfile && _sampleName.equals(((ExcludedProfile) obj)._sampleName);
     }
 
-    public int getRecordNumber() {
-        return _recordNumber;
+    @Override
+    public int hashCode() {
+        return _sampleName.hashCode();
     }
 
     public Object getAdditionalData() {

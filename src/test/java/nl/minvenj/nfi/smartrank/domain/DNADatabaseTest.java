@@ -18,7 +18,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
+import nl.minvenj.nfi.smartrank.messages.data.AnalysisParametersMessage;
 import nl.minvenj.nfi.smartrank.messages.data.EnabledLociMessage;
+import nl.minvenj.nfi.smartrank.messages.data.ProsecutionHypothesisMessage;
 import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 
 @RunWith(Parameterized.class)
@@ -29,9 +31,10 @@ public class DNADatabaseTest {
         return Arrays.asList(new Object[][]{
             {"database_codis_2records_lowerascii.csv", "CODIS", "SHA-1/74D9EC71C1EEB4878FD0356DD188D53C0FD9066D", 2, 2, 0},
             {"database_codis_3records_1error.csv", "CODIS", "SHA-1/3B148EABD20354C6B9316F38F6DBAEE2A69F6EA6", 3, 3, 1},
-            {"database_codis_4records_1error_1empty.csv", "CODIS", "SHA-1/D3D7CB622A7C5C816D776D6D69C40E32FC5AD4C0", 4, 4, 1},
+            {"database_codis_4records_1error_1empty.csv", "CODIS", "SHA-1/8B9DB891FCFABBAF8E26469888E221BC1524DC8A", 4, 3, 1},
             {"database_codis_5002records_lowerascii.csv", "CODIS", "SHA-1/909188332F754E8622882E73F3BFC777401EFE16", 5002, 5002, 0},
-            {"database_codis_2records_utf8withBOM.csv", "CODIS", "SHA-1/7FD3192E2532CCCD7147894DF491408F1C74770B", 2, 2, 0}
+            {"database_codis_2records_utf8withBOM.csv", "CODIS", "SHA-1/7FD3192E2532CCCD7147894DF491408F1C74770B", 2, 2, 0},
+            {"database_codis_generated_300000.csv", "CODIS", "SHA-1/79F4D9A81857EE250B937036F68EEE873A3E28CD", 299534, 299534, 138932}
         });
     }
 
@@ -71,6 +74,11 @@ public class DNADatabaseTest {
         final DNADatabase db = new DNADatabase(new File(getClass().getResource(_connectString).getPath()));
         final StringBuilder encounteredProblems = new StringBuilder();
         final AtomicInteger problemCounter = new AtomicInteger(0);
+
+        MessageBus.getInstance().send("DNADatabaseTest", new EnabledLociMessage(Arrays.asList("TH01", "SE33", "D8S1179", "D10S1248", "VWA", "Dummy")));
+        MessageBus.getInstance().send("DNADatabaseTest", new ProsecutionHypothesisMessage(new ProsecutionHypothesis()));
+        MessageBus.getInstance().send("DNADatabaseTest", new AnalysisParametersMessage(new AnalysisParameters()));
+
         db.validate(new DatabaseValidationEventListener() {
 
             @Override
@@ -78,16 +86,16 @@ public class DNADatabaseTest {
             }
 
             @Override
-            public void onProblem(final long location, final String specimen, final String locus, final String message) {
-                encounteredProblems.append("Line " + location + ", specimen " + specimen + "." + locus + ": " + message).append("\r\n");
+            public void onProblem(final String specimen, final String locus, final String message) {
+                encounteredProblems.append("Specimen " + specimen + "." + locus + ": " + message).append("\r\n");
                 problemCounter.incrementAndGet();
             }
         });
 
         assertEquals("Expected " + _expectedProblemCount + " problems but found " + problemCounter.intValue() + " :" + encounteredProblems.toString(), _expectedProblemCount, problemCounter.intValue());
-        assertEquals(_totalRecordCount, db.getRecordCount());
-        assertEquals(_format, db.getFormatName());
-        assertEquals(_fileHash, db.getFileHash());
+        assertEquals("Total Record Count was " + db.getRecordCount() + " instead of the expected ", _totalRecordCount, _totalRecordCount, db.getRecordCount());
+        assertEquals("Format was " + db.getFormatName() + " instead of the expected " + _format, _format, db.getFormatName());
+        assertEquals("File Hash was " + db.getFileHash() + " instead of the expected " + _fileHash, _fileHash, db.getFileHash());
 
         final Iterator<Sample> iterator = db.iterator();
 
@@ -99,8 +107,6 @@ public class DNADatabaseTest {
             // The sample iterator does not support removal. An exception here is OK
         }
 
-        MessageBus.getInstance().send("DNADatabaseTest", new EnabledLociMessage(Arrays.asList("D10S1248", "VWA", "Dummy")));
-
         int count = 0;;
         assertNotNull(iterator);
         while (iterator.hasNext()) {
@@ -108,6 +114,6 @@ public class DNADatabaseTest {
             assertNotNull(sample);
             count++;
         }
-        assertEquals(_iteratedRecordCount, count);
+        assertEquals("Iterated over " + count + " records instead of the expected " + _iteratedRecordCount, _iteratedRecordCount, count);
     }
 }

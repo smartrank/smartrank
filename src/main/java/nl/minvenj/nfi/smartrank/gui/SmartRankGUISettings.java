@@ -27,13 +27,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nl.minvenj.nfi.smartrank.SmartRank;
+import nl.minvenj.nfi.smartrank.raven.NullUtils;
 
 public class SmartRankGUISettings {
+
+    private static final String DATABASE_QUERY_BATCH_SIZE = "jdbc.query.batchSize";
 
     private static final Logger LOG = LoggerFactory.getLogger(SmartRankGUISettings.class);
 
     private static final Properties PROPERTIES = new Properties();
-    private static final String PROPERTIES_FILENAME = "SmartRank.properties";
+    private static final String DEFAULT_PROPERTIES_FILENAME = "SmartRank.properties";
     private static final String LAST_SELECTED_DATABASE_FILENAME = "lastSelectedDatabasePath";
     private static final String LAST_SELECTED_CRIMESCENE_PATH = "lastSelectedCrimescenePath";
     private static final String LAST_SELECTED_KNOWNPROFILE_PATH = "lastSelectedKnownProfilePath";
@@ -44,15 +47,19 @@ public class SmartRankGUISettings {
     private static final String DATABASE_SCHEMANAME = "jdbc.schemaName";
     private static final String DATABASE_PASSWORD = "jdbc.userName";
     private static final String DATABASE_USERNAME = "jdbc.password";
-    private static final String DATABASE_QUERY = "jdbc.query";
-    private static final String DATABASE_QUERY_VALIDATED = "jdbc.query.validated";
-    private static final String DATABASE_QUERY_SINGLEROW = "jdbc.query.singleRow";
-    private static final String DATABASE_QUERY_SPECIMEN_COLUMN_INDEX = "jdbc.query.columns.specimenId";
+    private static final String DATABASE_QUERY_SPECIMENS = "jdbc.query.specimens";
+    private static final String DATABASE_QUERY_SPECIMENKEYS = "jdbc.query.specimenkeys";
+    private static final String DATABASE_QUERY_REVISION = "jdbc.query.revision";
+    private static final String DATABASE_QUERIES_VALIDATED = "jdbc.queries.validated";
+    private static final String DATABASE_QUERY_SPECIMENS_SINGLEROW = "jdbc.query.specimens.singleRow";
+    private static final String DATABASE_QUERY_SPECIMENID_COLUMN_INDEX = "jdbc.query.columns.specimenId";
     private static final String DATABASE_QUERY_LOCUS_COLUMN_INDEX = "jdbc.query.columns.locus";
     private static final String DATABASE_QUERY_ALLELE_COLUMN_INDEX = "jdbc.query.columns.allele";
+    private static final String BATCHMODE_START_TIME = "batchmode.startTime";
+    private static final String BATCHMODE_END_TIME = "batchmode.endTime";
+    private static final String WINDOW_TITLE = "windowTitle";
 
-
-    private static String _propertiesFileName;
+    private static String _propertiesFileName = System.getProperty("smartrankProperties");
 
     public static String getLastSelectedDatabaseFileName() {
         return get(LAST_SELECTED_DATABASE_FILENAME, "");
@@ -126,28 +133,44 @@ public class SmartRankGUISettings {
         set(DATABASE_PASSWORD, password);
     }
 
-    public static String getDatabaseQuery() {
-        return get(DATABASE_QUERY, "");
+    public static String getDatabaseSpecimenQuery() {
+        return get(DATABASE_QUERY_SPECIMENS, "");
     }
 
-    public static void setDatabaseQuery(final String query) {
-        set(DATABASE_QUERY, query);
+    public static void setDatabaseSpecimenQuery(final String query) {
+        set(DATABASE_QUERY_SPECIMENS, query);
     }
 
-    public static void setDatabaseQueryValidated(final boolean validated) {
-        set(DATABASE_QUERY_VALIDATED, Boolean.toString(validated));
+    public static String getDatabaseSpecimenKeysQuery() {
+        return get(DATABASE_QUERY_SPECIMENKEYS, "");
     }
 
-    public static boolean getDatabaseQueryValidated() {
-        return Boolean.valueOf(get(DATABASE_QUERY_VALIDATED, "false"));
+    public static void setDatabaseSpecimenKeysQuery(final String query) {
+        set(DATABASE_QUERY_SPECIMENKEYS, query);
+    }
+
+    public static String getDatabaseRevisionQuery() {
+        return get(DATABASE_QUERY_REVISION, "");
+    }
+
+    public static void setDatabaseRevisionQuery(final String query) {
+        set(DATABASE_QUERY_REVISION, query);
+    }
+
+    public static void setDatabaseQueriesValidated(final boolean validated) {
+        set(DATABASE_QUERIES_VALIDATED, Boolean.toString(validated));
+    }
+
+    public static boolean getDatabaseQueriesValidated() {
+        return Boolean.valueOf(get(DATABASE_QUERIES_VALIDATED, "false"));
     }
 
     public static void setDatabaseQuerySpecimenIdColumnIndex(final int specimenIdColumnIndex) {
-        set(DATABASE_QUERY_SPECIMEN_COLUMN_INDEX, "" + specimenIdColumnIndex);
+        set(DATABASE_QUERY_SPECIMENID_COLUMN_INDEX, "" + specimenIdColumnIndex);
     }
 
     public static int getDatabaseQuerySpecimenIdColumnIndex() {
-        return Integer.decode(get(DATABASE_QUERY_SPECIMEN_COLUMN_INDEX, "-1"));
+        return Integer.decode(get(DATABASE_QUERY_SPECIMENID_COLUMN_INDEX, "-1"));
     }
 
     public static void setDatabaseQueryLocusColumnIndex(final int locusColumnIndex) {
@@ -166,12 +189,12 @@ public class SmartRankGUISettings {
         return Integer.decode(get(DATABASE_QUERY_ALLELE_COLUMN_INDEX, "-1"));
     }
 
-    public static void setDatabaseQuerySingleRow(final boolean singleRowQuery) {
-        set(DATABASE_QUERY_SINGLEROW, Boolean.toString(singleRowQuery));
+    public static void setDatabaseSpecimenQuerySingleRow(final boolean singleRowQuery) {
+        set(DATABASE_QUERY_SPECIMENS_SINGLEROW, Boolean.toString(singleRowQuery));
     }
 
-    public static boolean isSingleRowQuery() {
-        return Boolean.valueOf(get(DATABASE_QUERY_SINGLEROW, "false"));
+    public static boolean isSingleRowSpecimenQuery() {
+        return Boolean.valueOf(get(DATABASE_QUERY_SPECIMENS_SINGLEROW, "false"));
     }
 
     public static String getLastSelectedSearchCriteriaPath() {
@@ -182,26 +205,59 @@ public class SmartRankGUISettings {
         set(LAST_SELECTED_SEARCH_CRITERIA_PATH, path);
     }
 
+    public static String getBatchModeStartTime() {
+        return get(BATCHMODE_START_TIME, "00:00");
+    }
+
+    public static void setBatchModeStartTime(final String time) {
+        set(BATCHMODE_START_TIME, time);
+    }
+
+    public static String getBatchModeEndTime() {
+        return get(BATCHMODE_END_TIME, "23:59");
+    }
+
+    public static void setBatchModeEndTime(final String time) {
+        set(BATCHMODE_END_TIME, time);
+    }
+
+    public static int getDatabaseSpecimenBatchSize() {
+        return Integer.decode(get(DATABASE_QUERY_BATCH_SIZE, "2000"));
+    }
+
+    public static void setDatabaseSpecimenBatchSize(final int batchSize) {
+        set(DATABASE_QUERY_BATCH_SIZE, Integer.toString(batchSize));
+    }
+
+    public static String getWindowTitle() {
+        return get(WINDOW_TITLE, "");
+    }
+
     private static String get(final String key, final String defaultValue) {
-        load();
-        String value = PROPERTIES.getProperty(key);
+        String value = System.getProperty(key);
         if (value == null) {
-            set(key, defaultValue);
-            value = defaultValue;
+            load();
+            value = PROPERTIES.getProperty(key);
+            if (value == null) {
+                set(key, defaultValue);
+                value = defaultValue;
+            }
         }
         return value;
     }
 
     private static void set(final String key, final String value) {
         load();
+        if (!NullUtils.getValue(value, "").equals(PROPERTIES.getProperty(key))) {
         PROPERTIES.setProperty(key, value);
         store();
+    }
     }
 
     private static void load() {
         if (_propertiesFileName == null) {
-            if (!load(PROPERTIES_FILENAME))
-                load(System.getProperty("user.home") + File.separatorChar + PROPERTIES_FILENAME);
+            if (!load(DEFAULT_PROPERTIES_FILENAME))
+                load(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
         }
         else {
             load(_propertiesFileName);
@@ -211,6 +267,9 @@ public class SmartRankGUISettings {
     private static boolean load(final String fileName) {
         try (FileInputStream fis = new FileInputStream(fileName)) {
             PROPERTIES.load(fis);
+            if (_propertiesFileName == null) {
+                LOG.info("Loaded GUI properties from {}", fileName);
+            }
             _propertiesFileName = fileName;
             return true;
         }
@@ -225,8 +284,8 @@ public class SmartRankGUISettings {
 
     private static void store() {
         if (_propertiesFileName == null) {
-            if (!store(PROPERTIES_FILENAME))
-                store(System.getProperty("user.home") + File.separatorChar + PROPERTIES_FILENAME);
+            if (!store(DEFAULT_PROPERTIES_FILENAME))
+                store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
         }
         else {
             store(_propertiesFileName);
@@ -235,7 +294,7 @@ public class SmartRankGUISettings {
 
     private static boolean store(final String fileName) {
         try (FileOutputStream fos = new FileOutputStream(fileName)) {
-            PROPERTIES.store(fos, "Created by SmartRank " + SmartRank.getVersion());
+            PROPERTIES.store(fos, "Created by SmartRank " + SmartRank.getRevision());
             _propertiesFileName = fileName;
             return true;
         }
@@ -244,5 +303,4 @@ public class SmartRankGUISettings {
         }
         return false;
     }
-
 }

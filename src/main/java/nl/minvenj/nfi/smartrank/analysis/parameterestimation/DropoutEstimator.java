@@ -25,7 +25,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,23 +115,6 @@ public class DropoutEstimator extends Thread {
         // Store the minimum and maximum
         if (!succesfulDropouts.isEmpty()) {
             Collections.sort(succesfulDropouts);
-
-            // Determine frequencies
-            // Obtain the 5% and 95% percentiles.
-            final Percentile percentile = new Percentile();
-            final double[] dropouts = new double[succesfulDropouts.size()];
-            for (int idx = 0; idx < dropouts.length; idx++) {
-                dropouts[idx] = succesfulDropouts.get(idx).doubleValue();
-            }
-
-            percentile.setData(dropouts);
-
-            final double min = percentile.evaluate(5);
-            LOG.debug("5% Percentile = {}", min);
-            final double max = percentile.evaluate(95);
-            LOG.debug("95% Percentile = {}", max);
-
-            estimate.setValues(hypo.getId(), new BigDecimal(min), new BigDecimal(max));
             estimate.setData(succesfulDropouts);
         }
         else {

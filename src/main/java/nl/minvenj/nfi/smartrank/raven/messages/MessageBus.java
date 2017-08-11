@@ -60,9 +60,9 @@ public class MessageBus {
         }
 
         public PendingMessage take() throws InterruptedException {
-            Thread.sleep(50);
+            Thread.sleep(10);
             while (_messages.size() == 0) {
-                Thread.sleep(100);
+                Thread.sleep(10);
             }
 
             synchronized (_messages) {
@@ -211,7 +211,7 @@ public class MessageBus {
     private MessageBus() {
         _currentValues = new HashMap<Class<? extends RavenMessage<?>>, CurrentValue>();
         _lock = new ReentrantReadWriteLock();
-        _notificationService = Executors.newCachedThreadPool();
+        _notificationService = Executors.newSingleThreadExecutor();
         _messageQueue = new MessageQueue(100);
         _subscriptions = new HashMap<Class<? extends RavenMessage<?>>, ArrayList<Subscription>>();
         _messagePump = new MessagePump();
@@ -277,6 +277,8 @@ public class MessageBus {
     public void send(final Object source, final RavenMessage<?> message) {
         _lock.writeLock().lock();
         try {
+            if (message.isWaitForIdleBus())
+                waitIdle(3000);
             final CurrentValue newValue = new CurrentValue(source, message);
             _currentValues.put((Class<? extends RavenMessage<?>>) message.getClass(), newValue);
             _messageQueue.put(new PendingMessage(source, message));

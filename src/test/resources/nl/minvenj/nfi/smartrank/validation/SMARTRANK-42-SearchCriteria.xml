@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SmartRankImportFile xmlns="urn:SmartRankImportFile-schema" version="1">
+    <userid>dejong</userid>
+    <dateTime>2016-11-24T12:17:29</dateTime>
+    <Replicates>
+        <Replicate name="LVDZ0000ES#16-QHOL0000BE#23"/>
+    </Replicates>
+    <Dropin>0.050</Dropin>
+    <Theta>0.010</Theta>
+    <LrThreshold>1000</LrThreshold>
+    <MaximumNumberOfResults>10</MaximumNumberOfResults>
+    <RareAlleleFrequency>1.0E-4</RareAlleleFrequency>
+    <HP candidateDropout="0.03">
+        <Contributors/>
+        <NonContributors/>
+        <Unknowns count="1" dropout="0.03"/>
+    </HP>
+    <HD>
+        <Contributors/>
+        <NonContributors/>
+        <Unknowns count="2" dropout="0.03"/>
+    </HD>
+    <Specimen name="LVDZ0000ES#16-QHOL0000BE#23">
+        <Locus name="D16S539">
+            <Allele value="9"/>
+            <Allele value="11"/>
+        </Locus>
+        <Locus name="D18S51">
+            <Allele value="14"/>
+            <Allele value="16"/>
+            <Allele value="18"/>
+            <Allele value="19"/>
+        </Locus>
+        <Locus name="D22S1045">
+            <Allele value="12"/>
+            <Allele value="15"/>
+            <Allele value="17"/>
+        </Locus>
+        <Locus name="D2S1338">
+            <Allele value="17"/>
+            <Allele value="23"/>
+        </Locus>
+        <Locus name="D2S441">
+            <Allele value="10"/>
+            <Allele value="12"/>
+            <Allele value="14"/>
+            <Allele value="16"/>
+        </Locus>
+        <Locus name="D12S391">
+            <Allele value="18"/>
+            <Allele value="21"/>
+            <Allele value="22"/>
+        </Locus>
+        <Locus name="TH01">
+            <Allele value="7"/>
+            <Allele value="9"/>
+            <Allele value="9.3"/>
+        </Locus>
+        <Locus name="FGA">
+            <Allele value="20"/>
+            <Allele value="21"/>
+            <Allele value="22"/>
+            <Allele value="24"/>
+        </Locus>
+        <Locus name="VWA">
+            <Allele value="14"/>
+            <Allele value="16"/>
+            <Allele value="18"/>
+        </Locus>
+        <Locus name="SE33">
+            <Allele value="24.2"/>
+            <Allele value="25.2"/>
+            <Allele value="29.2"/>
+        </Locus>
+        <Locus name="D3S1358">
+            <Allele value="15"/>
+            <Allele value="16"/>
+            <Allele value="17"/>
+        </Locus>
+        <Locus name="D1S1656">
+            <Allele value="12"/>
+            <Allele value="13"/>
+            <Allele value="16.3"/>
+        </Locus>
+        <Locus name="D8S1179">
+            <Allele value="12"/>
+            <Allele value="13"/>
+            <Allele value="16"/>
+        </Locus>
+        <Locus name="D10S1248">
+            <Allele value="14"/>
+            <Allele value="15"/>
+        </Locus>
+        <Locus name="D21S11">
+            <Allele value="31.2"/>
+            <Allele value="32.2"/>
+        </Locus>
+        <Locus name="D19S433">
+            <Allele value="13"/>
+            <Allele value="14"/>
+            <Allele value="15"/>
+            <Allele value="15.2"/>
+        </Locus>
+    </Specimen>
+    <Specimen name="Candidate"/>
+    <Statistics rareAlleleFrequency="1.0E-4">
+        <Locus name="VWA">
+            <Allele value="11" probability="9.66744E-5"/>
+            <Allele value="12" probability="1.93349E-4"/>
+            <Allele value="13" probability="0.00183681"/>
+            <Allele value="14" probability="0.103345"/>
+            <Allele value="15" probability="0.102958"/>
+            <Allele value="16" probability="0.20872"/>
+            <Allele value="17" probability="0.272912"/>
+            <Allele value="18" probability="0.213844"/>
+            <Allele value="19" probability="0.0809165"/>
+            <Allele value="20" probability="0.0141145"/>
+            <Allele value="21" probability="0.00106342"/>
+        </Locus>
+        <Locus name="TH01">
+            <Allele value="5" probability="7.72499E-4"/>
+            <Allele value="6" probability="0.231653"/>
+            <Allele value="7" probability="0.16348"/>
+            <Allele value="8" probability="0.115295"/>
+            <Allele value="8.3" probability="4.82812E-4"/>
+            <Allele value="9" probability="0.177482"/>
+            <Allele value="9.3" probability="0.29973"/>
+            <Allele value="10" probability="0.0110081"/>
+            <Allele value="10.3" probability="9.65624E-5"/>
+        </Locus>
+        <Locus name="D21S11">
+            <Allele value="24.2" probability="5.79374E-4"/>
+            <Allele value="25" probability="5.79374E-4"/>
+            <Allele value="25.2" probability="4.82812E-4"/>
+            <Allele value="26" probability="0.00125531"/>
+            <Allele value="26.2" probability="9.65624E-5"/>
+            <Allele value="27" probability="0.0310931"/>
+            <Allele value="28" probability="0.153051"/>
+            <Allele value="28.1" probability="9.65624E-5"/>
+            <Allele value="28.2" probability="1.93125E-4"/>
+            <Allele value="29" probability="0.217072"/>
+            <Allele value="29.2" probability="9.65624E-4"/>
+            <Allele value="29.3" probability="2.89687E-4"/>
+            <Allele value="30" probability="0.232426"/>
+            <Allele value="30.2" probability="0.0422943"/>
+            <Allele value="31" probability="0.0718424"/>
+            <Allele value="31.2" probability="0.0954036"/>
+            <Allele value="31.3" probability="9.65624E-5"/>
+            <Allele value="32" probability="0.013905"/>
+            <Allele value="32.2" probability="0.0982039"/>
+            <Allele value="33" probability="0.00106219"/>
+            <Allele value="33.1" probability="1.93125E-4"/>
+            <Allele value="33.2" probability="0.0341831"/>
+            <Allele value="34" probability="1.93125E-4"/>
+            <Allele value="34.2" probability="0.00405562"/>
+            <Allele value="35.2" probability="3.8625E-4"/>
+        </Locus>
+        <Locus name="FGA">
+            <Allele value="16" probability="4.83092E-4"/>
+            <Allele value="17" probability="0.00115942"/>
+            <Allele value="18" probability="0.0150725"/>
+            <Allele value="19" probability="0.068599"/>
+            <Allele value="19.2" probability="1.93237E-4"/>
+            <Allele value="20" probability="0.142126"/>
+            <Allele value="20.2" probability="6.76329E-4"/>
+            <Allele value="21" probability="0.178454"/>
+            <Allele value="21.2" probability="0.00144928"/>
+            <Allele value="22" probability="0.180773"/>
+            <Allele value="22.2" probability="0.00956522"/>
+            <Allele value="23" probability="0.147246"/>
+            <Allele value="23.2" probability="0.00502415"/>
+            <Allele value="24" probability="0.138357"/>
+            <Allele value="24.2" probability="0.00115942"/>
+            <Allele value="25" probability="0.0771014"/>
+            <Allele value="25.2" probability="3.86473E-4"/>
+            <Allele value="26" probability="0.0270531"/>
+            <Allele value="26.2" probability="1.93237E-4"/>
+            <Allele value="27" probability="0.00347826"/>
+            <Allele value="28" probability="9.66184E-4"/>
+            <Allele value="29" probability="1.93237E-4"/>
+            <Allele value="30" probability="9.66184E-5"/>
+        </Locus>
+        <Locus name="D8S1179">
+            <Allele value="8" probability="0.0124565"/>
+            <Allele value="9" probability="0.0114909"/>
+            <Allele value="10" probability="0.0773465"/>
+            <Allele value="11" probability="0.0846852"/>
+            <Allele value="12" probability="0.138857"/>
+            <Allele value="13" probability="0.327153"/>
+            <Allele value="14" probability="0.214465"/>
+            <Allele value="15" probability="0.104577"/>
+            <Allele value="16" probability="0.0250097"/>
+            <Allele value="17" probability="0.00309"/>
+            <Allele value="18" probability="8.69061E-4"/>
+        </Locus>
+        <Locus name="D3S1358">
+            <Allele value="11" probability="0.00144872"/>
+            <Allele value="12" probability="7.72648E-4"/>
+            <Allele value="13" probability="0.00270427"/>
+            <Allele value="14" probability="0.109523"/>
+            <Allele value="15" probability="0.256616"/>
+            <Allele value="16" probability="0.250145"/>
+            <Allele value="17" probability="0.212865"/>
+            <Allele value="18" probability="0.153371"/>
+            <Allele value="19" probability="0.0113"/>
+            <Allele value="20" probability="0.00115897"/>
+        </Locus>
+        <Locus name="D18S51">
+            <Allele value="9" probability="8.69397E-4"/>
+            <Allele value="10" probability="0.00888717"/>
+            <Allele value="11" probability="0.00917697"/>
+            <Allele value="12" probability="0.131569"/>
+            <Allele value="13" probability="0.132148"/>
+            <Allele value="14" probability="0.170788"/>
+            <Allele value="15" probability="0.147508"/>
+            <Allele value="16" probability="0.137268"/>
+            <Allele value="16.2" probability="9.65997E-5"/>
+            <Allele value="17" probability="0.107612"/>
+            <Allele value="18" probability="0.0685858"/>
+            <Allele value="19" probability="0.0451121"/>
+            <Allele value="20" probability="0.0213485"/>
+            <Allele value="21" probability="0.011592"/>
+            <Allele value="22" probability="0.00589258"/>
+            <Allele value="23" probability="8.69397E-4"/>
+            <Allele value="24" probability="5.79598E-4"/>
+            <Allele value="25" probability="9.65997E-5"/>
+        </Locus>
+        <Locus name="D16S539">
+            <Allele value="8" probability="0.0145809"/>
+            <Allele value="9" probability="0.110564"/>
+            <Allele value="10" probability="0.0569718"/>
+            <Allele value="11" probability="0.299826"/>
+            <Allele value="12" probability="0.30562"/>
+            <Allele value="12.1" probability="9.65624E-5"/>
+            <Allele value="12.2" probability="9.65624E-5"/>
+            <Allele value="13" probability="0.182213"/>
+            <Allele value="14" probability="0.0284859"/>
+            <Allele value="15" probability="0.00144844"/>
+        </Locus>
+        <Locus name="D2S1338">
+            <Allele value="14" probability="9.66184E-5"/>
+            <Allele value="15" probability="5.7971E-4"/>
+            <Allele value="16" probability="0.0449275"/>
+            <Allele value="17" probability="0.220193"/>
+            <Allele value="18" probability="0.0837681"/>
+            <Allele value="19" probability="0.110531"/>
+            <Allele value="20" probability="0.144928"/>
+            <Allele value="21" probability="0.0314976"/>
+            <Allele value="22" probability="0.0271498"/>
+            <Allele value="23" probability="0.105894"/>
+            <Allele value="24" probability="0.102415"/>
+            <Allele value="25" probability="0.104541"/>
+            <Allele value="26" probability="0.0209662"/>
+            <Allele value="27" probability="0.00183575"/>
+            <Allele value="28" probability="1.93237E-4"/>
+        </Locus>
+        <Locus name="D19S433">
+            <Allele value="10" probability="4.82812E-4"/>
+            <Allele value="10.2" probability="9.65624E-5"/>
+            <Allele value="11" probability="0.00395906"/>
+            <Allele value="12" probability="0.0844921"/>
+            <Allele value="12.1" probability="3.8625E-4"/>
+            <Allele value="12.2" probability="8.69061E-4"/>
+            <Allele value="13" probability="0.236095"/>
+            <Allele value="13.2" probability="0.0172847"/>
+            <Allele value="14" probability="0.348494"/>
+            <Allele value="14.2" probability="0.0238509"/>
+            <Allele value="15" probability="0.160873"/>
+            <Allele value="15.2" probability="0.0401699"/>
+            <Allele value="16" probability="0.0517574"/>
+            <Allele value="16.2" probability="0.020954"/>
+            <Allele value="17" probability="0.00415218"/>
+            <Allele value="17.2" probability="0.00328312"/>
+            <Allele value="18" probability="2.89687E-4"/>
+            <Allele value="18.2" probability="0.00222093"/>
+        </Locus>
+        <Locus name="D1S1656">
+            <Allele value="9" probability="9.65437E-5"/>
+            <Allele value="10" probability="0.00202742"/>
+            <Allele value="11" probability="0.085055"/>
+            <Allele value="12" probability="0.129562"/>
+            <Allele value="13" probability="0.068353"/>
+            <Allele value="13.3" probability="1.93087E-4"/>
+            <Allele value="14" probability="0.0843792"/>
+            <Allele value="14.3" probability="0.00222051"/>
+            <Allele value="15" probability="0.137768"/>
+            <Allele value="15.3" probability="0.0600502"/>
+            <Allele value="16" probability="0.116818"/>
+            <Allele value="16.3" probability="0.0535818"/>
+            <Allele value="17" probability="0.0481753"/>
+            <Allele value="17.1" probability="4.82719E-4"/>
+            <Allele value="17.3" probability="0.136802"/>
+            <Allele value="18" probability="0.00492373"/>
+            <Allele value="18.3" probability="0.0577332"/>
+            <Allele value="19" probability="1.93087E-4"/>
+            <Allele value="19.3" probability="0.0108129"/>
+            <Allele value="20.3" probability="6.75806E-4"/>
+        </Locus>
+        <Locus name="D2S441">
+            <Allele value="8" probability="0.00106198"/>
+            <Allele value="9" probability="0.00125507"/>
+            <Allele value="10" probability="0.188067"/>
+            <Allele value="10.3" probability="1.93087E-4"/>
+            <Allele value="11" probability="0.335489"/>
+            <Allele value="11.3" probability="0.0608226"/>
+            <Allele value="12" probability="0.0377486"/>
+            <Allele value="12.3" probability="0.00183433"/>
+            <Allele value="13" probability="0.0310871"/>
+            <Allele value="13.3" probability="4.82719E-4"/>
+            <Allele value="14" probability="0.294941"/>
+            <Allele value="15" probability="0.0433481"/>
+            <Allele value="15.3" probability="9.65437E-5"/>
+            <Allele value="16" probability="0.00347557"/>
+            <Allele value="17" probability="9.65437E-5"/>
+        </Locus>
+        <Locus name="D10S1248">
+            <Allele value="9" probability="1.93125E-4"/>
+            <Allele value="11" probability="0.00299343"/>
+            <Allele value="12" probability="0.0283893"/>
+            <Allele value="13" probability="0.27163"/>
+            <Allele value="14" probability="0.313345"/>
+            <Allele value="15" probability="0.205098"/>
+            <Allele value="16" probability="0.140209"/>
+            <Allele value="17" probability="0.0345693"/>
+            <Allele value="18" probability="0.00309"/>
+            <Allele value="19" probability="3.8625E-4"/>
+        </Locus>
+        <Locus name="D22S1045">
+            <Allele value="10" probability="2.89687E-4"/>
+            <Allele value="11" probability="0.137215"/>
+            <Allele value="12" probability="0.0128428"/>
+            <Allele value="13" probability="0.00453843"/>
+            <Allele value="14" probability="0.0475087"/>
+            <Allele value="15" probability="0.359212"/>
+            <Allele value="16" probability="0.339417"/>
+            <Allele value="17" probability="0.0887408"/>
+            <Allele value="18" probability="0.00840093"/>
+            <Allele value="19" probability="0.00164156"/>
+            <Allele value="20" probability="1.93125E-4"/>
+        </Locus>
+        <Locus name="D12S391">
+            <Allele value="14" probability="3.86175E-4"/>
+            <Allele value="15" probability="0.0404518"/>
+            <Allele value="16" probability="0.0290597"/>
+            <Allele value="16.3" probability="1.93087E-4"/>
+            <Allele value="17" probability="0.106295"/>
+            <Allele value="17.3" probability="0.0189226"/>
+            <Allele value="18" probability="0.186716"/>
+            <Allele value="18.3" probability="0.0201776"/>
+            <Allele value="19" probability="0.113922"/>
+            <Allele value="19.3" probability="0.0112956"/>
+            <Allele value="20" probability="0.118942"/>
+            <Allele value="20.2" probability="9.65437E-5"/>
+            <Allele value="20.3" probability="0.0015447"/>
+            <Allele value="21" probability="0.110253"/>
+            <Allele value="21.3" probability="4.82719E-4"/>
+            <Allele value="22" probability="0.106488"/>
+            <Allele value="22.1" probability="9.65437E-5"/>
+            <Allele value="22.3" probability="1.93087E-4"/>
+            <Allele value="23" probability="0.0846689"/>
+            <Allele value="24" probability="0.0320525"/>
+            <Allele value="25" probability="0.0139023"/>
+            <Allele value="26" probability="0.00289631"/>
+            <Allele value="27" probability="8.68894E-4"/>
+        </Locus>
+        <Locus name="SE33">
+            <Allele value="6.3" probability="1.65399E-4"/>
+            <Allele value="7.3" probability="1.65399E-4"/>
+            <Allele value="8" probability="1.65399E-4"/>
+            <Allele value="9" probability="1.65399E-4"/>
+            <Allele value="10" probability="1.65399E-4"/>
+            <Allele value="11" probability="4.96196E-4"/>
+            <Allele value="11.2" probability="4.96196E-4"/>
+            <Allele value="12" probability="0.00413497"/>
+            <Allele value="12.1" probability="1.65399E-4"/>
+            <Allele value="12.2" probability="3.30797E-4"/>
+            <Allele value="12.3" probability="1.65399E-4"/>
+            <Allele value="13" probability="0.00793913"/>
+            <Allele value="13.2" probability="0.00198478"/>
+            <Allele value="14" probability="0.0292756"/>
+            <Allele value="14.2" probability="0.00198478"/>
+            <Allele value="14.3" probability="3.30797E-4"/>
+            <Allele value="15" probability="0.0444922"/>
+            <Allele value="15.2" probability="6.61594E-4"/>
+            <Allele value="15.3" probability="3.30797E-4"/>
+            <Allele value="16" probability="0.0458154"/>
+            <Allele value="16.1" probability="3.30797E-4"/>
+            <Allele value="16.2" probability="3.30797E-4"/>
+            <Allele value="16.3" probability="0.00297717"/>
+            <Allele value="17" probability="0.0731062"/>
+            <Allele value="17.2" probability="4.96196E-4"/>
+            <Allele value="17.3" probability="0.00148859"/>
+            <Allele value="18" probability="0.070956"/>
+            <Allele value="18.1" probability="1.65399E-4"/>
+            <Allele value="18.2" probability="6.61594E-4"/>
+            <Allele value="18.3" probability="0.00115779"/>
+            <Allele value="19" probability="0.074264"/>
+            <Allele value="19.2" probability="0.00297717"/>
+            <Allele value="19.3" probability="1.65399E-4"/>
+            <Allele value="20" probability="0.0499504"/>
+            <Allele value="20.2" probability="0.0100893"/>
+            <Allele value="21" probability="0.0282832"/>
+            <Allele value="21.2" probability="0.0129011"/>
+            <Allele value="22" probability="0.00926232"/>
+            <Allele value="22.2" probability="0.0272908"/>
+            <Allele value="23" probability="0.00148859"/>
+            <Allele value="23.2" probability="0.0387033"/>
+            <Allele value="24" probability="3.30797E-4"/>
+            <Allele value="24.2" probability="0.0320873"/>
+            <Allele value="25" probability="4.96196E-4"/>
+            <Allele value="25.2" probability="0.0375455"/>
+            <Allele value="26" probability="3.30797E-4"/>
+            <Allele value="26.2" probability="0.0540853"/>
+            <Allele value="26.3" probability="3.30797E-4"/>
+            <Allele value="27.2" probability="0.0747602"/>
+            <Allele value="27.3" probability="1.65399E-4"/>
+            <Allele value="28" probability="6.61594E-4"/>
+            <Allele value="28.2" probability="0.0779027"/>
+            <Allele value="29" probability="8.26993E-4"/>
+            <Allele value="29.2" probability="0.0640093"/>
+            <Allele value="29.3" probability="1.65399E-4"/>
+            <Allele value="30" probability="1.65399E-4"/>
+            <Allele value="30.1" probability="1.65399E-4"/>
+            <Allele value="30.2" probability="0.051439"/>
+            <Allele value="31" probability="4.96196E-4"/>
+            <Allele value="31.2" probability="0.027787"/>
+            <Allele value="32" probability="3.30797E-4"/>
+            <Allele value="32.2" probability="0.0122395"/>
+            <Allele value="33" probability="0.00479656"/>
+            <Allele value="33.2" probability="0.00545815"/>
+            <Allele value="34" probability="0.00198478"/>
+            <Allele value="34.2" probability="0.00215018"/>
+            <Allele value="35" probability="0.00165399"/>
+            <Allele value="35.2" probability="1.65399E-4"/>
+            <Allele value="36" probability="8.26993E-4"/>
+            <Allele value="36.2" probability="1.65399E-4"/>
+        </Locus>
+    </Statistics>
+</SmartRankImportFile>

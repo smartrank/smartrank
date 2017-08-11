@@ -39,6 +39,8 @@
 
 body {
     counter-reset: sectioncounter;
+    counter-reset: subsectioncounter;
+    counter-reset: subsubsectioncounter;
     counter-reset: appendixcounter;
 }
 
@@ -48,11 +50,30 @@ body {
 
 .section {
     counter-increment: sectioncounter;
-    counter-reset: imagecounter;
+    counter-reset: imagecounter subsectioncounter subsubsectioncounter;
 }
 
 .sectiontitle:before {
     content: counter(sectioncounter) ".\0000a0\0000a0";
+}
+
+.subsection {
+    counter-increment: subsectioncounter;
+    counter-reset: subsubsectioncounter;
+    page-break-inside: avoid
+}
+
+.subsectiontitle:before {
+    content: counter(sectioncounter)"." counter(subsectioncounter) ".\0000a0\0000a0";
+}
+
+.subsubsection {
+    counter-increment: subsubsectioncounter;
+    page-break-inside: avoid
+}
+
+.subsubsectiontitle:before {
+    content: counter(sectioncounter)"." counter(subsectioncounter) "." counter(subsubsectioncounter) ".\0000a0\0000a0";
 }
 
 .imagecaption {
@@ -65,14 +86,61 @@ body {
     content: "Image " counter(sectioncounter) "." counter(imagecounter) ":\0000a0\0000a0";
 }
 
+.imageTable {
+	margin-left: auto;
+	margin-right: auto;
+	border: 0px;
+}
+
 .sql {
     color: blue; 
     border: 1px solid black ;
 }
 
+table {
+	border: 1px solid black;
+}
+
+table thead tr {
+	background-color: black;
+	color: white;
+	font-weight: bold;
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: #dddddd;
+}
+
 .sqlKeyword {
     color: purple; 
     font-style: italic;
+}
+
+ol {
+  list-style-type: none;
+  counter-reset: item;
+  margin: 0;
+  padding: 0;
+}
+
+ol > li {
+  display: table;
+  counter-increment: item;
+  margin-bottom: 0.6em;
+}
+
+ol > li:before {
+  content: counters(item, ".") ". ";
+  display: table-cell;
+  padding-right: 0.6em;    
+}
+
+li ol > li {
+  margin: 0;
+}
+
+li ol > li:before {
+  content: counters(item, ".") " ";
 }
 </style>
 
@@ -104,6 +172,13 @@ body {
         optimized to enable searches of (increasingly) voluminous DNA-databases, while keeping the rate of false negative and false positive errors at 
         a minimum. SmartRank enables a more efficient searching of DNA-databases with partial and/or complex profiles. 
         SmartRank should primarily be used as a tool to acquire intelligence data.</p>
+        
+        <h2>Note regarding results</h2>
+        Starting with version 1.0.3, the optimization known as 'Shutting Down the Q Designation' has been disabled. 
+        Consequently the numerical results of version 1.0.3 and above are no longer directly comparable to those from earlier versions of SmartRank.
+        If results are to be compared between different versions of SmartRank, please see <span class="reference">PresettingRestrictionsParameters</span> 
+        on how to re-enable the Q Designation Shutdown using the <code>qDesignationShutdown</code> option. The effects of the Q Designation Shutdown are described in 
+        <a href="Benschop_2016_Proceedings ISHI2016_Searching national DNA databases with complex STR DNA profiles.pdf">ISHI 2016 proceedings</a> located in the 'manual' subfolder of the SmartRank installation folder. 
     </div>
     
     <h3>
@@ -141,154 +216,235 @@ body {
         </h2>
         <p>
             The first step of using SmartRank is to load the database containing the candidate profiles. The database can be loaded on the 
-            <i>DNA database</i> tab. Any format problems will be displayed in the table at the bottom of the panel. Details of which record, 
+            <i>DNA database</i> tab. Any format problems will be displayed in the table at the bottom of the panel. Details of which 
             specimen, locus and cause of the problem can be viewed here. Continuing with format problems still present will result in the problematic 
             locus or specimen - depending on the nature of the problem - being excluded from the analysis.
         </p>
-        <table align="center">
-            <tr><td><img src="images/database1.png" alt="the database tab" width="90%"></td></tr>
+        <table class="imageTable">
+            <tr><td><img src="images/database1.png" alt="the database tab"></td></tr>
             <tr><td><div class="imagecaption">the database tab</div></td></tr>
            </table>
-        <p>
-           SmartRank supports the following options for accessing a DNA database:
-           <H3>Reading from a CSV file</H3>
+        <p> The DNA database can be read from a file or from a direct database connection.
+    <div class="subsection">
+        <h3 class="subsectiontitle"><a id="ReadingSpecimensCSV">Reading from a CSV file</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
            The DNA database can be read from a CSV file. See <span class="reference">DatabaseFormat</span> for more information on 
            the expected contents of the CSV file. Click the Browse... button. to select a database file. 
         <p>
            CODIS users, please see <span class="reference">DatabaseExport</span> for the SQL query can be used to export the specimens to a suitable format.  
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/database2.png"></td></tr>
             <tr><td><div class="imagecaption">a successfully loaded database with a single formatting error</div></td></tr>
         </table>
-           <div class="onnewpage">
-           <H3>Reading specimens through a direct database connection</H3>
+        </div>
+    <div class="subsection">
+        <h3 class="subsectiontitle"><a id="ReadingSpecimensJDBC">Reading specimens through a direct database connection</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
            <p>
            SmartRank has the capability to connect directly to databases running on either Microsoft SQLServer or SAP Adaptive Server Enterprise. 
            On the Database tab, click the Connect... button to bring up the Database Settings screen on which you can review or configure the connection to the database.
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/database-connect-dialog.png"></td></tr>
             <tr><td><div class="imagecaption">the Database Settings dialog</div></td></tr>
            </table>
            <br>
            On this screen the following settings can be made:
-           <table border="1" >
+           <table>
                <thead>
-                 <tr bgcolor="black">
-                 <th><font color="white">Setting</font></th>
-                 <th><font color="white">Description</font></th>
-              </tr>
-            </thead>
+                 <tr>
+                 <th>Setting</th>
+                 <th>Description</th>
+	              </tr>
+	            </thead>
+	            <tbody>
                <tr><td>Database Type</td><td>The type of DBMS that is used for the DNA database. Supported types are SQLServer and Sybase.</td></tr>
                <tr><td>Host:Port</td><td>The network address and port of the database server.</td></tr>
                <tr><td>Database Name</td><td>The schema name of the DNA database.</td></tr>
                <tr><td>Username</td><td>The username under which to log in.</td></tr>
                <tr><td>Password</td><td>The password for logging in to the database.</td></tr>
                <tr><td>Save Password</td><td>Indicates whether the password is to be stored in the configuration file. <br><b>IMPORTANT NOTE:</b> the storage of the password is in no way secure! Only use this option if the machine SmartRank runs on is in a trusted environment.</td></tr>
-               <tr><td>Sample Query</td><td>The query to be executed in order to obtain the specimens from the database.</td></tr>
+               <tr><td>Specimen Keys Query</td><td>The query to be executed in order to obtain a list of all eligible specimens in the database.</td></tr>
+               <tr><td>Specimen Retrieval Batch Size</td><td>This value indicates how many specimens are to be retrieved from the database in one go. This can be set to 0 to retrieve all specimens, but this may have adverse effects on the responsiveness of SmartRank while specimens are being retrieved!</td></tr>
+               <tr><td>Specimen Retrieval Query</td><td>The query to be executed in order to obtain the data for some or all of the specimens in the database.</td></tr>
+               <tr><td>Database Revision Query</td><td>The query to be executed in order to obtain a value that uniquely identifies the current state of the database.</td></tr>
+           </tbody>
            </table>
            <br><br>
            If the settings are not correct, an error is shown just below the Sample Query box. An example is shown below:
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/database-connect-dialog-error.png"></td></tr>
             <tr><td><div class="imagecaption">example of an error message in the Database Settings dialog</div></td></tr>
            </table>
            <div class="onnewpage">
+	        	When using direct database access to obtain specimen data, SmartRank uses the following flow:
+	        	<OL>
+	        	<LI>Before each search, the Database Revision Query is run to detect changes in the database since the last validation. If changes are detected, the database is re-validated before the search is executed. Note that this query is optional. If it is not configured, the database will not be re-validated and changes (particularly newly added records) will not be detected.</LI>
+	        	<LI>The Specimen Keys Query is executed to obtain a list of unique keys (identifying values) for all specimens that qualify for a SmartRank search</LI>
+	        	<LI>For each batch, as configured by the Specimen Retrieval Batch Size value, the Specimen Retrieval Query is run to get the actual specimen data.</LI>
+	        	</OL> 
+       	  </div>
+       	  When using CODIS, please see <span class="reference">CodisQueries</span>.
+       	  
+
+    <div class="subsubsection">
+        <h3 class="subsubsectiontitle"><a id="DatabaseRevisionQuery">The Database Revision Query</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
+        This query obtains a value that identifies the current state of the database, so that changes to can be detected at a future time. An example of this is the identifier (key) of the latest Audit Trail record in the CODIS datamodel.  
+        Since not all databases and datamodels may have a way of getting this value, the query is optional.
+        <h4>Expected properties of the query</h4>
+        In order for the results of the query to be understood correctly be SmartRank, the results of the query must meet the following criteria:
+        <UL>
+        	<LI>The query must return a single column in its result</LI>
+        	<LI>Only the first row of the result is used. If more rows are returned, they are ignored.</LI>
+        	<LI>Any type of data can be returned (VARCHAR, INT etc).</LI>
+        </UL>
+	</div>     
+	   
+    <div class="subsubsection">
+        <h3 class="subsubsectiontitle"><a id="SpecimenKeysQuery">The Specimen Keys Query</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
+        This query obtains a list of keys for all specimens in the database that qualify as candidates for a SmartRank search. The query is executed once before every search.
+        
+           <h4>Expected properties of the query</h4>
+           In order for the results of the query to be understood correctly be SmartRank, the results of the query must meet the following criteria:
+           <UL>
+               <LI>The result of the query must be a single column.</LI>
+               <LI>Results must be grouped by specimen.</LI>
+           </UL>
+	</div>
+
+    <div class="subsubsection">
+        <h3 class="subsubsectiontitle"><a id="SpecimenRetrievalQuery">The Specimen Retrieval Query</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
+        	This query returns the actual content of specimens.
+        	
            <h4>Expected properties of the query</h4>
            In order for the results of the query to be understood correctly be SmartRank, the results of the query must meet the following criteria:
            <UL>
                <LI>
-                   The result of the query must be 3 columns. The order of the columns is not important, but the names of these columns must be '<i>specimenId</i>', '<i>locus</i>' and '<i>allele</i>'.
+                   The result of the query must be at least 3 columns. The order of the columns is not important, but the names of these columns must be '<i>specimenId</i>', '<i>locus</i>' and '<i>allele</i>'.
+                   If the result set holds more columns, statistics will be kept on the number of distinct values returned. The report and logfile will contain
+                   a table listing the values and the number of occurrences for each value.
                </LI>
-               <LI>The alleles for a locus can be returned in a single row (by separating the allele values with spaces in the <i>allele</i> column, or by returning a row for each allele value.</LI>
+               <LI>The alleles for a locus can be returned in a single row - by separating the allele values with spaces in the <i>allele</i> column - or by returning a row for each allele value.</LI>
+               <LI>The query can contain 2 '?' placeholders that will be replaced by the first and last ID of a batch of specimens to retrieve.</LI>
                <LI>Results must be grouped by specimen.</LI>
            </UL>
            <h4>Examples</h4>
            <div style="column-count:2; column-gap: 20px;">
                <div style="break-inside: avoid;">
                    The following result set is <b>valid</b>. Each allele is returned in its own row.
-                   <table border="1">    
+                   <table>    
                        <thead>
-                         <tr bgcolor="black">
-                         <th><font color="white">SpecimenId</font></th>
-                         <th><font color="white">locus</font></th>
-                         <th><font color="white">allele</font></th>
-                      </tr>
-                      <tr><td>ID-1</td><td>vWA</td><td>11</td></tr>
-                      <tr><td>ID-1</td><td>vWA</td><td>12</td></tr>
-                      <tr><td>ID-1</td><td>FGA</td><td>13.2</td></tr>
-                      <tr><td>ID-1</td><td>FGA</td><td>14</td></tr>
-                      <tr><td>ID-2</td><td>vWA</td><td>8</td></tr>
-                      <tr><td>ID-2</td><td>vWA</td><td>12</td></tr>
-                      <tr><td>ID-2</td><td>FGA</td><td>17</td></tr>
-                      <tr><td>ID-2</td><td>FGA</td><td>18</td></tr>
-                    </thead>
+                         <tr>
+	                         <th>SpecimenId</th>
+	                         <th>locus</th>
+	                         <th>allele</th>
+	                      </tr>
+	                    </thead>
+                      <tbody>
+	                      <tr><td>ID-1</td><td>vWA</td><td>11</td></tr>
+	                      <tr><td>ID-1</td><td>vWA</td><td>12</td></tr>
+	                      <tr><td>ID-1</td><td>FGA</td><td>13.2</td></tr>
+	                      <tr><td>ID-1</td><td>FGA</td><td>14</td></tr>
+	                      <tr><td>ID-2</td><td>vWA</td><td>8</td></tr>
+	                      <tr><td>ID-2</td><td>vWA</td><td>12</td></tr>
+	                      <tr><td>ID-2</td><td>FGA</td><td>17</td></tr>
+	                      <tr><td>ID-2</td><td>FGA</td><td>18</td></tr>
+                      </tbody>
+                   </table>
+                   The following result set is <b>valid</b>. Each allele is returned in its own row. An additional field is returned under the name 'Specimen Type'.
+                   <table>    
+                       <thead>
+                         <tr>
+	                         <th>SpecimenId</th>
+	                         <th>locus</th>
+	                         <th>allele</th>
+	                         <th>Specimen Type</th>
+	                      </tr>
+	                    </thead>
+                      <tbody>
+	                      <tr><td>ID-1</td><td>vWA</td><td>11</td><td>Convicted Offender</td></tr>
+	                      <tr><td>ID-1</td><td>vWA</td><td>12</td><td>Convicted Offender</td></tr>
+	                      <tr><td>ID-1</td><td>FGA</td><td>13.2</td><td>Convicted Offender</td></tr>
+	                      <tr><td>ID-1</td><td>FGA</td><td>14</td><td>Convicted Offender</td></tr>
+	                      <tr><td>ID-2</td><td>vWA</td><td>8</td><td>Missing Person</td></tr>
+	                      <tr><td>ID-2</td><td>vWA</td><td>12</td><td>Missing Person</td></tr>
+	                      <tr><td>ID-2</td><td>FGA</td><td>17</td><td>Missing Person</td></tr>
+	                      <tr><td>ID-2</td><td>FGA</td><td>18</td><td>Missing Person</td></tr>
+	                      <tr><td>ID-3</td><td>vWA</td><td>8</td><td>Convicted Offender</td></tr>
+	                      <tr><td>ID-3</td><td>vWA</td><td>12</td><td>Convicted Offender</td></tr>
+	                      <tr><td>ID-3</td><td>FGA</td><td>17</td><td>Convicted Offender</td></tr>
+	                      <tr><td>ID-3</td><td>FGA</td><td>18</td><td>Convicted Offender</td></tr>
+                      </tbody>
+                   </table>
+                   The 'Specimen Type' field will in the result set will cause a table to be included in the report and logfile:
+                   <table>
+                   <thead>
+                   	<tr>
+                   	<th>
+                   		Specimen Type
+                   	</th>
+                   	</tr>
+                   </thead>
+                   <tbody>
+                   	<tr><td>Convicted Offender</td><td>2</td></tr>
+                   	<tr><td>Missing Person</td><td>1</td></tr>
+                   	</tbody>
                    </table>
                    <br>The following result set is <b>valid</b>. Alleles for a locus are returned in a single row, the values separated by spaces.
-                   <table border="1">    
+                   <table>    
                        <thead>
-                         <tr bgcolor="black">
-                         <th><font color="white">SpecimenId</font></th>
-                         <th><font color="white">locus</font></th>
-                         <th><font color="white">allele</font></th>
-                      </tr>
-                      <tr><td>ID-1</td><td>vWA</td><td>11 12</td></tr>
-                      <tr><td>ID-1</td><td>FGA</td><td>13.2 14</td></tr>
-                      <tr><td>ID-2</td><td>vWA</td><td>8 12</td></tr>
-                      <tr><td>ID-2</td><td>FGA</td><td>17 18</td></tr>
-                    </thead>
+                         <tr>
+	                         <th>SpecimenId</th>
+	                         <th>locus</th>
+	                         <th>allele</th>
+	                      </tr>
+	                    </thead>
+	                    <tbody>
+	                      <tr><td>ID-1</td><td>vWA</td><td>11 12</td></tr>
+	                      <tr><td>ID-1</td><td>FGA</td><td>13.2 14</td></tr>
+	                      <tr><td>ID-2</td><td>vWA</td><td>8 12</td></tr>
+	                      <tr><td>ID-2</td><td>FGA</td><td>17 18</td></tr>
+                      </tbody>
                    </table>
                </div>
                <div style="break-inside: avoid;"">
                    The following result set is <b>invalid</b>. The results are not grouped by specimenId.
-                   <table border="1">    
+                   <table>    
                        <thead>
-                         <tr bgcolor="black">
-                         <th><font color="white">SpecimenId</font></th>
-                         <th><font color="white">locus</font></th>
-                         <th><font color="white">allele</font></th>
-                      </tr>
-                      <tr><td>ID-1</td><td>vWA</td><td>11</td></tr>
-                      <tr><td>ID-2</td><td>vWA</td><td>8</td></tr>
-                      <tr><td>ID-1</td><td>vWA</td><td>12</td></tr>
-                      <tr><td>ID-2</td><td>vWA</td><td>12</td></tr>
-                      <tr><td>ID-1</td><td>FGA</td><td>13.2</td></tr>
-                      <tr><td>ID-2</td><td>FGA</td><td>17</td></tr>
-                      <tr><td>ID-1</td><td>FGA</td><td>14</td></tr>
-                      <tr><td>ID-2</td><td>FGA</td><td>18</td></tr>
-                    </thead>
+                         <tr>
+	                         <th>SpecimenId</th>
+	                         <th>locus</th>
+	                         <th>allele</th>
+	                      </tr>
+	                    </thead>
+	                    <tbody>
+	                      <tr><td>ID-1</td><td>vWA</td><td>11</td></tr>
+	                      <tr><td>ID-2</td><td>vWA</td><td>8</td></tr>
+	                      <tr><td>ID-1</td><td>vWA</td><td>12</td></tr>
+	                      <tr><td>ID-2</td><td>vWA</td><td>12</td></tr>
+	                      <tr><td>ID-1</td><td>FGA</td><td>13.2</td></tr>
+	                      <tr><td>ID-2</td><td>FGA</td><td>17</td></tr>
+	                      <tr><td>ID-1</td><td>FGA</td><td>14</td></tr>
+	                      <tr><td>ID-2</td><td>FGA</td><td>18</td></tr>
+                      </tbody>
                    </table>
                    <br>The following result set is <b>invalid</b>. The column names are not the ones recognized by SmartRank.
-                   <table border="1">    
+                   <table>    
                        <thead>
-                         <tr bgcolor="black">
-                         <th><font color="white">RecordName</font></th>
-                         <th><font color="white">Marker</font></th>
-                         <th><font color="white">PCR Value</font></th>
+                         <tr>
+                         <th>RecordName</th>
+                         <th>Marker</th>
+                         <th>PCR Value</th>
                       </tr>
+                    </thead>
+                    <tbody>
                       <tr><td>ID-1</td><td>vWA</td><td>11 12</td></tr>
                       <tr><td>ID-1</td><td>FGA</td><td>13.2 14</td></tr>
                       <tr><td>ID-2</td><td>vWA</td><td>8 12</td></tr>
                       <tr><td>ID-2</td><td>FGA</td><td>17 18</td></tr>
-                    </thead>
+                   </tbody>
                    </table>
                </div>
            </div>
         <br>
-        <p>
-        To read specimens from a CODIS database, the following query can be used:
-<pre class="sql">
-<span class="sqlKeyword">SELECT TOP </span>1000000 S.Spec_ID <span class="sqlKeyword">as</span> [specimenId], Locus, rtrim(PV.PCR_Value) <span class="sqlKeyword">as</span> [allele]
-<span class="sqlKeyword">FROM</span> CODIS.dbo.Specimen S
-<span class="sqlKeyword">INNER JOIN</span> CODIS.dbo.Sizing Z <span class="sqlKeyword">ON</span> S.Spec_CD = Z.Spec_CD 
-<span class="sqlKeyword">INNER JOIN</span> CODIS.dbo.PCR_Value PV <span class="sqlKeyword">ON</span> Z.Locus_CD = PV.Locus_CD 
-<span class="sqlKeyword">AND</span> Z.Spec_CD = PV.Spec_CD 
-<span class="sqlKeyword">INNER JOIN</span> CODIS.dbo.Locus L <span class="sqlKeyword">ON</span> Z.Locus_CD = L.Locus_CD
-<span class="sqlKeyword">WHERE</span> S.Spec_Type_CD <span class="sqlKeyword">IN</span> (
-    <span class="sqlKeyword">Select</span> Spec_Type_CD <span class="sqlKeyword">
-    from</span> CODIS.dbo.Spec_Type 
-    <span class="sqlKeyword">where</span> Spec_Type <span class="sqlKeyword">IN</span> ('Convicted Offender','Suspect, Known', 'Elimination, Known'))
-<span class="sqlKeyword">ORDER BY</span> S.Spec_ID 
-</pre>
+    </div>
     </div>
     </div>
     
@@ -301,8 +457,8 @@ body {
 				shown along with a possibility to enable or disable the profiles for the analysis. If the file contains
 				replicates, all these will be shown as individual samples. It is also possible to load replicates from multiple files.
 		</p>
-        <table align="center">
-            <tr><td><img src="images/crimeSceneProfile.png" alt="A successfully loaded crime scene sample" width="90%"></td></tr>
+        <table class="imageTable">
+            <tr><td><img src="images/crimeSceneProfile.png" alt="A successfully loaded crime scene sample"></td></tr>
             <tr><td><div class="imagecaption">a successfully loaded crime scene sample.</div></td></tr>
         </table>
         <p>The mix profile file must be in tab- or comma separated format. See <span class="reference">ProfileFormat</span> for more information.
@@ -321,7 +477,7 @@ body {
         <p>
             Optionally, just like loading crime scene profiles, you can load any known contributors to the mixed profile in the known profiles tab.     
         </p>
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/knownProfile.png" alt="Known profile"></td></tr>
             <tr><td><div class="imagecaption">a successfully loaded known sample.</div></td></tr>
         </table>
@@ -339,26 +495,27 @@ body {
             The dropout probabilities can also be estimated by SmartRank by pressing the 'Estimate dropout probabilities' button after loading the population
             statistics. In this case, SmartRank will use the 95% percentile of a Monte-Carlo simulation as the drop-out estimate. 
         </p>
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/hypotheses.png" alt="Hypotheses"></td></tr>
             <tr><td><div class="imagecaption">formulating hypotheses for prosecution and defense</div></td></tr>
         </table>
     
-        <h3><a id="LoadingPopulationStatisticsAndSettingParameters">Loading population statistics and setting parameters</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
+	    <div class="subsection">
+        <h3 class="subsectiontitle"><a id="LoadingPopulationStatisticsAndSettingParameters">Loading population statistics and setting parameters</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
         <p>
             In the Parameters section of the Search tab, various settings can be configured that can influence the results of the search. See below for the possible settings and their effects.
         </p>
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/populationStatistics.png" alt="Population statistics"></td></tr>
-            <tr><td><tr><td><div class="imagecaption">the Parameters section</div></td></tr>
+            <tr><td><div class="imagecaption">the Parameters section</div></td></tr>
         </table>
     	
     	The following settings can be made in the Parameters panel:
-    	<table style="border: 1px solid black; border-collapse: separate; border-spacing: 3px;">
+    	<table>
 			<thead>
-				<tr bgcolor="black">
-					<th><font color="white">Setting</font></th>
-					<th><font color="white">Description</font></th>
+				<tr>
+					<th>Setting</th>
+					<th>Description</th>
 				</tr>
 			</thead>
     		<tbody>
@@ -372,6 +529,7 @@ body {
     		</tbody>
     	</table>
     </div>
+    </div>
     
     <div class="section">
         <h2 class="sectiontitle"><a id="PerformingSearch">Performing a search</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h2>
@@ -380,7 +538,7 @@ body {
             pressing the 'Search' button. The estimated time to complete the search will be shown and once it is
             completed, any results will be displayed in the results box at the bottom half of the screen. If necessary,
             the search can be aborted at any time by pressing the red cross next to the progress bar.</p>
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/searching.png" alt="SmartRank searching"></td></tr>
             <tr><td><div class="imagecaption">SmartRank running a search</div></td></tr>
         </table>
@@ -393,7 +551,7 @@ body {
             the preset LR threshold will be displayed here. The Show Report button opens the PDF containing the search results. Pressing the Control key while clicking this button 
             will open the folder containing the report file instead of the file itself. The Show Log button open the log file generated during the search. Here also, pressing the Control 
             key while clicking this button will open the folder containing the log file. 
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/results1.png" alt="Results 1"></td></tr>
             <tr><td><div class="imagecaption">displaying of search results</div></td></tr>
         </table>
@@ -401,7 +559,7 @@ body {
             The details of a matching profile can be viewed by double clicking the profile in the results table. In this detailed view, allelic mismatches
             between the sample and the candidate are highlighted in red.
         </p>
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/results2.png" alt="Results 2"></td></tr>
             <tr><td><div class="imagecaption">more details of a single result</div></td></tr>
         </table>
@@ -425,12 +583,12 @@ body {
             Next to the logfile and report, SmartRank will export the reported profiles in CSV format in the same location as the report. The CSV files are in a format that is suitable to be 
             read by LRmixStudio. If this is not desired, the feature can be disabled in the restrictions file (see <span class="reference">PresettingParameters</span>).
         </p>
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/log.png" alt="Log" border="1"></td></tr>
             <tr><td><div class="imagecaption">excerpt of the search log</div></td></tr>
         </table>
         <br />
-        <table align="center">
+        <table class="imageTable">
             <tr><td><img src="images/report.png" alt="Report" border=1></td></tr>
             <tr><td><div class="imagecaption">excerpt of the search report</div></td></tr>
         </table>
@@ -441,134 +599,206 @@ body {
             <a id="PresettingParameters">Presetting parameters</a> <span class="no-print"><font size="1"><a
                     href="#Top">Back to top</a></font></span>
         </h2>
-        <p>SmartRank comes with a SmartRankRestrictions.properties file, which can be used to preset or set
-            constraints to certain parameters. Below is a list of possible parameters and what effect it will have on the
-            usage of SmartRank.</p>
+        <p>SmartRank uses a number of files to store configuration data. To support concurrently running instances of SmartRank each using their own configuration, 
+        the names of these files can be configured. The files are: 
+        <UL>
+        	<LI><b>SmartRankRestrictions.properties</b>, which can be used to preset or set constraints to certain parameters. By default this file is located in the installation folder of the application. 
+            The name and location of this file can be configured by starting SmartRank with the following option: <div style="white-space: nowrap"><font face="Courier New">-DsmartrankRestrictions=<i><b>&lt;location and name of the restrictions file&gt;</b></i></font></div>.</LI>
+            <LI><b>SmartRank.properties</b>, which is used for storing the last entered parameter values for some parameters (e.g. the name of the last loaded statistics file).
+            By default this file is located in the application directory. To configure the name of this file, start SmartRank with 
+            the following option: <div style="white-space: nowrap"><font face="Courier New">-DsmartrankProperties=<i><b>&lt;location and name of the properties file&gt;</b></i></font></div>.</LI>
+            <LI><b>logback.xml</b>, which is used to configure the location and content of the logfiles generated by SmartRank.
+            By default this file is located in the application directory. To configure the name of this file, start SmartRank with 
+            the following option: <div style="white-space: nowrap"><font face="Courier New">-DloggingConfigurationFile=<i><b>&lt;location and name of the logging configuration file&gt;</b></i></font></div>.</LI>  
+        </UL>
     <p />
-        <table style="border: 1px solid black; border-collapse: separate; border-spacing: 3px;">
+    <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="PresettingGUIParameters">Available parameters in the SmartRank.properties file</a> <span class="no-print"><font size="1"><a
+                    href="#Top">Back to top</a></font></span>
+        </h3>
+        The SmartRank.properties file contains settings that allow easier operation of the application, e.g. by remembering selections made in earlier runs of the program. 
+        These settings will be updated automatically by SmartRank as it runs and generally do not need to be edited by hand. The contents of this file may change between versions
+        of SmartRank and no assumption should be made on the presence or value of any property defined in the file. In the current version,
+        the following table lists those properties that may be of use for tailoring the way SmartRank looks.
+        Each of these options can also be specified on the commandline, in which case this setting will take precedence over any value configured in the file. 
+        To specify a value on the commandline, include the following argument when starting SmartRank: 
+        <div style="white-space: nowrap"><font face="Courier New">-D<i>&lt;property name&gt;</i>=<i>&lt;property value&gt;</i></font></div>.
+        <table>
+        	<thead>
             <tr>
-                <th style="border: 1px solid black;"><b>Property</b></th>
-                <th style="border: 1px solid black;"><b>Function</b></th>
-                <th style="border: 1px solid black; text-align: center;"><b>Allowed values</b></th>
+                <th><b>Property</b></th>
+                <th><b>Function</b></th>
+                <th><b>Allowed values</b></th>
             </tr>
+            </thead>
+            <tbody>
             <tr>
-                <td style="border: 1px solid black;">automaticParameterEstimationEnabled</td>
-                <td style="border: 1px solid black;">Makes SmartRank automatically estimate dropout probabilities using
-                    a Monte Carlo simulation. Manual input of dropout probabilities will be disabled.</td>
-                <td style="border: 1px solid black; text-align: center;">True/false</td>
+                <td>windowTitle</td>
+                <td>Sets a string that will be included after the application name and version in the title of the SmartRank window. 
+                Can be useful to distinguish between concurrently running instances of SmartRank.</td>
+                <td>Any string. This property is optional and can be omitted, in which case the window title will be <i>SmartRank ${project.version}</i>.</td>
             </tr>
-            <tr>
-                <td style="border: 1px solid black;">caseLogFilename</td>
-                <td style="border: 1px solid black;">Sets the name of the logfile that is generated for each search.</td>
-                <td style="border: 1px solid black; text-align: center;">A template describing the name of case log files. See <span class="reference">TemplateStrings</span> for more information.</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">databaseCacheSize</td>
-                <td style="border: 1px solid black;">Sets a maximum amount of candidate profiles used from a DNA
-                    database.</td>
-                <td style="border: 1px solid black; text-align: center;">Any number</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">dropoutMinimum</td>
-                <td style="border: 1px solid black;">Sets a minimum value for drop-out probability.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">dropoutDefault</td>
-                <td style="border: 1px solid black;">Sets a default value for drop-out probability.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">dropoutMaximum</td>
-                <td style="border: 1px solid black;">Sets a maximum value for drop-out probability.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">dropinMinimum</td>
-                <td style="border: 1px solid black;">Sets a minimum value for drop-in probability.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">dropinDefault</td>
-                <td style="border: 1px solid black;">Sets a default value for drop-in probability.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">dropinMaximum</td>
-                <td style="border: 1px solid black;">Sets a maximum value for drop-in probability.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">thetaMinimum</td>
-                <td style="border: 1px solid black;">Sets a minimum value for theta.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">thetaDefault</td>
-                <td style="border: 1px solid black;">Sets a default value for theta.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">thetaMaximum</td>
-                <td style="border: 1px solid black;">Sets a maximum value for theta.</td>
-                <td style="border: 1px solid black; text-align: center;">0.0 to 0.99</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">maximumStoredResults</td>
-                <td style="border: 1px solid black;">Sets a maximum amount of returned likelihood ratios.</td>
-                <td style="border: 1px solid black; text-align: center;">Any number</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">maximumUnknownCount</td>
-                <td style="border: 1px solid black;">Sets a maximum number of unknown contributors.</td>
-                <td style="border: 1px solid black; text-align: center;">Any number</td>
-            </tr>
-            <tr>
-                <td style="border:1px solid black;">minimumNumberOfLoci</td>
-                <td style="border:1px solid black;">Sets a minimum number of loci for a profile to be included in an analysis.</td>
-                <td style="border:1px solid black; text-align:center;">Any number</td>
-            </tr>            
-            <tr>
-                <td style="border: 1px solid black;">interactiveParameterEstimationEnabled</td>
-                <td style="border: 1px solid black;">Makes dropout probability estimation manually executable.</td>
-                <td style="border: 1px solid black; text-align: center;">true/false</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">parameterEstimationIterations</td>
-                <td style="border: 1px solid black;">The amount of iterations used for estimating the dropout probability.</td>
-                <td style="border: 1px solid black; text-align: center;">Any number</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">reportFileName</td>
-                <td style="border: 1px solid black;">Sets the path, where analysis reports are exported to.</td>
-                <td style="border: 1px solid black; text-align: center;">A template describing the name of analysis report files. See <span class="reference">TemplateStrings</span> for more information.</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">reportTemplateFileName</td>
-                <td style="border: 1px solid black;">Sets the path to the template, used for creating analysis reports.</td>
-                <td style="border: 1px solid black; text-align: center;">A filepath</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">outputRootFolder</td>
-                <td style="border: 1px solid black;">When importing search criteria from a file, the output path specified in the file - if any - will be resolved relative to this folder. Especially useful when the machine generating the XML has different drive mappings than the machine running SmartRank.</td>
-                <td style="border: 1px solid black; text-align: center;">A filepath</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">exportMatchingProfilesAfterSearch</td>
-                <td style="border: 1px solid black;">Indicates whether the profiles with LRs exceeding the LR Threshold should be exported to csv files after a search.</td>
-                <td style="border: 1px solid black; text-align: center;">true/false</td>
-            </tr>
-            <tr>
-                <td style="border: 1px solid black;">defaultLRThreshold</td>
-                <td style="border: 1px solid black;">The default value for the LR threshold.</td>
-                <td style="border: 1px solid black; text-align: center;">Any positive integer</td>
-            </tr>
+        	</tbody>
         </table>
     </div>
-
-    <div class="section">
-        <h2 class="sectiontitle"><a id="TemplateStrings">Template Strings</a> <span class="no-print"><font size="1"><a
-                    href="#Top">Back to top</a></font></span></h2>
+    
+    <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="PresettingRestrictionsParameters">Available parameters in the restrictions file</a> <span class="no-print"><font size="1"><a
+                    href="#Top">Back to top</a></font></span>
+        </h3>
+        Below is a list of possible parameters in the restrictions file and what effect it will have on the
+        usage of SmartRank. Each of these options can also be specified on the commandline, in which case this setting will take precedence over any value configured in the file. 
+        To specify a value on the commandline, include the following argument when starting SmartRank: 
+        <div style="white-space: nowrap"><font face="Courier New">-D<i>&lt;property name&gt;</i>=<i>&lt;property value&gt;</i></font></div>.
+        <table>
+        	<thead>
+            <tr>
+                <th><b>Property</b></th>
+                <th><b>Function</b></th>
+                <th><b>Allowed values</b></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>automaticParameterEstimationEnabled</td>
+                <td>Makes SmartRank automatically estimate dropout probabilities using
+                    a Monte Carlo simulation. Manual input of dropout probabilities will be disabled.</td>
+                <td>true/false</td>
+            </tr>
+            <tr>
+                <td>batchMode</td>
+                <td>When set to true, SmartRank will start in batch mode (see <span class="reference">BatchMode</span>).</td>
+                <td>true/false</td>
+            </tr>
+            <tr>
+                <td>caseLogFilename</td>
+                <td>Sets the name of the logfile that is generated for each search.</td>
+                <td>A template describing the name of case log files. See <span class="reference">TemplateStrings</span> for more information.</td>
+            </tr>
+            <tr>
+                <td>dropoutMinimum</td>
+                <td>Sets a minimum value for drop-out probability.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>dropoutDefault</td>
+                <td>Sets a default value for drop-out probability.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>dropoutMaximum</td>
+                <td>Sets a maximum value for drop-out probability.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>dropinMinimum</td>
+                <td>Sets a minimum value for drop-in probability.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>dropinDefault</td>
+                <td>Sets a default value for drop-in probability.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>dropinMaximum</td>
+                <td>Sets a maximum value for drop-in probability.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>thetaMinimum</td>
+                <td>Sets a minimum value for theta.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>thetaDefault</td>
+                <td>Sets a default value for theta.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>thetaMaximum</td>
+                <td>Sets a maximum value for theta.</td>
+                <td>0.0 to 0.99</td>
+            </tr>
+            <tr>
+                <td>maximumStoredResults</td>
+                <td>Sets a maximum number of returned likelihood ratios.</td>
+                <td>Any positive number, 250 by default</td>
+            </tr>
+            <tr>
+                <td>maximumPathLength</td>
+                <td>Sets the maximum length of paths for logfiles and reports. This to prevent creating files that cannot be read on some versions of Windows.</td>
+                <td>Any positive number, 128 by default</td>
+            </tr>
+            <tr>
+                <td>maximumUnknownCount</td>
+                <td>Sets a maximum number of unknown contributors.</td>
+                <td>Any positive number, 4 by default</td>
+            </tr>
+            <tr>
+                <td>minimumNumberOfLoci</td>
+                <td>Sets a minimum number of loci for a profile to be included in an analysis.</td>
+                <td>Any positive number, 1 by default</td>
+            </tr>            
+            <tr>
+                <td>interactiveParameterEstimationEnabled</td>
+                <td>Makes dropout probability estimation manually executable.</td>
+                <td>true/false</td>
+            </tr>
+            <tr>
+                <td>parameterEstimationIterations</td>
+                <td>The number of iterations used for estimating the dropout probability.</td>
+                <td>Any positive number, 10000 by default</td>
+            </tr>
+            <tr>
+                <td>reportFileName</td>
+                <td>Sets the path, where analysis reports are exported to.</td>
+                <td>A template describing the name of analysis report files. See <span class="reference">TemplateStrings</span> for more information.</td>
+            </tr>
+            <tr>
+                <td>reportTemplateFileName</td>
+                <td>Sets the path to the template, used for creating analysis reports.</td>
+                <td>A filepath</td>
+            </tr>
+            <tr>
+                <td>outputRootFolder</td>
+                <td>When importing search criteria from a file, the output path specified in the file - if any - will be resolved relative to this folder. Especially useful when the machine generating the XML has different drive mappings than the machine running SmartRank.</td>
+                <td>A filepath</td>
+            </tr>
+            <tr>
+                <td>exportMatchingProfilesAfterSearch</td>
+                <td>Indicates whether the profiles with LRs exceeding the LR Threshold should be exported to csv files after a search.</td>
+                <td>true/false</td>
+            </tr>
+            <tr>
+                <td>defaultLRThreshold</td>
+                <td>The default value for the LR threshold.</td>
+                <td>Any positive integer, 1000 by default</td>
+            </tr>
+            <tr>
+            	<td>qDesignationShutdown</td>
+            	<td>Indicates whether the Q Designation should be shut down for the calculation of <i><code>Pr(E|Hp)</code></i>. Please note that changing this value is <b>not recommended</b>, as it changes the numerical results of the program, and can cause performance problems. The setting is only present for testing purposes.</td>
+            	<td>true/false, true by default</td>
+            </tr>
+            <tr>
+                <td>windowCloseBlockedInBatchMode</td>
+                <td>Indicates whether closing the application window is allowed when SmartRank Batch Mode is in running state. If set to true, closing application window while SmartRank is in running state (i.e. the run button has been clicked) will minimize the window instead.</td>
+                <td>true/false, false by default</td>
+            </tr>
+            <tr>
+                <td>batchMode.autoStart</td>
+                <td>When in batch mode, this option can be specified to automatically connect to the database or load a database file and start the batch process when SmartRank is started.</td>
+                <td><code>db</code> automatically connect to the database and start batch processing.<br>
+                <code>file</code> automatically load the last-loaded file and start batch processing.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="subsection">
+        <h3 class="subsectiontitle"><a id="TemplateStrings">Template Strings</a> <span class="no-print"><font size="1"><a
+                    href="#Top">Back to top</a></font></span></h3>
         <p>
             Some values in the restrictions file are specified in Template Strings. These are strings containing placeholder markers that are replaced with actual 
             values to form the final string. Placeholders are enclosed in '{' and '}' characters (e.g. {DATE}, {TIME})
@@ -586,6 +816,124 @@ body {
             </ul>
         </p>
     </div>
+	</div>
+
+	<div class="section">
+		<h2 class="sectionTitle">
+			<a id="BatchMode">Batch Mode</a> <span class="no-print"><font size="1"><a
+                    href="#Top">Back to top</a></font></span></h2>
+        <p>Batch mode was introduced to reduce the number of manual actions when processing a large number of search queries.
+        To activate Batch Mode, set the batchMode property to 'true' in the restrictions file (see <span class="reference">PresettingParameters</span>). </p>
+        
+        <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="BatchModeActivation">The Batch Mode Tab</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+        <p>When started in batch mode - and after loading a database - the Batch Mode tab is enabled. On this tab a directory can be selected that will be 
+        monitored for Search Criteria files. The detected files will be shown in a list, and some basic management of search jobs is available.</p>
+        <table class="imageTable">
+            <tr><td><img src="images/batchmode1.png" alt="Batch Mode 1"></td></tr>
+            <tr><td><div class="imagecaption">the Batch Mode tab</div></td></tr>
+        </table>
+         </div>
+         
+        <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="BatchModeInputFolder">Configuring the input folder</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+        <p>Batch Mode constantly monitors a configured input folder for search criteria files. The path of this directory can be typed into the Input Folder box, or the Browse 
+        button can be used to select a directory using a file chooser dialog.  
+        <table class="imageTable">
+            <tr><td><img src="images/batchmode2.png" alt="Batch Mode 2"></td></tr>
+            <tr><td><div class="imagecaption">selecting a directory to scan for search criteria files</div></td></tr>
+        </table>
+        Note that the selected folder will be periodically scanned for new files. These will be added to the list of detected files automatically.
+        <p>
+        </div>
+        <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="BatchModeStatistics">Configuring default population statistics</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+        Search criteria files can either contain embedded population statistics or rely on an external file to supply the statistics. For files that do not contain population 
+        statistics, a default statistics file can be configured. Enter the path of the file in the Population Statistics textbox, or use the Browse button to select the file
+        with a file chooser dialog. If a default statistics file is not selected, files that do not contain embedded statistics cannot be not be processed, and will be moved 
+        to the Failed state with an appropriate error message.
+        <table class="imageTable">
+            <tr><td><img src="images/batchmode5.png" alt="Batch Mode 5"></td></tr>
+            <tr><td><div class="imagecaption">selecting a default population statistics file</div></td></tr>
+        </table>
+        </div>
+        
+        <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="BatchModeFileList">The file list</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+        <p>The batch mode tab will list the filename, status and any remarks for all search criteria files found in the input directory. This directory is periodically scanned 
+        for new files, which will be added to the displayed list automatically. Select a line in the table to see more details in the lower section:
+        <table class="imageTable">
+            <tr><td><img src="images/batchmode3.png" alt="Batch Mode 3"></td></tr>
+            <tr><td><div class="imagecaption">showing details of a selected file. In this case a file where the sample data for a contributor is listed under Hd could not be found. </div></td></tr>
+        </table>
+        As files are processed, they are assigned a status by SmartRank. The following status values are used:
+    	<table>
+			<thead>
+				<tr>
+					<th>Status</th>
+					<th>Description</th>
+					<th>File Location</th>
+				</tr>
+			</thead>
+    		<tbody>
+    			<tr><td>Pending</td><td>Indicates that SmartRank has detected the presence of the file, and has verified that the file contains search criteria.</td><td>These files are present in the selected directory</td></tr>
+    			<tr><td>Processing</td><td>Indicates that a file is currently being processed.</td><td>Before being processed, files are moved into the 'processing' subdirectory. If this subdirectory does not exist, it is created.</td></tr>
+    			<tr><td>Failed</td><td>Indicates that an error was encountered when reading or processing the file. Depending on the nature of the failure, the files may be rescheduled by selecting the file and clicking the Restart button.</td><td>These files are moved to the 'failed' subdirectory. If this subdirectory does not exist, it is created.</td></tr>
+    			<tr><td>Succeeded</td><td>Indicates that a search was performed using the criteria from the file, and that a report and logfile were created. Note that this does <b>not</b> necessarily mean that any matches were obtained.</td><td>These files are moved to the 'succeeded' subdirectory. If this subdirectory does not exist, it is created.</td></tr>
+    			<tr><td>Interrupted</td><td>Indicates that the user interrupted the search before all specimens in the database were evaluated. Interrupted files can be re-scheduled by selecting them and clicking the Restart button.</td><td>These files are moved from the 'processing' subdirectory back to the of the input directory.</td></tr>
+    			<tr><td>Cancelled</td><td>Indicates that the this file should be skipped. These files can be re-scheduled by selecting them and clicking the Restart button.</td><td>These files are moved to the 'Failed' directory.</td></tr>
+    		</tbody>
+    	</table>
+         </div>
+         <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="TheToolbar">The toolbar</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+         <p>Above the list of files a toolbar is displayed with which a number of actions can be performed. 
+        <table class="imageTable">
+            <tr><td><img src="images/batchmode4.png" alt="Batch Mode 4"></td></tr>
+            <tr><td><div class="imagecaption">the toolbar</div></td></tr>
+        </table>
+         The toolbar contains the following buttons:
+         <table>
+			<thead>
+				<tr>
+					<th>Button</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+    		<tbody>
+    			<tr><td>Stop</td><td>Stops processing files. If a file is currently being processed, SmartRank waits until this has completed. This button is disabled until the Run button is clicked.</td></tr>
+    			<tr><td>Run</td><td>Starts performing searches for the files in the input directory. Files are processed in the order in which they appear in the list. The Up/Down/Top/Bottom buttons can be used to prioritized searches. Note that if the windowCloseBlockedInBatchMode option is set in the Restrictions file, the SmartRank window cannot be closed while Batch Mode is in running state.</td></tr>
+    			<tr><td>Start Time</td><td>This field contains a time in 24-hour notation. SmartRank will wait until this time to start processing search criteria files after the Run button is clicked. Use the up and down arrows to increase or decrease the time, or type a value in the edit box. The default value for this field is 00:00.</td></tr>
+    			<tr><td>End Time</td><td>This field contains a time in 24-hour notation. SmartRank stop processing search criteria files after this time. <br>
+    			If a file is being processed when the End Time is reached, this search is completed but no subsequent file will be picked up until the Start Time is once again reached.<br>
+    			 Use the up and down arrows to increase or decrease the time, or type a value in the edit box. The default value for this field is 23:59.</td></tr>
+    			<tr><td>Top</td><td>Moves the selected file to the top of the list.</td></tr>
+    			<tr><td>Up</td><td>Moves the selected file up one position.</td></tr>
+    			<tr><td>Down</td><td>Moves the selected file down one position.</td></tr>
+    			<tr><td>Bottom</td><td>Moves the selected file to the bottom of the list.</td></tr>
+    			<tr><td>Clear completed</td><td>Removes Failed, Cancelled and Successful files from the list.</td></tr>
+    			<tr><td>Restart</td><td>Sets the status of the selected file to Pending. This button is only enabled if a file with status Failed, Cancelled or Interrupted is selected.</td></tr>
+    			<tr><td>Cancel</td><td>Sets the status of the currently selected file to Cancelled.</td></tr>
+    		</tbody>
+    	</table>
+    	</div>
+         If processing of a file is to be interrupted, use the interrupt button at the bottom right of the screen. 
+         Once processing of a file has completed, the detail view for that file will show the locations of the logfile and report. Use the Show Log and Show Report buttons 
+         to view the contents of these files, and use the Open Folder buttons to open the directory in which the files were written.
+         <p>When all files have been processed, SmartRank will continue to monitor the selected directory, and automatically process any new search criteria files, 
+         until the Stop button is clicked or SmartRank is closed.
+         
+    </div>
 
     <div class="section">
         <h2 class="sectiontitle">
@@ -599,6 +947,21 @@ body {
                 <code>java -version</code>
                 <br> SmartRank requires Java 1.7.0 or higher.<br>
                 </p></li>
+        <li><b>The report notes that a number of loci were not processed</b><p>
+        	The following text may be present in the Comments section of the Results table in the SmartRank report.<br>  
+        	<code>
+        		Specimen loci not evaluated: TH01 and VWA<br>
+				Crime Sample loci not evaluated: TH01 and VWA</code>
+			The names of the loci in question will vary according to your specific situation.
+			SmartRank only calculates an LR for the loci that are present in <b>all</b> of the following locations:
+			<UL>
+				<li>The crimescene sample</li>
+				<li>All selected known donor profiles</li>
+				<li>The current specimen</li>
+				<li>The population statistics</li>
+			</UL>
+        	If a locus is missing in any of these places, an LR will <b>not</b> be calculated for that locus, and a remarks will be added to the Comments section for the specimen in question.
+        </li>
         <li><b>SmartRank says it has run out of memory</b>
             <p>
                     When you see a dialog that looks something like this:<br> <img
@@ -623,7 +986,7 @@ body {
 
         <p>Using the query below, a SmartRank-compatible database file can be exported from a CODIS SQLServer database.</p>
         <pre style="color: blue; border: 1px solid black ;">
-<span style="color: purple; font-style: italic;">SELECT</span> 
+<span class="sqlKeyword">SELECT</span> 
     specimenId, CSF1PO_1, CSF1PO_2, CSF1PO_3, CSF1PO_4,
     D10S1248_1, D10S1248_2, D10S1248_3, D10S1248_4, D12S391_1,
     D12S391_2, D12S391_3, D12S391_4, D13S317_1, D13S317_2,
@@ -644,33 +1007,33 @@ body {
     [Penta E_4], SE33_1, SE33_2, SE33_3, SE33_4, TH01_1,
     TH01_2, TH01_3, TH01_4, TPOX_1, TPOX_2,
     TPOX_3,TPOX_4, vWA_1, vWA_2, vWA_3, vWA_4
-<span style="color: purple; font-style: italic;">FROM</span> 
+<span class="sqlKeyword">FROM</span> 
 (
-    <span style="color: purple; font-style: italic;">SELECT</span> 
-        S.Spec_ID <span style="color: purple; font-style: italic;">AS</span> [specimenId],
-        <span style="color: purple; font-style: italic;">CAST</span>(rtrim(Locus) <span
-                style="color: purple; font-style: italic;">AS</span> VARCHAR(50)) + '_' + <span
-                style="color: purple; font-style: italic;">CAST</span>(PV.Band_Num <span
-                style="color: purple; font-style: italic;">AS</span> VARCHAR(2)) [locus],
-        rtrim(PV.PCR_Value) <span style="color: purple; font-style: italic;">AS</span> [data]
-    <span style="color: purple; font-style: italic;">FROM</span> 
+    <span class="sqlKeyword">SELECT</span> 
+        S.Spec_ID <span class="sqlKeyword">AS</span> [specimenId],
+        <span class="sqlKeyword">CAST</span>(rtrim(Locus) <span
+                class="sqlKeyword">AS</span> VARCHAR(50)) + '_' + <span
+                class="sqlKeyword">CAST</span>(PV.Band_Num <span
+                class="sqlKeyword">AS</span> VARCHAR(2)) [locus],
+        rtrim(PV.PCR_Value) <span class="sqlKeyword">AS</span> [data]
+    <span class="sqlKeyword">FROM</span> 
         CODIS.dbo.Specimen S
-        <span style="color: purple; font-style: italic;">INNER JOIN</span> CODIS.dbo.Sizing Z <span
-                style="color: purple; font-style: italic;">ON</span> S.Spec_CD = Z.Spec_CD 
-        <span style="color: purple; font-style: italic;">INNER JOIN</span> CODIS.dbo.PCR_Value PV <span
-                style="color: purple; font-style: italic;">ON</span> Z.Locus_CD = PV.Locus_CD 
-        <span style="color: purple; font-style: italic;">AND</span> Z.Spec_CD = PV.Spec_CD 
-        <span style="color: purple; font-style: italic;">INNER JOIN</span> CODIS.dbo.Locus L <span
-                style="color: purple; font-style: italic;">ON</span> Z.Locus_CD = L.Locus_CD
-        <span style="color: purple; font-style: italic;">WHERE</span> S.Spec_Type_CD <span
-                style="color: purple; font-style: italic;">IN</span> 
+        <span class="sqlKeyword">INNER JOIN</span> CODIS.dbo.Sizing Z <span
+                class="sqlKeyword">ON</span> S.Spec_CD = Z.Spec_CD 
+        <span class="sqlKeyword">INNER JOIN</span> CODIS.dbo.PCR_Value PV <span
+                class="sqlKeyword">ON</span> Z.Locus_CD = PV.Locus_CD 
+        <span class="sqlKeyword">AND</span> Z.Spec_CD = PV.Spec_CD 
+        <span class="sqlKeyword">INNER JOIN</span> CODIS.dbo.Locus L <span
+                class="sqlKeyword">ON</span> Z.Locus_CD = L.Locus_CD
+        <span class="sqlKeyword">WHERE</span> S.Spec_Type_CD <span
+                class="sqlKeyword">IN</span> 
         (
-            <span style="color: purple; font-style: italic;">SELECT</span> 
+            <span class="sqlKeyword">SELECT</span> 
                 Spec_Type_CD 
-            <span style="color: purple; font-style: italic;">FROM</span> 
+            <span class="sqlKeyword">FROM</span> 
                 CODIS.dbo.Spec_Type 
-                <span style="color: purple; font-style: italic;">WHERE</span> Spec_Type <span
-                style="color: purple; font-style: italic;">IN</span> 
+                <span class="sqlKeyword">WHERE</span> Spec_Type <span
+                class="sqlKeyword">IN</span> 
                 (
                     'Convicted Offender',
                     'Suspect, Known', 
@@ -678,11 +1041,11 @@ body {
                 )
         )
 ) 
-<span style="color: purple; font-style: italic;">x PIVOT</span>
+<span class="sqlKeyword">x PIVOT</span>
 (
-    <span style="color: purple; font-style: italic;">MAX</span>(<span style="color: purple; font-style: italic;">DATA</span>)
-    <span style="color: purple; font-style: italic;">FOR</span> locus <span
-                style="color: purple; font-style: italic;">IN</span>
+    <span class="sqlKeyword">MAX</span>(<span class="sqlKeyword">DATA</span>)
+    <span class="sqlKeyword">FOR</span> locus <span
+                class="sqlKeyword">IN</span>
     (
         CSF1PO_1, D10S1248_1, D12S391_1, D13S317_1, D16S539_1,
         D18S51_1, D19S433_1, D1S1656_1, D21S11_1, D22S1045_1, 
@@ -705,7 +1068,7 @@ body {
         FES_FPS_4, FGA_4, [Penta D_4], [Penta E_4], SE33_4, 
         TH01_4, TPOX_4, vWA_4
     )
-) <span style="color: purple; font-style: italic;">
+) <span class="sqlKeyword">
 AS</span> p
     </pre>
     </div>
@@ -764,7 +1127,7 @@ AS</span> p
                     This overrides the location configured in the restrictions file --&gt;</font>
             <font color=blue>&lt;CaseFolder&gt;</font><b>2016/01 januari/2016.01.01.001</b><font color=blue>&lt;/CaseFolder&gt;</font>
             
-            <font color=green>&lt;!-- The user id of the person who generated this file (not used in smartrank, but present for tracability reasons) --&gt;</font>
+            <font color=green>&lt;!-- The user id of the person who generated this file --&gt;</font>
             <font color=blue>&lt;userid&gt;</font><b>MASLA</b><font color=blue>&lt;/userid&gt;</font>
             
             <font color=green>&lt;!-- The date and time that the file was generated (not used in smartrank, but present for tracability reasons) --&gt;</font>
@@ -783,16 +1146,16 @@ AS</span> p
             <font color=blue>&lt;Theta&gt;</font><b>0.03</b><font color=blue>&lt;/Theta&gt;</font>
             
             <font color=green>&lt;!-- Specification of Hp. The candidateDropout attribute defines the dropout for the candidate sample. --&gt;</font>
-            <font color=blue>&lt;HP <font color=purple>candidateDropout=<font color=red>"0.10"</font></font>&gt;
+            <font color=blue>&lt;HP <font color=purple>candidateDropout=<font color=red>"0.10"</font></font>&gt;</font>
                 <font color=green>&lt;!-- Contains references to the samples that contributors under Hp, and their corresponding dropout --&gt;</font>
                 <font color=blue>&lt;Contributors&gt;</font>
                     <font color=green>&lt;!-- Each sample that is a contributor under Hp gets a Contributor item here. 
                             The name refers to the name of a Specimen (see below) --&gt;</font>
-                    <font color=blue>&lt;Contributor <font color=purple>name=<font color=red>"CEDU0059FR#07"</font></font> <font color=purple>dropout=<font color=red>"0.11"</font></font>/&gt;
+                    <font color=blue>&lt;Contributor <font color=purple>name=<font color=red>"CEDU0059FR#07"</font></font> <font color=purple>dropout=<font color=red>"0.11"</font></font>/&gt;</font>
                 <font color=blue>&lt;/Contributors&gt;</font>
                 
                 <font color=green>&lt;!-- Contains the settings for unknown contributors under Hp --&gt;</font>
-                <font color=blue>&lt;Unknowns <font color=purple>count=<font color=red>"1"</font></font> <font color=purple>dropout=<font color=red>"0.12"</font></font>/&gt;
+                <font color=blue>&lt;Unknowns <font color=purple>count=<font color=red>"1"</font></font> <font color=purple>dropout=<font color=red>"0.12"</font></font>/&gt;</font>
             <font color=blue>&lt;/HP&gt;</font>
 
             <font color=green>&lt;!-- Specification of Hd. --&gt;</font>
@@ -801,11 +1164,11 @@ AS</span> p
                 <font color=blue>&lt;Contributors&gt;</font>
                     <font color=green>&lt;!-- Each sample that is a contributor under Hd gets a Contributor item here. 
                             The name refers to the name of a Specimen (see below) --&gt;</font>
-                    <font color=blue>&lt;Contributor <font color=purple>name=<font color=red>"CEDU0059FR#07"</font></font> <font color=purple>dropout=<font color=red>"0.13"</font></font>/&gt;
+                    <font color=blue>&lt;Contributor <font color=purple>name=<font color=red>"CEDU0059FR#07"</font></font> <font color=purple>dropout=<font color=red>"0.13"</font></font>/&gt;</font>
                 <font color=blue>&lt;/Contributors&gt;</font>
                 
                 <font color=green>&lt;!-- Contains the settings for unknown contributors under Hd --&gt;</font>
-                <font color=blue>&lt;Unknowns <font color=purple>count=<font color=red>"2"</font></font> <font color=purple>dropout=<font color=red>"0.14"</font></font>/&gt;
+                <font color=blue>&lt;Unknowns <font color=purple>count=<font color=red>"2"</font></font> <font color=purple>dropout=<font color=red>"0.14"</font></font>/&gt;</font>
             <font color=blue>&lt;/HD&gt;</font>
             
             <font color=green>&lt;!-- For every loaded crime-scene profile and known profile, a Specimen entry 
@@ -838,43 +1201,112 @@ AS</span> p
         </pre>
     </div>
     
+    <div class="appendix">
+        <h2>
+            Appendix F. <a id="CodisQueries">Suggested queries for CODIS users</a> <span class="no-print"><font
+                size="1"><a href="#Top">Back to top</a></font></span>
+        </h2>
+    	<p>The following queries can be used when accessing a CODIS database directly:
+    	<UL>
+    		<LI>Specimen Keys Query
+    		<pre>
+select S.Spec_CD
+FROM CODIS.dbo.Specimen S
+WHERE S.Spec_Type_CD IN (
+    Select Spec_Type_CD 
+    from CODIS.dbo.Spec_Type 
+    where Spec_Type IN ('Convicted Offender','Suspect, Known', 'Elimination, Known'))
+order by Spec_CD
+			</pre>
+    		</LI>
+    		<LI>Specimen Retrieval Query
+    		<pre>
+SELECT S.Spec_ID as [specimenId], L.Locus, rtrim(PV.PCR_Value) as [allele]
+FROM CODIS.dbo.Specimen S, CODIS.dbo.Locus L, CODIS.dbo.Sizing Z, CODIS.dbo.PCR_Value PV
+WHERE S.Spec_CD = Z.Spec_CD
+AND Z.Spec_CD = PV.Spec_CD 
+AND Z.Locus_CD = L.Locus_CD
+AND Z.Locus_CD = PV.Locus_CD  
+AND S.Spec_CD between ? and ?
+AND S.Spec_Type_CD IN (
+    Select Spec_Type_CD 
+    from CODIS.dbo.Spec_Type 
+    where Spec_Type IN ('Convicted Offender','Suspect, Known', 'Elimination, Known'))
+group by s.spec_id, L.locus, PV.PCR_Value
+			</pre>
+    		</LI>
+    		<LI>Database Revision Query
+    		<pre>
+select max(Audit_CD)
+FROM CODIS.dbo.Audit_Trail
+			</pre>
+    		</LI>
+    	</UL>
+    
     <!--  This code composes the table of contents at the top of the document -->
     <script type="text/javascript">
+    	function resolveReferences(references, id, title, targetType) {
+            for(ref=0;ref<references.length;ref++) {
+                var reference = references[ref];
+                if(reference.textContent === id) {
+                    reference.innerHTML = "the <a href='#" + id + "'>&#39;" + title.trim() + "&#39;</a> " + targetType;
+                } 
+            }
+    	}
+    
         var i;
+        var subcount;
         var t = "<h2><a id='TableOfContents'>Table of Contents</a></h2><OL class='toclist'>";
         var sections = document.getElementsByClassName("section")
         for(i=0;i<sections.length;i++) {
             var header = sections[i].getElementsByClassName("sectiontitle")[0];
             var anchor = header.getElementsByTagName("a")[0];
-            var sectiontitle = header.innerHTML.replace(/<.*>/i, "") + anchor.textContent
-        	
-            var references = document.getElementsByClassName("reference");
-            for(ref=0;ref<references.length;ref++) {
-                var reference = references[ref];
-                if(reference.textContent == anchor.id) {
-                    reference.innerHTML = "the <a href='#" + anchor.id + "'>" + sectiontitle + "</a> section";
-                } 
-            }
-            
-            t += "<LI><a href='#" + anchor.id + "'>" +  sectiontitle + "</a></LI>"
+            var sectionTitle = header.innerHTML.replace(/<.*>/i, "") + anchor.textContent
+			resolveReferences(document.getElementsByClassName("reference"), anchor.id, sectionTitle, "section");
+
+            t += "<LI><a href='#" + anchor.id + "'>" +  sectionTitle + "</a>"
+
+	        var subsections = sections[i].getElementsByClassName("subsection");
+	        if(subsections.length > 0) {
+	        	t += "<OL style=\"start:"+i+".1\">";
+	        }
+	        for(subcount=0;subcount<subsections.length;subcount++) {
+	            var subheader = subsections[subcount].getElementsByClassName("subsectiontitle")[0];
+	            var subanchor = subheader.getElementsByTagName("a")[0];
+	            var subsectionTitle = subheader.innerHTML.replace(/<.*>/i, "") + subanchor.textContent
+				resolveReferences(document.getElementsByClassName("reference"), subanchor.id, subsectionTitle, "subsection");
+				t += "<LI><a href='#" + subanchor.id + "'>" +  subsectionTitle + "</a></LI>"
+				
+	        	var subsubsections = subsections[subcount].getElementsByClassName("subsubsection");
+		        if(subsubsections.length > 0) {
+		        	t += "<OL style=\"start:"+i+"."+subcount+".1\">";
+		        }
+	        	for(subsubcount=0;subsubcount<subsubsections.length;subsubcount++) {
+		            var subsubheader = subsubsections[subsubcount].getElementsByClassName("subsubsectiontitle")[0];
+		            var subsubanchor = subsubheader.getElementsByTagName("a")[0];
+		            var subsubsectionTitle = subsubheader.innerHTML.replace(/<.*>/i, "") + subsubanchor.textContent
+					resolveReferences(document.getElementsByClassName("reference"), subsubanchor.id, subsubsectionTitle, "subsubsection");
+					t += "<LI><a href='#" + subsubanchor.id + "'>" +  subsubsectionTitle + "</a></LI>"
+	        	}
+		        if(subsubsections.length > 0) {
+		        	t += "</OL>";
+		        }
+	        }
+	        if(subsections.length > 0) {
+	        	t += "</OL>";
+	        }
+
+            t += "</LI>"
         }
         t += "</OL>";
-        
+
         t+= "<br><h2>Appendices</h2><ul class='toclist'>";
         var appendices = document.getElementsByClassName("appendix")
         for(app=0;app<appendices.length;app++) {
             var header = appendices[app].getElementsByTagName("h2")[0];
             var anchor = header.getElementsByTagName("a")[0];
             var appendixtitle = header.innerHTML.replace(/<.*>/i, "") + anchor.textContent;
-            
-            var references = document.getElementsByClassName("reference");
-            for(ref=0;ref<references.length;ref++) {
-                var reference = references[ref];
-                if(reference.textContent == anchor.id) {
-                    reference.innerHTML = "the <a href='#" + anchor.id + "'>" + appendixtitle + "</a> appendix";
-                }
-            }
-            
+			resolveReferences(document.getElementsByClassName("reference"), anchor.id, appendixtitle, "appendix");        		
             t += "<LI><a href='#" + anchor.id + "'>" + header.innerHTML.replace(/<.*>/i, "") + anchor.textContent + "</a></LI>"
         }
         t += "</ul>";

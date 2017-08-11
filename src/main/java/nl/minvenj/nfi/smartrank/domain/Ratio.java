@@ -32,7 +32,7 @@ public class Ratio {
      * @param prosecutionProbability The probability for the prosecution
      * @param defenseProbability The probability for the defense
      */
-    public Ratio(String locusName, Double prosecutionProbability, Double defenseProbability) {
+    public Ratio(final String locusName, final Double prosecutionProbability, final Double defenseProbability) {
         this(locusName, prosecutionProbability, defenseProbability, null);
     }
 
@@ -46,7 +46,7 @@ public class Ratio {
      * probabilities. Useful when the individual probabilities are too small to
      * calculate a ratio
      */
-    public Ratio(String locusName, Double prosecutionProbability, Double defenseProbability, Double ratio) {
+    public Ratio(final String locusName, final Double prosecutionProbability, final Double defenseProbability, final Double ratio) {
         _locusName = locusName;
         _defenseProbability = defenseProbability;
         _prosecutionProbability = prosecutionProbability;
@@ -81,6 +81,10 @@ public class Ratio {
      */
     public Double getRatio() {
         return _ratio;
+    }
+
+    public boolean isReal() {
+        return !(_ratio.isInfinite() || _ratio.isNaN());
     }
 
     @Override

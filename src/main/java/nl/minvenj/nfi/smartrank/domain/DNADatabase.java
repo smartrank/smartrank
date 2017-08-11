@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import nl.minvenj.nfi.smartrank.analysis.ExcludedProfile;
-import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseReader;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseReaderFactory;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
@@ -34,93 +33,133 @@ import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
  */
 public class DNADatabase {
 
-    private static final int CACHE_SIZE = SmartRankRestrictions.getDBCacheSize();
     private final DatabaseConfiguration _configuration;
     private DatabaseReader _reader;
 
+    /**
+     * Creates a file-based DNA database.
+     *
+     * @param dbFile the CSV file where the specimens of the DNA database reside
+     */
     public DNADatabase(final File dbFile) {
         _configuration = new DatabaseConfiguration(dbFile);
     }
 
+    /**
+     * Creates a DBMS-based DNA database
+     *
+     * @param config a {@link DatabaseConfiguration} representing the link to the DMBS where the specimens of the database reside
+     */
     public DNADatabase(final DatabaseConfiguration config) {
         _configuration = config;
     }
 
+    /**
+     * Validates the configuration and specimens within the DNA database.
+     *
+     * @param listener a {@link DatabaseValidationEventListener} that is notified of errors and progress
+     * @throws IOException if the DNA database is not correctly configured
+     * @throws InterruptedException if the validation process is interrupted
+     */
     public void validate(final DatabaseValidationEventListener listener) throws IOException, InterruptedException {
         _reader = DatabaseReaderFactory.create(_configuration);
         _reader.validate(listener);
     }
 
+    /**
+     * Validates the configuration and specimens within the DNA database. This is usually done when changes to the database are detected after an initial validation.
+     *
+     * @param listener a {@link DatabaseValidationEventListener} that is notified of errors and progress
+     * @throws IOException if the DNA database is not correctly configured
+     * @throws InterruptedException if the validation process is interrupted
+     */
+    public void revalidate(final DatabaseValidationEventListener listener) throws IOException, InterruptedException {
+        _reader.revalidate(listener);
+    }
+
+    /**
+     * Gets a string describing the database connection.
+     *
+     * @return A string describing the database connection
+     */
     public String getConnectString() {
         return _configuration.getConnectString();
     }
 
+    /**
+     * Get the configuration that was used to create this DNADatabase.
+     *
+     * @return a {@link DatabaseConfiguration} holding the settings for this database
+     */
     public DatabaseConfiguration getConfiguration() {
         return _configuration;
     }
 
+    /**
+     * Gets the number of records in the database.
+     *
+     * @return an int containing the number of specimens in the database
+     */
     public int getRecordCount() {
         return _reader.getRecordCount();
     }
 
+    /**
+     * Gets a breakdown of the database composition by number of loci in the profiles.
+     *
+     * @return a {@link List} of {@link Integer}s where value at index x holds the number of profiles having x loci.
+     */
     public List<Integer> getSpecimenCountPerNumberOfLoci() {
         return _reader.getSpecimenCountPerNumberOfLoci();
     }
 
+    /**
+     * Gets a value that identifies the current contents of the database. This value is used to determine if a revalidation of the database is required before starting a search.
+     * Depending on the underlying datastore this can be a SHA-1 hash, or some (derived) value from a database table.
+     *
+     * @return a String containing an identifying value for the current state of the database
+     */
     public String getFileHash() {
         return _reader.getContentHash();
     }
 
+    /**
+     * Gets the name of the formatting of the database.
+     *
+     * @return a String identifying the format of the database
+     */
     public String getFormatName() {
         return _reader.getFormatName();
     }
 
+    /**
+     * Gets an iterator over the specimens in the database.
+     *
+     * @return an {@link Iterator} over the {@link Sample}s in the database
+     */
     public Iterator<Sample> iterator() {
-        return new CachedSampleIterator();
+        return _reader.iterator();
     }
 
-    private class CachedSampleIterator implements Iterator<Sample> {
-
-        private Iterator<Sample> _iterator;
-        private final Sample[] _profileCache = new Sample[CACHE_SIZE];
-        private int _cacheHead = 0;
-        private int _cacheTail = 0;
-
-        @Override
-        public boolean hasNext() {
-            if (_cacheHead >= _cacheTail) {
-                fillProfileCache();
-            }
-            return _cacheHead < _cacheTail;
-        }
-
-        @Override
-        public Sample next() {
-            return _profileCache[_cacheHead++];
-        }
-
-        private void fillProfileCache() {
-            if (_iterator == null) {
-                _iterator = _reader.iterator();
-            }
-            _cacheTail = 0;
-            _cacheHead = 0;
-            while (_cacheTail < _profileCache.length && _iterator.hasNext()) {
-                _profileCache[_cacheTail++] = _iterator.next();
-            }
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("Remove is not supported.");
-        }
-    }
-
+    /**
+     * Gets a list of records that are to be ignored due to formatting issues.
+     *
+     * @return a {@link List} of {@link ExcludedProfile} objects describing the specimen to ignore and the reason why it should be ignored
+     */
     public List<ExcludedProfile> getBadRecordList() {
         return _reader.getBadRecordList();
     }
 
+    /**
+     * Gets a map containing the number of specimens containing a given locus.
+     *
+     * @return a {@link Map} with key {@link String} holding the names of all encountered loci and as value an {@link Integer} holding the number of specimens containing this locus
+     */
     public Map<String, Integer> getSpecimenCountsPerLocus() {
         return _reader.getSpecimenCountsPerLocus();
+    }
+
+    public Map<String, Map<String, Integer>> getMetadataStatistics() {
+        return _reader.getMetadataStatistics();
     }
 }

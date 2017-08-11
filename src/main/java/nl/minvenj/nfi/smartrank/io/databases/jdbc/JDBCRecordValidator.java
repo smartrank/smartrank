@@ -30,6 +30,8 @@ import nl.minvenj.nfi.smartrank.domain.Allele;
 import nl.minvenj.nfi.smartrank.domain.Locus;
 import nl.minvenj.nfi.smartrank.domain.Sample;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
+import nl.minvenj.nfi.smartrank.messages.status.DetailStringMessage;
+import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 
 /**
  * Validates records in the database.
@@ -39,7 +41,7 @@ public class JDBCRecordValidator extends Thread {
     public static final String VALID_ALLELE_REGEX = "\\d{0,2}(\\.\\d)?";
     private final DatabaseValidationEventListener _listener;
     private final List<ExcludedProfile> _badRecords;
-    private final BlockingQueue<JDBCRecordData> _queue;
+    private final BlockingQueue<Sample> _queue;
     private boolean _done;
     private final ArrayList<Integer> _specimenCountPerNumberOfLoci;
     private final HashMap<String, Integer> _specimenCountPerLocus;
@@ -52,7 +54,7 @@ public class JDBCRecordValidator extends Thread {
      * @param badRecordList a list of record numbers for those records that are deemed invalid
      * @param listener a {@link DatabaseValidationEventListener} that will be called when a record fails validation
      */
-    public JDBCRecordValidator(final BlockingQueue<JDBCRecordData> queue, final List<ExcludedProfile> badRecordList, final DatabaseValidationEventListener listener) {
+    public JDBCRecordValidator(final BlockingQueue<Sample> queue, final List<ExcludedProfile> badRecordList, final DatabaseValidationEventListener listener) {
         _listener = listener;
         _badRecords = badRecordList;
         _queue = queue;
@@ -63,11 +65,11 @@ public class JDBCRecordValidator extends Thread {
     @Override
     public void run() {
         while (!(_done && _queue.isEmpty())) {
-            JDBCRecordData recordData = null;
+            Sample sample = null;
             try {
-                recordData = _queue.poll(50, TimeUnit.MILLISECONDS);
-                if (recordData != null) {
-                    validateSample(recordData.getRecordNumber(), recordData.getSample());
+                sample = _queue.poll(50, TimeUnit.MILLISECONDS);
+                if (sample != null) {
+                    validateSample(sample);
                 }
             }
             catch (final InterruptedException ie) {
@@ -76,11 +78,12 @@ public class JDBCRecordValidator extends Thread {
         }
     }
 
-    private void validateSample(final int recordNumber, final Sample sample) {
+    private void validateSample(final Sample sample) {
+        MessageBus.getInstance().send(this, new DetailStringMessage("Validating specimen " + sample.getName()));
         for (final Locus locus : sample.getLoci()) {
             try {
                 if (locus.size() > 2) {
-                    _listener.onProblem(recordNumber, sample.getName(), locus.getName(), "Locus excluded as it has " + locus.size() + " alleles: " + locus.getAlleles());
+                    _listener.onProblem(sample.getName(), locus.getName(), "Locus excluded as it has " + locus.size() + " alleles: " + locus.getAlleles());
                 }
 
                 Integer specimensHavingThisLocus = _specimenCountPerLocus.get(locus.getName());
@@ -92,14 +95,14 @@ public class JDBCRecordValidator extends Thread {
                 // Check if the fields are all valid alleles and that the record has no more than 2 alleles
                 for (final Allele allele : locus.getAlleles()) {
                     if (!allele.getAllele().matches(VALID_ALLELE_REGEX)) {
-                        _listener.onProblem(recordNumber, sample.getName(), locus.getName(), "Allele '" + allele.getAllele() + "' ignored as it has an invalid format");
+                        _listener.onProblem(sample.getName(), locus.getName(), "Allele '" + allele.getAllele() + "' ignored as it has an invalid format");
                     }
                 }
             }
             catch (final Throwable e) {
-                _listener.onProblem(recordNumber, sample.getName(), locus.getName(), "Specimen excluded due to error: " + e.getClass().getName() + " - " + e.getLocalizedMessage());
+                _listener.onProblem(sample.getName(), locus.getName(), "Specimen excluded due to error: " + e.getClass().getName() + " - " + e.getLocalizedMessage());
                 synchronized (_badRecords) {
-                    _badRecords.add(new ExcludedProfile(sample.getName(), recordNumber, ExclusionReason.OTHER));
+                    _badRecords.add(new ExcludedProfile(sample.getName(), ExclusionReason.OTHER));
                 }
             }
         }

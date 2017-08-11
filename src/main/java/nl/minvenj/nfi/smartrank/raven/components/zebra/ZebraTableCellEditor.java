@@ -20,6 +20,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.util.EventObject;
 
+import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
 import javax.swing.JSpinner;
 import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.JTable;
@@ -36,34 +38,20 @@ public class ZebraTableCellEditor implements TableCellEditor {
 
     @Override
     public Component getTableCellEditorComponent(final JTable table, final Object value, final boolean isSelected, final int row, final int column) {
-        final Component component = _proxyEditor.getTableCellEditorComponent(table, value, isSelected, row, column);
-        Color evenRowColor = Color.WHITE;
-        Color oddRowColor = Color.WHITE;
+        final JComponent component = (JComponent) _proxyEditor.getTableCellEditorComponent(table, value, isSelected, row, column);
+        final Color backgroundColor = (row % 2) == 0 ? ((ZebraTable) table).getEvenRowColor() : ((ZebraTable) table).getOddRowColor();
 
-        if (!table.isEnabled()) {
-            evenRowColor = toGrayScale(evenRowColor);
-            oddRowColor = toGrayScale(oddRowColor);
-        }
-        
         component.setEnabled(table.isEnabled());
-        
+
         if (component instanceof JSpinner) {
-            ((DefaultEditor) ((JSpinner) component).getEditor()).getTextField().setBackground((row % 2) == 0 ? evenRowColor : oddRowColor);
+            final JFormattedTextField textField = ((DefaultEditor) ((JSpinner) component).getEditor()).getTextField();
+            textField.setBackground(backgroundColor);
+            textField.setOpaque(true);
         } else {
-            component.setBackground((row % 2) == 0 ? evenRowColor : oddRowColor);
+            component.setBackground(backgroundColor);
+            component.setOpaque(true);
         }
         return component;
-    }
-
-    private Color toGrayScale(final Color color) {
-        int component = color.getRed();
-        if (color.getBlue() < component) {
-            component = color.getBlue();
-        }
-        if (color.getGreen() < component) {
-            component = color.getGreen();
-        }
-        return new Color(component, component, component);
     }
 
     @Override

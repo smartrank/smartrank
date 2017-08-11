@@ -21,8 +21,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +54,7 @@ public class SmartRankLogfileReader implements SearchCriteriaReader {
     private Double _dropin;
     private Integer _lrThreshold;
     private Double _rareAlleleFrequency;
+    private Date _dateTime;
 
     /**
      * A helper class to store the number and dropout probability of unknown contributors.
@@ -77,7 +81,19 @@ public class SmartRankLogfileReader implements SearchCriteriaReader {
 
     private void readFile(final BufferedReader reader) throws IOException {
         String line;
+        boolean first = true;
         while ((line = reader.readLine()) != null) {
+            if (first) {
+                try {
+                    _dateTime = DateFormat.getInstance().parse(line);
+                }
+                catch (final ParseException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                first = false;
+            }
+
             if (line.startsWith("Loaded replicates:")) {
                 loadSamples(reader, _samples);
             }
@@ -255,6 +271,17 @@ public class SmartRankLogfileReader implements SearchCriteriaReader {
 
     @Override
     public PopulationStatistics getPopulationStatistics() {
+        return null;
+    }
+
+    @Override
+    public String getRequester() {
+        return "";
+    }
+
+    @Override
+    public Date getRequestDateTime() {
+        // TODO Auto-generated method stub
         return null;
     }
 

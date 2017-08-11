@@ -24,6 +24,7 @@ import nl.minvenj.nfi.smartrank.messages.data.ProsecutionHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.UpdateProsecutionContributorMessage;
 import nl.minvenj.nfi.smartrank.messages.data.UpdateProsecutionNoncontributorMessage;
 import nl.minvenj.nfi.smartrank.messages.data.UpdateProsecutionUnknownsMessage;
+import nl.minvenj.nfi.smartrank.raven.annotations.ExecuteOnSwingEventThread;
 import nl.minvenj.nfi.smartrank.raven.annotations.RavenMessageHandler;
 import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 
@@ -34,6 +35,7 @@ public class ProsecutionHypothesisPanel extends HypothesisPanel {
     }
 
     @RavenMessageHandler(ProsecutionHypothesisMessage.class)
+    @ExecuteOnSwingEventThread
     public void onNewProsecutionHypothesis(final ProsecutionHypothesis hypothesis) {
         setHypothesis(hypothesis);
     }

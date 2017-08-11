@@ -17,44 +17,80 @@
  */
 package nl.minvenj.nfi.smartrank.io.databases.jdbc;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import nl.minvenj.nfi.smartrank.domain.Sample;
+import nl.minvenj.nfi.smartrank.messages.status.ErrorStringMessage;
+import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 
 public class JDBCSampleIterator implements Iterator<Sample> {
 
-    private ResultSet _resultSet;
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCSampleIterator.class);
+
+    private JDBCResultSetChunker _resultSet;
     private final JDBCReader _reader;
     private Sample _nextSample;
+    private long _lastAccessTime;
 
     public JDBCSampleIterator(final JDBCReader reader) {
         _reader = reader;
+        _lastAccessTime = System.currentTimeMillis();
+
+        final Thread watchDog = new Thread() {
+
+            @Override
+            public void run() {
+                int timeout = 300000;
+                while (!isInterrupted() && (System.currentTimeMillis() - _lastAccessTime < timeout)) {
+                    try {
+                        Thread.sleep(timeout);
+                    }
+                    catch (final InterruptedException e) {
+                    }
+                    timeout = 30000;
+                }
+                if (_nextSample != null) {
+                    LOG.info("Shutting down JDBC reader due to timeout");
+                    _reader.close();
+                }
+            };
+        };
+
+        watchDog.start();
     }
 
     @Override
     public boolean hasNext() {
+        _lastAccessTime = System.currentTimeMillis();
         if (_nextSample == null) {
             try {
                 _nextSample = _reader.readSample(getResultSet());
+                _lastAccessTime = System.currentTimeMillis();
             }
             catch (final SQLException e) {
-                return false;
+                LOG.error("Error accessing the database", e);
+                MessageBus.getInstance().send(this, new ErrorStringMessage("Error accessing the database!\n" + e.getMessage()));
+                throw new RuntimeException(e);
             }
         }
         return (_nextSample != null);
     }
 
-    private ResultSet getResultSet() throws SQLException {
+    private JDBCResultSetChunker getResultSet() throws SQLException {
         if (_resultSet == null) {
             _resultSet = _reader.getResultSet();
+            _lastAccessTime = System.currentTimeMillis();
         }
         return _resultSet;
     }
 
     @Override
     public Sample next() {
+        _lastAccessTime = System.currentTimeMillis();
         final Sample s = _nextSample;
         _nextSample = null;
         return s;

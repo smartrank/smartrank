@@ -2,12 +2,15 @@ package nl.minvenj.nfi.smartrank.analysis;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
+import java.io.File;
 import java.util.Collection;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import nl.minvenj.nfi.smartrank.domain.DatabaseConfiguration;
 import nl.minvenj.nfi.smartrank.domain.LikelihoodRatio;
 import nl.minvenj.nfi.smartrank.domain.Locus;
 import nl.minvenj.nfi.smartrank.domain.LocusLikelihoods;
@@ -74,13 +77,13 @@ public class SearchResultsTest {
 
     @Test
     public final void testSearchResults() {
-        final SearchResults results = new SearchResults(0);
+        final SearchResults results = new SearchResults(0, null);
         assertEquals(0, results.getNumberOfLRs());
     }
 
     @Test
     public final void testGetNumberOfLRsOver1() {
-        final SearchResults results = new SearchResults(10);
+        final SearchResults results = new SearchResults(10, null);
 
         assertEquals(0, results.getNumberOfLRs());
         assertEquals(0, results.getNumberOfLRsOver1());
@@ -97,7 +100,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetMaxRatio() {
-        final SearchResults results = new SearchResults(3);
+        final SearchResults results = new SearchResults(3, null);
 
         results.addLR(_lr1);
         results.addLR(_lr2);
@@ -107,7 +110,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetMinRatio() {
-        final SearchResults results = new SearchResults(3);
+        final SearchResults results = new SearchResults(3, null);
         results.addLR(_lr1);
         results.addLR(_lr2);
         results.addLR(_lr3);
@@ -116,7 +119,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testDuration() {
-        final SearchResults results = new SearchResults(0);
+        final SearchResults results = new SearchResults(0, null);
         assertEquals(0, results.getDuration());
         results.setDuration(1234);
         assertEquals(1234, results.getDuration());
@@ -124,7 +127,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetResultsPerNumberOfLoci() {
-        final SearchResults results = new SearchResults(3);
+        final SearchResults results = new SearchResults(3, null);
         results.addLR(_lr1);
         results.addLR(_lr2);
         results.addLR(_lr3);
@@ -135,7 +138,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetPercentile() {
-        final SearchResults results = new SearchResults(3);
+        final SearchResults results = new SearchResults(3, null);
         results.addLR(_lr1);
         results.addLR(_lr2);
         results.addLR(_lr3);
@@ -144,6 +147,18 @@ public class SearchResultsTest {
         assertEquals(1.2, results.getPercentile(50), 0.00000001);
         assertEquals(1357.954285714285, results.getPercentile(70), 0.00000001);
         assertEquals(1697.1428571428569, results.getPercentile(99), 0.00000001);
+    }
+
+    public final void testGetDatabaseConfigurationNull() {
+        final SearchResults results = new SearchResults(0, null);
+        assertNull(results.getDatabaseConfiguration());
+    }
+
+    public final void testGetDatabaseConfiguration() {
+        final DatabaseConfiguration config = new DatabaseConfiguration(new File("fakefile"));
+        final SearchResults results = new SearchResults(0, config);
+        assertNotNull(results.getDatabaseConfiguration());
+        assertEquals(config, results.getDatabaseConfiguration());
     }
 
 }

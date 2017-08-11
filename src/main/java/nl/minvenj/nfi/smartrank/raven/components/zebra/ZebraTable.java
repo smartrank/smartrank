@@ -41,6 +41,13 @@ public class ZebraTable extends JTable {
         ((DefaultTableModel) getModel()).addRow(data);
     }
 
+    @Override
+    public Color getSelectionBackground() {
+        if (isEnabled())
+            return super.getSelectionBackground();
+        return toGrayScale(super.getSelectionBackground());
+    }
+
     public Color getOddRowColor() {
         if (isEnabled()) {
             return _oddRowColor;
@@ -90,7 +97,7 @@ public class ZebraTable extends JTable {
         public void setCellRenderer(final TableCellRenderer renderer) {
             TableCellRenderer newRenderer = renderer;
             if (!(renderer instanceof ZebraTableCellRenderer)) {
-                newRenderer = new ZebraTableCellRenderer(renderer, getName());
+                newRenderer = new ZebraTableCellRenderer(renderer);
             }
 
             _tableColumnProxy.setCellRenderer(newRenderer);
@@ -110,7 +117,7 @@ public class ZebraTable extends JTable {
     public void setDefaultRenderer(final Class<?> columnClass, final TableCellRenderer renderer) {
         TableCellRenderer newRenderer = renderer;
         if (!(renderer instanceof ZebraTableCellRenderer)) {
-            newRenderer = new ZebraTableCellRenderer(renderer, getName());
+            newRenderer = new ZebraTableCellRenderer(renderer);
         }
 
         super.setDefaultRenderer(columnClass, newRenderer);
@@ -137,7 +144,7 @@ public class ZebraTable extends JTable {
         createDefaultRenderers();
         final TableCellRenderer headerCellRenderer = getTableHeader().getDefaultRenderer();
         if (!(headerCellRenderer instanceof ZebraTableCellRenderer)) {
-            getTableHeader().setDefaultRenderer(new ZebraTableCellRenderer(headerCellRenderer, null));
+            getTableHeader().setDefaultRenderer(new ZebraTableCellRenderer(headerCellRenderer));
         }
     }
 
@@ -157,7 +164,7 @@ public class ZebraTable extends JTable {
         super.createDefaultRenderers();
         final HashMap wrappedRenderers = new HashMap();
         for (final Object key : defaultRenderersByColumnClass.keySet()) {
-            wrappedRenderers.put(key, new ZebraTableCellRenderer((TableCellRenderer) defaultRenderersByColumnClass.get(key), getName()));
+            wrappedRenderers.put(key, new ZebraTableCellRenderer((TableCellRenderer) defaultRenderersByColumnClass.get(key), true));
         }
         defaultRenderersByColumnClass.clear();
         defaultRenderersByColumnClass.putAll(wrappedRenderers);

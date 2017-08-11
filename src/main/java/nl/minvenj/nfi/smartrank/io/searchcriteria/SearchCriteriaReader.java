@@ -17,6 +17,7 @@
  */
 package nl.minvenj.nfi.smartrank.io.searchcriteria;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -145,4 +146,18 @@ public interface SearchCriteriaReader {
      * @return a {@link PopulationStatistics} object representing the statistics in the import file, or null if no statistics are present in the file.
      */
     public PopulationStatistics getPopulationStatistics();
+
+    /**
+     * Gets the ID of the requester (if available in the input file)
+     *
+     * @return a String containing the id of the requester
+     */
+    public String getRequester();
+
+    /**
+     * Gets the date and time of a search request (if available in the input file)
+     *
+     * @return a {@link Date} containing the date and time that the search criteria file was created, or null if this was not present in the file
+     */
+    public Date getRequestDateTime();
 }
