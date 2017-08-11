@@ -349,7 +349,7 @@ public class SmartRankImportFileReaderTest {
     @Test
     public void testGetRequestDateTime() {
         if (_requestDateTime != null) {
-            assertEquals(_requestDateTime, _reader.getRequestDateTime());
+            assertEquals(_requestDateTime.getTime(), _reader.getRequestDateTime().getTime());
         }
     }
 
