@@ -1,0 +1,98 @@
+<SmartRankImportFile version="1.0"
+    xmlns="urn:SmartRankImportFile-schema">
+    <userid>SOMEONE</userid>
+    <dateTime>2016-11-21 15:26:00</dateTime>
+    <Replicates>
+        <Replicate name="FOEC0000BE#08-GBCX0000LU#09" />
+    </Replicates>
+    <Dropin>0.05</Dropin>
+    <Theta>0.01</Theta>
+    <LrThreshold>1000</LrThreshold>
+    <RareAlleleFrequency> 0.0003</RareAlleleFrequency>
+    <HP candidateDropout="0.03">
+        <Contributors />
+        <Unknowns count="1" dropout="0.03" />
+    </HP>
+    <HD>
+        <Contributors />
+        <Unknowns count="2" dropout="0.03" />
+    </HD>
+    <Specimen name="FOEC0000BE#08-GBCX0000LU#09">
+        <Locus name="D16S539">
+            <Allele value="12" />
+        </Locus>
+        <Locus name="D18S51">
+            <Allele value="12" />
+            <Allele value="13" />
+            <Allele value="14" />
+        </Locus>
+        <Locus name="D22S1045">
+            <Allele value="15" />
+            <Allele value="16" />
+        </Locus>
+        <Locus name="D2S1338">
+            <Allele value="17" />
+            <Allele value="22" />
+            <Allele value="25" />
+        </Locus>
+        <Locus name="D2S441">
+            <Allele value="10" />
+            <Allele value="12" />
+            <Allele value="14" />
+        </Locus>
+        <Locus name="D12S391">
+            <Allele value="19" />
+            <Allele value="20" />
+            <Allele value="23" />
+        </Locus>
+        <Locus name="TH01">
+            <Allele value="6" />
+            <Allele value="7" />
+            <Allele value="9" />
+            <Allele value="9.3" />
+        </Locus>
+        <Locus name="FGA">
+            <Allele value="20" />
+            <Allele value="22" />
+            <Allele value="24" />
+        </Locus>
+        <Locus name="VWA">
+            <Allele value="16" />
+            <Allele value="17" />
+            <Allele value="18" />
+        </Locus>
+        <Locus name="SE33">
+            <Allele value="19" />
+            <Allele value="21" />
+            <Allele value="29.2" />
+        </Locus>
+        <Locus name="D3S1358">
+            <Allele value="16" />
+            <Allele value="17" />
+            <Allele value="18" />
+        </Locus>
+        <Locus name="D1S1656">
+            <Allele value="12" />
+            <Allele value="15" />
+        </Locus>
+        <Locus name="D8S1179">
+            <Allele value="11" />
+            <Allele value="14" />
+            <Allele value="15" />
+        </Locus>
+        <Locus name="D10S1248">
+            <Allele value="14" />
+            <Allele value="15" />
+            <Allele value="16" />
+        </Locus>
+        <Locus name="D21S11">
+            <Allele value="29" />
+            <Allele value="30" />
+        </Locus>
+        <Locus name="D19S433">
+            <Allele value="12" />
+            <Allele value="13" />
+            <Allele value="14" />
+        </Locus>
+    </Specimen>
+</SmartRankImportFile>

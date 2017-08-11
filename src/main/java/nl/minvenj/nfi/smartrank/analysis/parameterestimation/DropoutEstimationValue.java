@@ -20,4 +20,9 @@ public class DropoutEstimationValue {
     public int getCount() {
         return _count;
     }
+
+    @Override
+    public String toString() {
+        return "d=" + getDropout() + ", n=" + getCount();
+    }
 }

@@ -63,7 +63,7 @@ public class AboutPanel extends SmartRankPanel {
         titleLabel.setFont(new Font("Tahoma", 1, 24));
         add(titleLabel, "cell 0 0,alignx left,aligny top");
 
-        final JLabel versionLabel = new JLabel(SmartRank.getVersion(), SwingConstants.TRAILING);
+        final JLabel versionLabel = new JLabel(SmartRank.getRevision(), SwingConstants.TRAILING);
         versionLabel.setEnabled(false);
         add(versionLabel, "cell 2 0,alignx right,aligny bottom");
 

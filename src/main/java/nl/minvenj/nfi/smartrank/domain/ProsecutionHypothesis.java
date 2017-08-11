@@ -28,7 +28,7 @@ public class ProsecutionHypothesis extends Hypothesis {
         super("Prosecution");
         addContributor(DEFAULT_SAMPLE, SmartRankRestrictions.getDropoutDefault()).setCandidate(true);
         setUnknownDropoutProbability(SmartRankRestrictions.getDropoutDefault());
-        setQDesignationShutdown(true);
+        setQDesignationShutdown(SmartRankRestrictions.isQDesignationShutdownForHp());
     }
 
     @Override

@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +58,6 @@ import nl.minvenj.nfi.smartrank.messages.data.CrimeSceneProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseMessage;
 import nl.minvenj.nfi.smartrank.messages.data.EnabledLociMessage;
 import nl.minvenj.nfi.smartrank.messages.data.KnownProfilesMessage;
-import nl.minvenj.nfi.smartrank.messages.data.LRThresholdMessage;
-import nl.minvenj.nfi.smartrank.messages.data.LikelihoodRatiosMessage;
 import nl.minvenj.nfi.smartrank.messages.data.PopulationStatisticsMessage;
 import nl.minvenj.nfi.smartrank.raven.NullUtils;
 import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
@@ -104,7 +103,7 @@ class CaseLogger {
         encoder.setPattern("%m%n");
         encoder.start();
 
-        caseAppender = new FileAppender<ILoggingEvent>();
+        caseAppender = new FileAppender<>();
         caseAppender.setContext(context);
         caseAppender.setName("CaseLog");
         caseAppender.setEncoder(encoder);
@@ -196,12 +195,29 @@ class CaseLogger {
      *
      * @param specimenCount the number of specimens evaluated
      */
-    public synchronized void logFooter(final int specimenCount) {
+    public synchronized void logFooter(final SearchResults searchResults, final int specimenCount) {
         _duration = System.currentTimeMillis() - _start;
         _caseLogger.info("=================");
         _caseLogger.info("  Analysis Completed");
         _caseLogger.info("  Number of specimens: {}", specimenCount);
-        _caseLogger.info("  Number of matches: {}", NullUtils.safeSize(_messageBus.query(LikelihoodRatiosMessage.class)));
+        _caseLogger.info("");
+        int count = 0;
+        for (final LikelihoodRatio lr : searchResults.getPositiveLRs()) {
+            if (lr.getOverallRatio().getRatio() > searchResults.getParameters().getLrThreshold()) {
+                count++;
+            }
+        }
+        final Map<String, Map<String, Integer>> metadataStatistics = searchResults.getProfileMetadataStatistics();
+        for (final String statType : metadataStatistics.keySet()) {
+            final Map<String, Integer> statValues = metadataStatistics.get(statType);
+            _caseLogger.info("    Overview of specimens by {}", statType);
+            _caseLogger.info("    ------------------------------------------------");
+            for (final String statName : statValues.keySet()) {
+                _caseLogger.info("      {} : {}", addPadding(statName, 25), statValues.get(statName));
+            }
+            _caseLogger.info("");
+        }
+        _caseLogger.info("  Number of LRs over {}: {}", searchResults.getParameters().getLrThreshold(), count);
         _caseLogger.info("  Running time: {}", formatDuration(_duration));
         resetLogger();
     }
@@ -213,26 +229,22 @@ class CaseLogger {
      * @param percentReady the percentage of total specimens that were evaluated
      * @param specimenIndex the number of specimens evaluated
      */
-    public synchronized void logFooter(final InterruptedException ie, final int percentReady, final int specimenIndex) {
+    public synchronized void logFooter(final SearchResults searchResults, final int percentReady, final int specimenIndex) {
         final long runningTime = System.currentTimeMillis() - _start;
         _caseLogger.info("=================");
-        _caseLogger.info("  Analysis Interrupted after {} specimens ({}%) ", specimenIndex, percentReady);
-        _caseLogger.info("  Number of matches: {}", NullUtils.safeSize(_messageBus.query(LikelihoodRatiosMessage.class)));
-        _caseLogger.info("  Running time: {}", formatDuration(runningTime));
-        resetLogger();
-    }
+        if (searchResults.getFailureReason() instanceof InterruptedException)
+            _caseLogger.info("  Analysis Interrupted after {} specimens ({}%) ", specimenIndex, percentReady);
+        else
+            _caseLogger.info("  Analysis encountered an error: {}", searchResults.getFailureReason().getMessage(), searchResults.getFailureReason());
 
-    /**
-     * Logs a footer for a search that encountered an unspecified, reporting number of matches and time taken.
-     *
-     * @param t the Throwable that caused the search to be aborted
-     */
-    public synchronized void logFooter(final Throwable t) {
-        final long runningTime = System.currentTimeMillis() - _start;
-        _caseLogger.info("=================");
+        int count = 0;
+        for (final LikelihoodRatio lr : searchResults.getPositiveLRs()) {
+            if (lr.getOverallRatio().getRatio() > searchResults.getParameters().getLrThreshold()) {
+                count++;
+            }
+        }
+        _caseLogger.info("  Number of LRs over {}: {}", searchResults.getParameters().getLrThreshold(), count);
         _caseLogger.info("  Running time: {}", formatDuration(runningTime));
-        _caseLogger.info("  Number of matches: {}", NullUtils.safeSize(_messageBus.query(LikelihoodRatiosMessage.class)));
-        _caseLogger.info("  Analysis encountered an error: {}", t.getMessage(), t);
         resetLogger();
     }
 
@@ -258,7 +270,7 @@ class CaseLogger {
 
         _start = System.currentTimeMillis();
         _caseLogger.info(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
-        _caseLogger.info("  SmartRank version {}", SmartRank.getVersion());
+        _caseLogger.info("  SmartRank version {}", SmartRank.getRevision());
         final String[] signatureStrings = SmartRank.getSignatureInfo().split("(</LI>|<UL>)");
         for (final String sig : signatureStrings) {
             final String cleaned = sig.replaceAll("<LI>", "  ").replaceAll("<[^>]+>", "");
@@ -269,7 +281,7 @@ class CaseLogger {
 
         _caseLogger.info("  Analysis started by {} on {}", System.getProperty("user.name"), getHostName());
         _caseLogger.info("  Statistical Model: {}", modelName);
-        _caseLogger.info("  LR Threshold: {}", _messageBus.query(LRThresholdMessage.class));
+        _caseLogger.info("  LR Threshold: {}", parameters.getLrThreshold());
         _caseLogger.info("  Max memory: {} bytes, {} MB", Runtime.getRuntime().maxMemory(), Runtime.getRuntime().maxMemory() / 1048576);
         _caseLogger.info("  Java version: {}", System.getProperty("java.version"));
         _caseLogger.info("  Java home: {}", System.getProperty("java.home"));
@@ -296,10 +308,16 @@ class CaseLogger {
             }
 
         }
+
+        _caseLogger.info("");
+        logQuery("Specimen IDs", dnaDatabase.getConfiguration().getSpecimenKeyQuery());
+        logQuery("Specimen Data", dnaDatabase.getConfiguration().getSpecimenQuery());
+        logQuery("Database Revision", dnaDatabase.getConfiguration().getDatabaseRevisionQuery());
+
         _caseLogger.info("=================");
-        _caseLogger.info("  Statistics file: {}", popStats.getFileName());
-        _caseLogger.info("  Statistics file hash: {}", popStats.getFileHash());
-        _caseLogger.info("  Rare Allele Frequency: {}", popStats.getRareAlleleFrequency());
+        _caseLogger.info("  Statistics file: {}", popStats == null ? "No statistics file Loaded!" : popStats.getFileName());
+        _caseLogger.info("  Statistics file hash: {}", popStats == null ? "No statistics file Loaded!" : popStats.getFileHash());
+        _caseLogger.info("  Rare Allele Frequency: {}", popStats == null ? "No statistics file Loaded!" : popStats.getRareAlleleFrequency());
         _caseLogger.info("=================");
         _caseLogger.info("Loaded replicates:");
         for (final Sample sample : parameters.getEnabledCrimesceneProfiles()) {
@@ -326,7 +344,7 @@ class CaseLogger {
             for (final Allele a : rareAlleles) {
                 _caseLogger.info("  {} at locus {} of {}", a.getAllele(), a.getLocus().getName(), a.getLocus().getSample().getName());
             }
-            _caseLogger.info("These alleles have been assigned the following frequency: {}", popStats.getRareAlleleFrequency());
+            _caseLogger.info("These alleles have been assigned the following frequency: {}", popStats == null ? "No statistics file Loaded!" : popStats.getRareAlleleFrequency());
         }
         else {
             _caseLogger.info("No rare alleles detected");
@@ -335,19 +353,32 @@ class CaseLogger {
         _caseLogger.info("=================");
         if (automaticDropoutEstimation != null) {
             _caseLogger.info("Parameter estimation was performed automatically.");
-            _caseLogger.info("  Iterations: {}", automaticDropoutEstimation.getIterations());
-            _caseLogger.info("  Results:    {}", automaticDropoutEstimation);
+            _caseLogger.info("  Iterations:           {}", automaticDropoutEstimation.getIterations());
+            _caseLogger.info("  Dropout Distribution: {}", automaticDropoutEstimation);
+            _caseLogger.info("  SmartRank is configured to use the {}% percentile of the dropout distribution", automaticDropoutEstimation.getDropoutEstimationPercentile());
+            _caseLogger.info("  The dropout value at this percentile is {}", automaticDropoutEstimation.getEstimatedDropout());
         }
         else {
             final DropoutEstimation manualEstimate = parameters.getDropoutEstimation();
             if (manualEstimate != null) {
                 _caseLogger.info("Parameter estimation was performed manually.");
                 _caseLogger.info("  Iterations: {}", manualEstimate.getIterations());
-                _caseLogger.info("  Results:    {}", manualEstimate);
+                _caseLogger.info("  Dropout Distribution: {}", manualEstimate);
+                _caseLogger.info("  SmartRank is configured to use the % percentile of the dropout distribution", manualEstimate.getDropoutEstimationPercentile());
+                _caseLogger.info("  The dropout value at this percentile is {}", manualEstimate.getEstimatedDropout());
             }
             else {
                 _caseLogger.info("Parameter estimation was not performed.");
             }
+        }
+    }
+
+    private void logQuery(final String name, final String specimenKeyQuery) {
+        final String query = NullUtils.getValue(specimenKeyQuery, "").trim();
+        if (!query.isEmpty()) {
+            _caseLogger.info("{} obtained using query:", name);
+            _caseLogger.info("    {}", query.replaceAll("\n", "\n    "));
+            _caseLogger.info("");
         }
     }
 
@@ -380,7 +411,7 @@ class CaseLogger {
     /**
      * Logs the final ranking of matches.
      */
-    public synchronized void logRanking() {
+    public synchronized void logRanking(final SearchResults searchResults) {
         _caseLogger.info("=================");
         _caseLogger.info("Final ranking:");
         _caseLogger.info("  +--------------------------------+----------+---------------+----------+------------------------------------------------------------------+");
@@ -388,15 +419,15 @@ class CaseLogger {
         _caseLogger.info("  +--------------------------------+----------+---------------+----------+------------------------------------------------------------------+");
 
         int rank = 0;
-        for (final LikelihoodRatio ratio : _messageBus.query(LikelihoodRatiosMessage.class)) {
-            if (ratio.getOverallRatio().getRatio() > _messageBus.query(LRThresholdMessage.class)) {
+        for (final LikelihoodRatio ratio : searchResults.getPositiveLRs()) {
+            if (ratio.getOverallRatio().getRatio() > searchResults.getParameters().getLrThreshold()) {
                 rank++;
                 _caseLogger.info("  | {} | {} | {} | {} | {} |",
                                  addPadding(ratio.getProfile().getName(), 30),
                                  addPadding("" + rank, 8),
                                  addPadding(NumberUtils.format(3, Math.log10(ratio.getOverallRatio().getRatio())), 13),
                                  addPadding("" + ratio.getProfile().getLoci().size(), 8),
-                                 addPadding("", 64));
+                                 addPadding(ratio.getProfile().getAdditionalData(), 64));
             }
         }
         _caseLogger.info("  +--------------------------------+----------+---------------+----------+------------------------------------------------------------------+");
@@ -405,14 +436,16 @@ class CaseLogger {
     private Collection<Allele> getRareAlleles(final PopulationStatistics popstats) {
         final Collection<Sample> crimesceneProfiles = _messageBus.query(CrimeSceneProfilesMessage.class);
         final Collection<Allele> rareAlleles = new ArrayList<>();
-        for (final Sample sample : crimesceneProfiles) {
-            addRareAlleles(sample, popstats, rareAlleles);
-        }
-
-        final Collection<Sample> knownProfiles = _messageBus.query(KnownProfilesMessage.class);
-        if (knownProfiles != null) {
-            for (final Sample sample : knownProfiles) {
+        if (popstats != null) {
+            for (final Sample sample : crimesceneProfiles) {
                 addRareAlleles(sample, popstats, rareAlleles);
+            }
+
+            final Collection<Sample> knownProfiles = _messageBus.query(KnownProfilesMessage.class);
+            if (knownProfiles != null) {
+                for (final Sample sample : knownProfiles) {
+                    addRareAlleles(sample, popstats, rareAlleles);
+                }
             }
         }
         return rareAlleles;

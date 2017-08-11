@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Netherlands Forensic Institute
+ * Copyright (C) 2015,2017 Netherlands Forensic Institute
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -41,6 +41,7 @@ import nl.minvenj.nfi.smartrank.domain.DNADatabase;
 import nl.minvenj.nfi.smartrank.domain.ProblemLocation;
 import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.gui.tabs.SmartRankPanel;
+import nl.minvenj.nfi.smartrank.gui.tabs.database.config.DBSettingsDialog;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseConnectionMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseFileMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseMessage;
@@ -98,6 +99,7 @@ public class DatabasePanel extends SmartRankPanel {
         _iconLabel.setIcon(new ImageIcon(getClass().getResource("/images/64x64/db.png")));
         _databaseFileName = new JTextField();
         _databaseFileName.setEditable(false);
+        _databaseFileName.setDropTarget(getDropTarget());
         _browseButton = new JButton("Browse...", new ImageIcon(getClass().getResource("/images/16x16/folder.png")));
         _browseButton.addActionListener(new ActionListener() {
             @Override
@@ -149,10 +151,10 @@ public class DatabasePanel extends SmartRankPanel {
         _formattingProblemsTable = new ZebraTable();
         _formattingProblemsTable.setAutoCreateRowSorter(true);
         _formattingProblemsTable.setModel(new DefaultTableModel(new Object[][]{},
-                                                                new String[]{"Record", "Specimen", "Locus", "Description"}) {
-            private static final long serialVersionUID = 6843817182458249186L;
+                                                                new String[]{"Specimen", "Locus", "Description"}) {
+            private static final long serialVersionUID = 6843817182458249187L;
             Class<?>[] _types = new Class[]{
-                java.lang.Long.class, java.lang.Object.class, java.lang.Object.class, java.lang.String.class
+                java.lang.Object.class, java.lang.Object.class, java.lang.String.class
             };
 
             @Override
@@ -186,7 +188,7 @@ public class DatabasePanel extends SmartRankPanel {
     }
 
     private void connectButtonActionPerformed() {
-        final DBSettingsDialog dlg = new DBSettingsDialog((JFrame) SwingUtilities.getWindowAncestor(this));
+        final DBSettingsDialog dlg = new DBSettingsDialog((JFrame) SwingUtilities.getWindowAncestor(this), false);
         dlg.setLocationRelativeTo(this);
         dlg.setVisible(true);
         if(dlg.isOk()) {
@@ -224,7 +226,7 @@ public class DatabasePanel extends SmartRankPanel {
     @ExecuteOnSwingEventThread
     void onDatabaseFormatProblem(final List<ProblemLocation> problems) {
         for (final ProblemLocation problem : problems) {
-            _formattingProblemsTable.addRow(new Object[]{problem.getLocation(), problem.getSpecimen(), problem.getLocus(), problem.getDescription()});
+            _formattingProblemsTable.addRow(new Object[]{problem.getSpecimen(), problem.getLocus(), problem.getDescription()});
         }
         _formatProblemCount.setText("" + _formattingProblemsTable.getRowCount());
     }
@@ -259,6 +261,11 @@ public class DatabasePanel extends SmartRankPanel {
     @RavenMessageHandler(ApplicationStatusMessage.class)
     @ExecuteOnSwingEventThread
     public void onStatusChange(final ApplicationStatus newStatus) {
+        if (newStatus == ApplicationStatus.VERIFYING_DB) {
+            _formatProblemCount.setText("");
+            _formattingProblemsTable.setRowCount(0);
+        }
+
         final boolean enabled = !newStatus.isActive();
         _iconLabel.setEnabled(enabled);
         _browseButton.setEnabled(enabled);
@@ -268,5 +275,43 @@ public class DatabasePanel extends SmartRankPanel {
         _databaseFormatLabel.setEnabled(enabled);
         _databaseRecordCount.setEnabled(enabled);
         _databaseRecordCountLabel.setEnabled(enabled);
+    }
+
+    /**
+     * Loads the last-loaded database file.
+     *
+     * @return true if the file exists, false otherwise.
+     */
+    public boolean doLoad() {
+        final File file = new File(SmartRankGUISettings.getLastSelectedDatabaseFileName());
+        if (file.exists()) {
+            MessageBus.getInstance().send(this, new DatabaseFileMessage(new File(SmartRankGUISettings.getLastSelectedDatabaseFileName())));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Connects to the database using the last-used settings.
+     *
+     * @return true if the settings were valid, false otherwize.
+     */
+    public boolean doConnect() {
+        final DBSettingsDialog dlg = new DBSettingsDialog((JFrame) SwingUtilities.getWindowAncestor(this), true);
+        dlg.setLocationRelativeTo(this);
+        dlg.setVisible(true);
+        if (dlg.isOk()) {
+            MessageBus.getInstance().send(this, new DatabaseConnectionMessage(dlg.getDBSettings()));
+            while (MessageBus.getInstance().query(ApplicationStatusMessage.class) != ApplicationStatus.BATCHMODE_IDLE) {
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (final InterruptedException e) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }

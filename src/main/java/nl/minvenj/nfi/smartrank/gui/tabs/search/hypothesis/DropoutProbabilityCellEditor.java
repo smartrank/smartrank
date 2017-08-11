@@ -38,6 +38,7 @@ public class DropoutProbabilityCellEditor extends AbstractCellEditor implements 
 
     public DropoutProbabilityCellEditor() {
         _spinner.setBorder(null);
+        _spinner.setOpaque(false);
     }
 
     @Override

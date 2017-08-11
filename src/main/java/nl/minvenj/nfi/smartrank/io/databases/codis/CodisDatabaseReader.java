@@ -26,18 +26,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.io.FilenameUtils;
 
-import nl.minvenj.nfi.smartrank.io.databases.RecordData;
-
-import nl.minvenj.nfi.smartrank.io.databases.RecordValidator;
 import nl.minvenj.nfi.smartrank.analysis.ExcludedProfile;
 import nl.minvenj.nfi.smartrank.domain.Sample;
 import nl.minvenj.nfi.smartrank.io.CSVReader;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseReader;
+import nl.minvenj.nfi.smartrank.io.databases.DatabaseStatistics;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
 
 /**
@@ -55,12 +55,14 @@ public class CodisDatabaseReader implements DatabaseReader, Iterable<Sample> {
     private final List<ExcludedProfile> _badRecordList;
     private final List<Integer> _specimenCountPerNumberOfLoci;
     private final Map<String, Integer> _specimenCountPerLocus;
+    private long _lastModifiedTimeWhenValidated;
 
     public CodisDatabaseReader(final File dbFile) throws FileNotFoundException, MalformedURLException, IOException {
         _file = dbFile;
         _badRecordList = new ArrayList<>();
         _specimenCountPerNumberOfLoci = new ArrayList<>();
         _specimenCountPerLocus = new HashMap<>();
+        _lastModifiedTimeWhenValidated = -1L;
     }
 
     @Override
@@ -77,7 +79,20 @@ public class CodisDatabaseReader implements DatabaseReader, Iterable<Sample> {
             validateHeaders(validationReader);
             validateRecords(validationReader, listener);
 
+            _lastModifiedTimeWhenValidated = _file.lastModified();
             _validated = true;
+        }
+    }
+
+    @Override
+    public void revalidate(final DatabaseValidationEventListener listener) throws IOException, InterruptedException {
+        if (_file.exists() && _file.lastModified() != _lastModifiedTimeWhenValidated) {
+            _validated = false;
+            _recordCount = 0;
+            _badRecordList.clear();
+            _specimenCountPerNumberOfLoci.clear();
+            _specimenCountPerLocus.clear();
+            validate(listener);
         }
     }
 
@@ -121,52 +136,62 @@ public class CodisDatabaseReader implements DatabaseReader, Iterable<Sample> {
     }
 
     private void validateRecords(final CSVReader validationReader, final DatabaseValidationEventListener listener) throws IOException, InterruptedException {
-        String[] fields;
-        int recordNumber = 0;
-        final BlockingQueue<RecordData> validationJobs = new ArrayBlockingQueue<>(200);
-        final RecordValidator[] validators = new RecordValidator[Runtime.getRuntime().availableProcessors()];
-
-        for (int idx = 0; idx < validators.length; idx++) {
-            validators[idx] = new RecordValidator(_headers, validationJobs, _badRecordList, listener);
-            validators[idx].start();
+        final ExecutorService pool = Executors.newCachedThreadPool();
+        final ArrayList<Future<DatabaseStatistics>> futures = new ArrayList<>();
+        for (int idx = 0; idx < 8; idx++) {
+            futures.add(pool.submit(new CodisRecordValidator(_headers, validationReader, listener)));
         }
 
-        while ((fields = validationReader.readFields()) != null) {
-            recordNumber++;
-            validationJobs.put(new RecordData(recordNumber, fields));
-
-            listener.onProgress(validationReader.getOffset(), _file.length());
-        }
-
-        for (final RecordValidator validator : validators) {
-            validator.interrupt();
-            final List<Integer> counts = validator.getSpecimenCountPerNumberOfLoci();
-            while (_specimenCountPerNumberOfLoci.size() < counts.size() + 1) {
-                _specimenCountPerNumberOfLoci.add(new Integer(0));
-            }
-            for (int idx = 0; idx < counts.size(); idx++) {
-                final Integer curCount = _specimenCountPerNumberOfLoci.get(idx);
-                final Integer addCount = counts.get(idx);
-
-                _specimenCountPerNumberOfLoci.set(idx, curCount + addCount);
-            }
-            final Map<String,Integer> specimenCountPerLocusForThisValidator = validator.getSpecimenCountPerLocus();
-            for(final String locusName : specimenCountPerLocusForThisValidator.keySet()) {
-                Integer locusCount = _specimenCountPerLocus.get(locusName);
-                if(locusCount==null) {
-                    locusCount = 0;
+        final Thread progressReporter = new Thread() {
+            @Override
+            public void run() {
+                while (!isInterrupted()) {
+                    listener.onProgress(validationReader.getOffset(), _file.length());
                 }
-                _specimenCountPerLocus.put(locusName, locusCount + specimenCountPerLocusForThisValidator.get(locusName));
+            };
+        };
+
+        progressReporter.start();
+
+        for (final Future<DatabaseStatistics> future : futures) {
+            try {
+                final DatabaseStatistics stat = future.get();
+                final List<Integer> counts = stat.getSpecimenCountPerNumberOfLoci();
+                while (_specimenCountPerNumberOfLoci.size() < counts.size() + 1) {
+                    _specimenCountPerNumberOfLoci.add(new Integer(0));
+                }
+                for (int idx = 0; idx < counts.size(); idx++) {
+                    final Integer curCount = _specimenCountPerNumberOfLoci.get(idx);
+                    final Integer addCount = counts.get(idx);
+
+                    _specimenCountPerNumberOfLoci.set(idx, curCount + addCount);
+                }
+                final Map<String, Integer> specimenCountPerLocusForThisValidator = stat.getSpecimenCountPerLocus();
+                for (final String locusName : specimenCountPerLocusForThisValidator.keySet()) {
+                    Integer locusCount = _specimenCountPerLocus.get(locusName);
+                    if (locusCount == null) {
+                        locusCount = 0;
+                    }
+                    _specimenCountPerLocus.put(locusName, locusCount + specimenCountPerLocusForThisValidator.get(locusName));
+                }
+                _recordCount += stat.getRecordCount();
+            }
+            catch (final ExecutionException e) {
+                pool.shutdown();
+                throw new IOException(e);
             }
         }
-        _recordCount = recordNumber;
+        pool.shutdown();
+        progressReporter.interrupt();
+
         _fileHash = validationReader.getFileHash();
     }
 
     @Override
     public Iterator<Sample> iterator() {
         try {
-            return new CodisSampleIterator(new CSVReader(_file), _badRecordList);
+            _badRecordList.clear();
+            return new CodisSampleIterator(new CSVReader(_file), _recordCount, _badRecordList);
         }
         catch (final IOException ex) {
             throw new IllegalArgumentException("Cannot create an iterator for '" + _file + "'", ex);
@@ -186,5 +211,10 @@ public class CodisDatabaseReader implements DatabaseReader, Iterable<Sample> {
     @Override
     public Map<String, Integer> getSpecimenCountsPerLocus() {
         return _specimenCountPerLocus;
+    }
+
+    @Override
+    public Map<String, Map<String, Integer>> getMetadataStatistics() {
+        return new HashMap<>();
     }
 }

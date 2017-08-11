@@ -148,7 +148,7 @@ public abstract class Hypothesis {
                 return contributor;
             }
         }
-        throw new IllegalArgumentException("Contributor for Allele '" + a.getAllele() + "' not found in hypothesis '" + getId() + "'!");
+        throw new IllegalArgumentException("Contributor for Allele '" + a.getAllele() + "' (" + a.getLocus().getSample().getName() + ") not found in hypothesis '" + getId() + "'!");
     }
 
     public double getThetaCorrection() {

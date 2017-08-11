@@ -23,12 +23,21 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXB;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import nl.minvenj.nfi.smartrank.domain.Allele;
 import nl.minvenj.nfi.smartrank.domain.Locus;
@@ -52,6 +61,8 @@ import nl.minvenj.nfi.smartrank.raven.NullUtils;
  */
 public class SmartRankImportFileReader implements SearchCriteriaReader {
 
+    private static final Logger LOG = LoggerFactory.getLogger(SmartRankImportFileReader.class);
+
     private final ArrayList<Sample> _samples;
     private final ArrayList<Sample> _profiles;
     private final HashMap<String, Double> _hpContributors;
@@ -68,6 +79,8 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
     private Boolean _performParameterEstimation;
     private int _maxReturnedResults;
     private PopulationStatistics _statistics;
+    private String _userId;
+    private Date _dateTime;
 
     /**
      * A helper class to store the number and dropout probability of unknown contributors.
@@ -80,8 +93,8 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
     public SmartRankImportFileReader(final File file) throws IOException {
         _samples = new ArrayList<>();
         _profiles = new ArrayList<>();
-        _hpContributors = new HashMap<String, Double>();
-        _hdContributors = new HashMap<String, Double>();
+        _hpContributors = new HashMap<>();
+        _hdContributors = new HashMap<>();
         _hdUnknowns = new UnknownDonorDefinition();
         _hpUnknowns = new UnknownDonorDefinition();
         _resultLocation = "";
@@ -97,6 +110,39 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
     private void readFile(final Reader reader) {
         final HashMap<String, Sample> specimens = new HashMap<>();
         final SmartRankImportFile importFile = JAXB.unmarshal(reader, SmartRankImportFile.class);
+
+        _userId = importFile.getUserid();
+        if (_userId == null) {
+            try {
+                _userId = Files.getOwner(new File(_fileName).toPath(), LinkOption.NOFOLLOW_LINKS).getName();
+            }
+            catch (final Exception e) {
+                LOG.info("Could not determine owner of {}: {} - {}", _fileName, e.getClass().getSimpleName(), e.getMessage());
+            }
+        }
+
+        String dateTime = NullUtils.getValue(importFile.getDateTime(), "");
+        if (!dateTime.isEmpty()) {
+            // This to cater for Excel-exported dates, which have improperly formatted datetime values (yyyy-MM-dd HH:mm:ss instead of the specified yyyy-MM-ddTHH:mm:ss)
+            dateTime = dateTime.replaceFirst("(\\d{4}-\\d{2}-\\d{2}) (\\d\\d:\\d\\d:\\d\\d)", "$1T$2");
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            try {
+                _dateTime = sdf.parse(dateTime);
+            }
+            catch (final ParseException e) {
+                LOG.warn("File contained an unrecognized date:'{}'. expected yyyy-MM-ddTHH:mm:ss", dateTime);
+            }
+        }
+        else {
+            try {
+                final BasicFileAttributes attributes = Files.readAttributes(new File(_fileName).toPath(), BasicFileAttributes.class);
+                _dateTime = new Date(attributes.creationTime().toMillis());
+            }
+            catch (final IOException e) {
+                LOG.info("Could not determine creating time of {}: {}", _fileName, e.getMessage());
+            }
+        }
+
         for (final SpecimenType specimen : importFile.getSpecimen()) {
             final Sample sample = readSpecimen(specimen);
             specimens.put(sample.getName(), sample);
@@ -314,5 +360,15 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
     @Override
     public PopulationStatistics getPopulationStatistics() {
         return _statistics;
+    }
+
+    @Override
+    public String getRequester() {
+        return _userId;
+    }
+
+    @Override
+    public Date getRequestDateTime() {
+        return _dateTime;
     }
 }
