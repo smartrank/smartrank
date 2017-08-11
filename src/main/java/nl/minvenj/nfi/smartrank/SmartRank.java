@@ -42,12 +42,12 @@ public class SmartRank {
 
     public static void main(final String[] args) {
         try {
-            setupLogging();
+            final String logConfigLocation = setupLogging();
             _log = LoggerFactory.getLogger(SmartRank.class);
 
-            _log.info("Starting SmartRank Version {}", getVersion());
+            _log.info("Starting SmartRank Version {}", getRevision());
             _log.info("Max memory: {} bytes, {} MB", Runtime.getRuntime().maxMemory(), Runtime.getRuntime().maxMemory() / 1048576);
-
+            _log.info("Log configuration read from {}", logConfigLocation);
             final ArrayList<String> javaProperties = new ArrayList<>();
             final Enumeration<?> propertyNames = System.getProperties().propertyNames();
             while (propertyNames.hasMoreElements()) {
@@ -79,8 +79,10 @@ public class SmartRank {
         }
     }
 
-    private static void setupLogging() {
-        final File configFile = new File("./logback.xml");
+    private static String setupLogging() {
+        // By default, logging configuration is read from here.
+        String configLocation = SmartRank.class.getResource("/logback.xml").toString();
+        final File configFile = new File(System.getProperty("loggingConfigurationFile", "./logback.xml"));
 
         if (configFile.exists() && configFile.canRead()) {
             // assume SLF4J is bound to logback in the current environment
@@ -93,19 +95,22 @@ public class SmartRank {
             try {
                 // try to configure using the logback.,xml in the application directory
                 configurator.doConfigure(configFile);
+                configLocation = configFile.getAbsolutePath();
             }
             catch (final JoranException je) {
                 try {
                     // try to configure using the logback.,xml in the jar
                     configurator.doConfigure(SmartRank.class.getResourceAsStream("/logback.xml"));
-                    JOptionPane.showMessageDialog(null, "Logback.xml in application folder could not be read: " + je.getMessage() + "\nReverted to default configuration");
+                    configLocation = SmartRank.class.getResource("/logback.xml").toString();
+                    JOptionPane.showMessageDialog(null, "<html>Logging configuration file could not be read:<br>  <i>" + configFile.getAbsolutePath() + "</i><br>The error was: <b>" + je.getMessage() + "</b><br>Reverted to default configuration");
                 }
                 catch (final JoranException e) {
                     try {
                         configurator.doConfigure(configurator.recallSafeConfiguration());
+                        configLocation = "recalled safe configuration";
                     }
                     catch (final JoranException e1) {
-                        JOptionPane.showMessageDialog(null, "Logback.xml in application folder and default configuration were corrupt: " + je.getMessage() + "\nLogging will not be available.");
+                        JOptionPane.showMessageDialog(null, "<html>Logging configuration files in " + configFile.getAbsolutePath() + " and default configuration were both corrupt: " + je.getMessage() + "\nLogging will not be available.");
                         // Even the default configuration was not safe. Bugger.
                         e1.printStackTrace();
                     }
@@ -113,6 +118,7 @@ public class SmartRank {
             }
             StatusPrinter.printInCaseOfErrorsOrWarnings(context);
         }
+        return configLocation;
     }
 
     private static void startGUI() {
@@ -141,12 +147,19 @@ public class SmartRank {
     }
 
     public static String getVersion() {
-
-        final String version = SmartRank.class.getPackage().getImplementationVersion();
+        final String version = SmartRank.class.getPackage().getSpecificationVersion();
         if (version == null) {
             return "DEBUG";
         }
         return version;
+    }
+
+    public static String getRevision() {
+        String revision = SmartRank.class.getPackage().getImplementationVersion();
+        if (revision == null) {
+            revision = "Unknown Revision";
+        }
+        return getVersion() + ", revision " + revision;
     }
 
     public static String getSignatureInfo() {

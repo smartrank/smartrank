@@ -19,20 +19,14 @@ package nl.minvenj.nfi.smartrank.domain;
 
 public class ProblemLocation {
 
-    private final long _recordNumber;
     private final String _desc;
     private final String _specimen;
     private final String _locus;
 
-    public ProblemLocation(long recordNumber, String specimen, String locus, String desc) {
-        _recordNumber = recordNumber;
+    public ProblemLocation(final String specimen, final String locus, final String desc) {
         _specimen = specimen == null ? "-" : specimen;
         _locus = locus == null ? "-" : locus;
         _desc = desc == null ? "" : desc;
-    }
-
-    public long getLocation() {
-        return _recordNumber;
     }
 
     public String getSpecimen() {

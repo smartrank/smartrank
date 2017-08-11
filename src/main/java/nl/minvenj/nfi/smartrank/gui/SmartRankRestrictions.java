@@ -34,9 +34,8 @@ public class SmartRankRestrictions {
     private static final Logger LOG = LoggerFactory.getLogger(SmartRankRestrictions.class);
 
     private static final Properties PROPERTIES = new Properties();
-    private static final String PROPERTIES_FILENAME = "SmartRankRestrictions.properties";
+    private static final String DEFAULT_PROPERTIES_FILENAME = "SmartRankRestrictions.properties";
     private static final String CASE_LOG_FILENAME = "caseLogFilename";
-    private static final String DB_CACHE_SIZE = "databaseCacheSize";
     private static final String DROPOUT_DEFAULT = "dropoutDefault";
     private static final String DROPOUT_MINIMUM = "dropoutMinimum";
     private static final String DROPOUT_MAXIMUM = "dropoutMaximum";
@@ -51,16 +50,22 @@ public class SmartRankRestrictions {
     private static final String AUTOMATIC_PARAMETER_ESTIMATION_ENABLED = "automaticParameterEstimationEnabled";
     private static final String MANUAL_PARAMETER_ESTIMATION_ENABLED = "interactiveParameterEstimationEnabled";
     private static final String PARAMETER_ESTIMATION_ITERATIONS = "parameterEstimationIterations";
+    private static final String PARAMETER_ESTIMATION_DROPOUT_PERCENTILE = "parameterEstimationDropoutPercentile";
     private static final String REPORT_TEMPLATE_FILENAME = "reportTemplateFilename";
     private static final String REPORT_FILENAME = "reportFilename";
     private static final String MAXIMUM_STORED_RESULTS = "maximumStoredResults";
+    private static final String MAXIMUM_PATH_LENGTH = "maximumPathLength";
     private static final String SHOW_OPTIMIZATIONS_MENU = "showOptimizationsMenu";
     private static final String ALL_LRS_STORED = "allLRsStored";
     private static final String OUTPUT_ROOT_FOLDER = "outputRootFolder";
     private static final String LR_THRESHOLD = "defaultLRThreshold";
     private static final String EXPORT_MATCHING_PROFILES_AFTER_SEARCH = "exportMatchingProfilesAfterSearch";
+    private static final String BATCH_MODE = "batchMode";
+    private static final String Q_SHUTDOWN = "qDesignationShutdown";
+    private static final String IS_WINDOW_CLOSE_BLOCKED_IN_BATCH_MODE = "windowCloseBlockedInBatchMode";
+    private static final String BATCH_AUTOSTART_MODE = "batchMode.autoStart";
 
-    private static String _propertiesFileName;
+    private static String _propertiesFileName = System.getProperty("smartrankRestrictions");
 
     private static long _loadedDate;
 
@@ -152,8 +157,32 @@ public class SmartRankRestrictions {
         return get(OUTPUT_ROOT_FOLDER, "");
     }
 
+    public static boolean isBatchMode() {
+        return Boolean.parseBoolean(get(BATCH_MODE, "false"));
+    }
+
     public static Integer getDefaultLRThreshold() {
         return getInt(LR_THRESHOLD, 1000);
+    }
+
+    public static int getDropoutEstimationPercentile() {
+        return getInt(PARAMETER_ESTIMATION_DROPOUT_PERCENTILE, 95);
+    }
+
+    public static int getMaximumPathLength() {
+        return getInt(MAXIMUM_PATH_LENGTH, 128);
+    }
+
+    public static String getBatchAutoStartMode() {
+        return get(BATCH_AUTOSTART_MODE, "");
+    }
+
+    public static boolean isQDesignationShutdownForHp() {
+        return Boolean.parseBoolean(get(Q_SHUTDOWN, "true"));
+    }
+
+    public static boolean isWindowCloseBlockedInBatchMode() {
+        return Boolean.parseBoolean(get(IS_WINDOW_CLOSE_BLOCKED_IN_BATCH_MODE, "false"));
     }
 
     private static String get(final String key, final String defaultValue) {
@@ -178,8 +207,8 @@ public class SmartRankRestrictions {
     private static void load() {
         if ((System.currentTimeMillis() - _loadedDate) > 2000L) {
             if (_propertiesFileName == null) {
-                if (!load(PROPERTIES_FILENAME))
-                    load(System.getProperty("user.home") + File.separatorChar + PROPERTIES_FILENAME);
+                if (!load(DEFAULT_PROPERTIES_FILENAME))
+                    load(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
             }
             else {
                 load(_propertiesFileName);
@@ -208,8 +237,8 @@ public class SmartRankRestrictions {
 
     private static void store() {
         if (_propertiesFileName == null) {
-            if (!store(PROPERTIES_FILENAME))
-                store(System.getProperty("user.home") + File.separatorChar + PROPERTIES_FILENAME);
+            if (!store(DEFAULT_PROPERTIES_FILENAME))
+                store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
         }
         else {
             store(_propertiesFileName);
@@ -218,7 +247,7 @@ public class SmartRankRestrictions {
 
     private static boolean store(final String fileName) {
         try (FileOutputStream fos = new FileOutputStream(fileName)) {
-            PROPERTIES.store(fos, "Created by " + System.getProperty("user.name") + " using SmartRank " + SmartRank.getVersion());
+            PROPERTIES.store(fos, "Created by " + System.getProperty("user.name") + " using SmartRank " + SmartRank.getRevision());
             _propertiesFileName = fileName;
             return true;
         }
@@ -239,7 +268,12 @@ public class SmartRankRestrictions {
 
     private static int getInt(final String key, final int defaultValue) {
         try {
-            return Integer.parseInt(get(key, "" + defaultValue));
+            final int parsedInt = Integer.parseInt(get(key, "" + defaultValue));
+            if (parsedInt <= 0) {
+                LOG.warn("Value for {} ({}) <= 0. Returning default ({}) instead.", key, parsedInt, defaultValue);
+                return defaultValue;
+            }
+            return parsedInt;
         }
         catch (final NumberFormatException nfe) {
             return defaultValue;
@@ -249,8 +283,4 @@ public class SmartRankRestrictions {
     private SmartRankRestrictions() {
     }
 
-    public static int getDBCacheSize() {
-
-        return Integer.parseInt(get(DB_CACHE_SIZE, "5000"));
-    }
 }

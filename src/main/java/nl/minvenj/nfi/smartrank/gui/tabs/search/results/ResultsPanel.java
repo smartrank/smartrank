@@ -51,9 +51,9 @@ import nl.minvenj.nfi.smartrank.messages.data.DatabaseMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DefenseHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.KnownProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.LRThresholdMessage;
-import nl.minvenj.nfi.smartrank.messages.data.LikelihoodRatiosMessage;
 import nl.minvenj.nfi.smartrank.messages.data.ProsecutionHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.ReportTopMessage;
+import nl.minvenj.nfi.smartrank.messages.data.SearchResultsMessage;
 import nl.minvenj.nfi.smartrank.messages.status.SearchCompletedMessage;
 import nl.minvenj.nfi.smartrank.raven.annotations.ExecuteOnSwingEventThread;
 import nl.minvenj.nfi.smartrank.raven.annotations.RavenMessageHandler;
@@ -107,7 +107,6 @@ public class ResultsPanel extends SmartRankPanel {
             public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 final JLabel label = new JLabel("" + value);
                 label.setHorizontalAlignment(SwingConstants.CENTER);
-                label.setOpaque(true);
                 final AnalysisParameters parameters = MessageBus.getInstance().query(AnalysisParametersMessage.class);
                 if (parameters != null && row >= parameters.getMaximumNumberOfResults()) {
                     label.setText("<html><b><font color='white' bgColor='red'>" + label.getText());
@@ -122,7 +121,6 @@ public class ResultsPanel extends SmartRankPanel {
             public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 final JLabel label = new JLabel("" + value);
                 label.setBorder(new CompoundBorder(new EmptyBorder(0, 5, 0, 0), label.getBorder()));
-                label.setOpaque(true);
                 final AnalysisParameters parameters = MessageBus.getInstance().query(AnalysisParametersMessage.class);
                 if (parameters != null && row >= parameters.getMaximumNumberOfResults()) {
                     label.setText("<html><b><font color='white' bgColor='red'>" + label.getText());
@@ -137,7 +135,6 @@ public class ResultsPanel extends SmartRankPanel {
             public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 final JLabel label = new JLabel("" + value);
                 label.setBorder(new CompoundBorder(new EmptyBorder(0, 5, 0, 0), label.getBorder()));
-                label.setOpaque(true);
                 final AnalysisParameters parameters = MessageBus.getInstance().query(AnalysisParametersMessage.class);
                 if (parameters != null && row >= parameters.getMaximumNumberOfResults()) {
                     label.setText("<html><b><font color='white' bgColor='red'>" + label.getText());
@@ -168,11 +165,15 @@ public class ResultsPanel extends SmartRankPanel {
         registerAsListener();
     }
 
-    @RavenMessageHandler(LikelihoodRatiosMessage.class)
+    @RavenMessageHandler(SearchResultsMessage.class)
     @ExecuteOnSwingEventThread
-    public void onResultsChanged(final LikelihoodRatio[] lrs) {
-        _lrs = new LikelihoodRatio[lrs.length];
-        System.arraycopy(lrs, 0, _lrs, 0, lrs.length);
+    public void onResultsChanged(final SearchResults results) {
+        if (results == null) {
+            _lrs = new LikelihoodRatio[0];
+        }
+        else {
+            _lrs = results.getPositiveLRs().toArray(new LikelihoodRatio[0]);
+        }
         updateTable();
     }
 

@@ -5,7 +5,7 @@
             <xsd:sequence id="SeqImportFile">
                 <xsd:element name="CaseFolder" type="xsd:string" />
                 <xsd:element name="userid" type="xsd:string" />
-                <xsd:element name="dateTime" type="xsd:dateTime" />
+                <xsd:element name="dateTime" type="xsd:string" />
                 <xsd:element name="Replicates" type="ReplicatesType" />
                 <xsd:element name="Dropin" type="DropinType" />
                 <xsd:element name="Theta" type="ThetaType" />
@@ -165,7 +165,7 @@
     </xsd:complexType>
     
     <xsd:complexType name="StatisticsType">
-        <xsd:sequence id="SeqStatstics">
+        <xsd:sequence id="SeqStatistics">
             <xsd:element name="Locus" type="LocusStatisticsType"  minOccurs="1" maxOccurs="unbounded" />
         </xsd:sequence>
         <xsd:attribute name="rareAlleleFrequency" type="AlleleFrequencyType" />

@@ -20,99 +20,26 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
+
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
+
+import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 
 /**
  * Records the results of a dropout estimation.
  */
 public class DropoutEstimation {
 
-    private BigDecimal _minimum;
-    private BigDecimal _maximum;
-
-    private final HashMap<String, BigDecimal> _minimumValues = new HashMap<>();
-    private final HashMap<String, BigDecimal> _maximumValues = new HashMap<>();
-    private boolean _isValid;
-    private int _alleleCount;
     private int _replicateCount;
     private int _iterations;
     private List<DropoutEstimationValue> _data;
+    private double[] _doubleData;
+    private final int _percentile;
 
-    /**
-     * Constructor.
-     */
     public DropoutEstimation() {
-        _minimum = BigDecimal.ONE;
-        _maximum = BigDecimal.ZERO;
-    }
-
-    /**
-     * @return <b>true</b> if the dropout estimation contains a valid result.
-     */
-    public boolean isValid() {
-        return _isValid;
-    }
-
-    /**
-     * @return the maximum value for dropout
-     */
-    public BigDecimal getMaximum() {
-        return _maximum;
-    }
-
-    /**
-     * @return the minimum value for dropout
-     */
-    public BigDecimal getMinimum() {
-        return _minimum;
-    }
-
-    /**
-     * @return the minimum value for dropout for the prosecution hypothesis
-     */
-    public BigDecimal getProsecutionMinimum() {
-        return _minimumValues.get("Prosecution");
-    }
-
-    /**
-     * @return the minimum value for dropout for the defense hypothesis
-     */
-    public BigDecimal getDefenseMinimum() {
-        return _minimumValues.get("Defense");
-    }
-
-    /**
-     * @return the maximum value for dropout for the prosecution hypothesis
-     */
-    public BigDecimal getProsecutionMaximum() {
-        return _maximumValues.get("Prosecution");
-    }
-
-    /**
-     * @return the maximum value for dropout for the defense hypothesis
-     */
-    public BigDecimal getDefenseMaximum() {
-        return _maximumValues.get("Defense");
-    }
-
-    /**
-     * Sets the allele count for the dropout estimation.
-     *
-     * @param alleleCount the new value for the allele count
-     */
-    public void setAlleleCount(final int alleleCount) {
-        _alleleCount = alleleCount;
-    }
-
-    /**
-     * Gets the allele count.
-     *
-     * @return the number of alleles for the dropout setimation
-     */
-    public int getAlleleCount() {
-        return _alleleCount;
+        _percentile = SmartRankRestrictions.getDropoutEstimationPercentile();
     }
 
     /**
@@ -134,46 +61,8 @@ public class DropoutEstimation {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (obj instanceof DropoutEstimation) {
-            final DropoutEstimation other = (DropoutEstimation) obj;
-            return getMinimum().equals(other.getMinimum()) && getMaximum().equals(other.getMaximum());
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 97 * hash + Objects.hashCode(_minimum);
-        hash = 97 * hash + Objects.hashCode(_maximum);
-        return hash;
-    }
-
-    @Override
     public String toString() {
-        return "5%: " + _minimum + " 95%: " + _maximum;
-    }
-
-    /**
-     * Adds the results for a hypothesis to this object.
-     *
-     * @param hypothesisName the name of the hypothesis for which to add results
-     * @param minimum the minimum dropout for the hypothesis
-     * @param maximum the maximum dropout for the hypothesis
-     */
-    public void setValues(final String hypothesisName, final BigDecimal minimum, final BigDecimal maximum) {
-        if (_minimum.compareTo(minimum) > 0) {
-            _minimum = minimum.setScale(2, RoundingMode.HALF_UP);
-        }
-
-        if (_maximum.compareTo(maximum) < 0) {
-            _maximum = maximum.setScale(2, RoundingMode.HALF_UP);
-        }
-        _minimumValues.put(hypothesisName, minimum.setScale(2, RoundingMode.HALF_UP));
-        _maximumValues.put(hypothesisName, maximum.setScale(2, RoundingMode.HALF_UP));
-
-        _isValid = _minimumValues.size() == 2 && _maximumValues.size() == 2;
+        return "5%: " + getPercentile(5) + " 50%: " + getPercentile(50) + " 95%: " + getPercentile(95);
     }
 
     /**
@@ -194,18 +83,62 @@ public class DropoutEstimation {
         return _iterations;
     }
 
+    /**
+     * Gets the count for each dropout value of the number of iterations of the monte carlo simulation where the observed number of alleles was recovered.
+     *
+     * @return A {@link List} of {@link DropoutEstimationValue}s
+     */
     public List<DropoutEstimationValue> getData() {
         return _data;
     }
 
-    public void setData(final ArrayList<BigDecimal> succesfulDropouts) {
+    /**
+     * Sets the dropout values for which the number of alleles observed in the evidence was recovered during a Monte Carlo simulation.
+     *
+     * @param succesfulDropouts A {@link Collection} of  {@link BigDecimal}s representing the dropout values for which the observed number of alleles was recovered
+     */
+    public void setData(final Collection<BigDecimal> succesfulDropouts) {
         _data = new ArrayList<>();
+        _doubleData = new double[succesfulDropouts.size()];
         for (int idx = 0; idx < 100; idx++) {
             _data.add(new DropoutEstimationValue(new BigDecimal(idx).divide(new BigDecimal(100)).round(new MathContext(2, RoundingMode.HALF_UP)).doubleValue()));
         }
 
+        int idx = 0;
         for (final BigDecimal dropout : succesfulDropouts) {
             _data.get(dropout.multiply(new BigDecimal(100)).intValue()).add();
+            _doubleData[idx++] = dropout.round(new MathContext(2, RoundingMode.HALF_UP)).doubleValue();
         }
+    }
+
+    /**
+     * Gets the percentile configured in the restrictions file of the dropout values distribution to use as final dropout result of the estimation.
+     *
+     * @return a {@link BigDecimal} containing the estimation of the dropout
+     */
+    public BigDecimal getEstimatedDropout() {
+        return getPercentile(_percentile);
+    }
+
+    /**
+     * Gets a percentile point of the distribution of successful dropouts.
+     *
+     * @param percentile The requested percentile.
+     *
+     * @return a {@link BigDecimal} containing the dropout at the requested percentile
+     */
+    public BigDecimal getPercentile(final int percentile) {
+        final Percentile p = new Percentile(percentile);
+        p.setData(_doubleData);
+        return new BigDecimal(p.evaluate()).round(new MathContext(2, RoundingMode.HALF_UP));
+    }
+
+    /**
+     * Gets the percentile used to estimate the dropout value.
+     *
+     * @return an integer containing the percentile of the dropout distribution to use when estimating dropout
+     */
+    public int getDropoutEstimationPercentile() {
+        return _percentile;
     }
 }

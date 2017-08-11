@@ -39,20 +39,18 @@ public class DropoutProbabilityCellRenderer extends JSpinner implements TableCel
 
     public DropoutProbabilityCellRenderer() {
         setBorder(null);
+        setOpaque(false);
     }
 
     @Override
     public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
         final AnalysisParameters parameters = MessageBus.getInstance().query(AnalysisParametersMessage.class);
         if (!(table.getValueAt(row, 0) instanceof Boolean) || !(Boolean) table.getValueAt(row, 0)) {
-            final JLabel label = new JLabel();
-            label.setOpaque(true);
-            return label;
+            return new JLabel();
         }
         if (SmartRankRestrictions.isAutomaticParameterEstimationEnabled() || parameters.isAutomaticParameterEstimationToBePerformed()) {
             final JLabel label = new JLabel("automatic");
             label.setHorizontalAlignment(SwingConstants.RIGHT);
-            label.setOpaque(true);
             return label;
         }
 

@@ -1,0 +1,2 @@
+# Expected results for regression test of SMARTRANK-210
+# That's right, no results!

@@ -62,7 +62,6 @@ public class NumberOfLociPerSpecimenPane extends JSplitPane {
             @Override
             public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 final JLabel label = new JLabel(String.format("%2.2f %%", value), SwingConstants.RIGHT);
-                label.setOpaque(true);
                 return label;
             }
         });

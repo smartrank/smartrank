@@ -64,9 +64,7 @@ public class NumberOfSpecimensPerLocusPanel extends JSplitPane {
         _locusCountTable.setDefaultRenderer(Double.class, new TableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-                final JLabel label = new JLabel(String.format("%2.2f %%", value), SwingConstants.RIGHT);
-                label.setOpaque(true);
-                return label;
+                return new JLabel(String.format("%2.2f %%", value), SwingConstants.RIGHT);
             }
         });
         _locusCountTable.setModel(new DefaultTableModel(new Object[]{"Locus", "Number of Specimens", "Percentage"}, 0) {

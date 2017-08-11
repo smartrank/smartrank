@@ -21,6 +21,7 @@ import java.awt.Component;
 import java.awt.Graphics;
 
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
@@ -30,24 +31,26 @@ class ContributorCellRenderer extends JCheckBox implements TableCellRenderer {
 
     public ContributorCellRenderer() {
         setHorizontalAlignment(SwingConstants.CENTER);
+        setOpaque(false);
     }
 
     @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
         if (row == 0) {
             if (value instanceof Boolean) {
                 setSelected((Boolean) value);
                 return this;
             }
-            JLabel label = new JLabel(value.toString());
-            label.setOpaque(true);
-            return label;
+            return new JLabel(value.toString());
         }
-        return table.getDefaultRenderer(Boolean.class).getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        final JComponent component = (JComponent) table.getDefaultRenderer(Boolean.class).getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        component.setEnabled(table.isEnabled());
+        setOpaque(false);
+        return component;
     }
 
     @Override
-    public void paint(Graphics g) {
+    public void paint(final Graphics g) {
         setEnabled(false);
         super.paint(g);
     }

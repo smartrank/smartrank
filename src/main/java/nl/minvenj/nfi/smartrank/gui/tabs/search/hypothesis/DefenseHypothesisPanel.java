@@ -25,6 +25,7 @@ import nl.minvenj.nfi.smartrank.messages.data.DefenseHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.UpdateDefenseContributorMessage;
 import nl.minvenj.nfi.smartrank.messages.data.UpdateDefenseNoncontributorMessage;
 import nl.minvenj.nfi.smartrank.messages.data.UpdateDefenseUnknownsMessage;
+import nl.minvenj.nfi.smartrank.raven.annotations.ExecuteOnSwingEventThread;
 import nl.minvenj.nfi.smartrank.raven.annotations.RavenMessageHandler;
 import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 
@@ -35,6 +36,7 @@ public class DefenseHypothesisPanel extends HypothesisPanel {
     }
 
     @RavenMessageHandler(DefenseHypothesisMessage.class)
+    @ExecuteOnSwingEventThread
     public void onNewDefenseHypothesis(final DefenseHypothesis hypothesis) {
         setHypothesis(hypothesis);
     }

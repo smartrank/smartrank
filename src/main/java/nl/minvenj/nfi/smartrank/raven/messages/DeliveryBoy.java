@@ -47,7 +47,10 @@ public class DeliveryBoy implements Runnable {
     public void run() {
         final Method method = _subscription.getMethod();
         final Object instance = _subscription.getInstance();
-        LOG.debug("Notifying from {} to {} data '{}'", (_source instanceof String ? _source : _source.getClass().getSimpleName()), _subscription, _message.get());
+        LOG.debug("Notifying {} from {} to {} data '{}'", _message.getClass().getSimpleName(), (_source instanceof String ? _source : _source.getClass().getSimpleName()), _subscription, _message.get());
+        if (_message.getWarningMessage() != null) {
+            LOG.warn("Notifying {} from {} to {} data '{}' with warning: {}", _message.getClass().getSimpleName(), (_source instanceof String ? _source : _source.getClass().getSimpleName()), _subscription, _message.get(), _message.getWarningMessage());
+        }
         try {
             final Class<?>[] parameterTypes = method.getParameterTypes();
             method.setAccessible(true);

@@ -40,6 +40,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         </encoder>
     </appender>
     
+    <appender name="BatchLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover. Make sure the path matches the one in the file element or else
+            the rollover logs are placed in the working directory. -->
+            <fileNamePattern>smartrank_batch_%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d - %m%n</pattern>
+        </encoder>
+
+        <!-- keep 30 days' worth of history -->
+        <maxHistory>30</maxHistory>
+    </appender>
+
     <appender name="CaseLog" class="ch.qos.logback.core.FileAppender">
         <file>smartrank-case.log</file>
         <encoder>
@@ -51,8 +66,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         <appender-ref ref="CaseLog"/>
     </logger>
     
+    <logger name="BatchLogger" level="info" additivity="false">
+        <appender-ref ref="BatchLog"/>
+    </logger>
+    
     <logger name="nl.minvenj.nfi.smartrank.SmartRankManager" level="trace"/>
 
+    <!--<logger name="nl.minvenj.nfi.smartrank.io.databases.jdbc.JDBCReader" level="trace" />-->
     <!--<logger name="nl.minvenj.nfi.smartrank.raven" level="debug"/>-->
     <!--<logger name="nl.minvenj.nfi.smartrank.raven.messages.conversion.Conversions" additivity="false" level="fatal"/>-->
     <!--<logger name="nl.minvenj.nfi.smartrank.gui" level="trace"/>-->

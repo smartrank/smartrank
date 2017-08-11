@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import nl.minvenj.nfi.smartrank.SmartRankManager;
 import nl.minvenj.nfi.smartrank.analysis.SearchResults;
+import nl.minvenj.nfi.smartrank.domain.Contributor;
 import nl.minvenj.nfi.smartrank.domain.DefenseHypothesis;
 import nl.minvenj.nfi.smartrank.domain.LikelihoodRatio;
 import nl.minvenj.nfi.smartrank.domain.ProblemLocation;
@@ -33,6 +35,7 @@ import nl.minvenj.nfi.smartrank.io.WritableFileSource;
 import nl.minvenj.nfi.smartrank.messages.commands.StartAnalysisCommand;
 import nl.minvenj.nfi.smartrank.messages.commands.WritableFileSourceMessage;
 import nl.minvenj.nfi.smartrank.messages.data.AddCrimeSceneFilesMessage;
+import nl.minvenj.nfi.smartrank.messages.data.AddKnownFilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseFileMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DefenseHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.LRThresholdMessage;
@@ -56,13 +59,38 @@ public class ValidationTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(ValidationTest.class);
 
-    @Parameters(name = "DB {0}, Sample {1}, Stats {2}, Dropin {4}, Theta {5}, Hp Candidate ({6}) + {7} unknowns ({8}), Hd {9} unknowns ({10})")
+    private static final class Donor {
+        private final String _file;
+        private final double _dropout;
+
+        public Donor(final String file, final double dropout) {
+            _file = file;
+            _dropout = dropout;
+        }
+
+        public String getFile() {
+            return _file;
+        }
+
+        public double getDropout() {
+            return _dropout;
+        }
+
+        @Override
+        public String toString() {
+            return _file + " (" + _dropout + ")";
+        }
+    }
+
+    @Parameters(name = "DB {0}, Sample {1}, Knowns {2}, Stats {3}, Dropin {5}, Theta {6}, Hp Candidate ({7}) + {8} unknowns ({9}), Hd {10} unknowns ({11})")
     public static Iterable<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            {"database_codis_generated_100.csv", "FOEC0000BE#08-GBCX0000LU#09.csv", "str_base_validation_file.xml", 0.0003, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "FOEC0000BE#08-GBCX0000LU#09-expectedresults.txt", 0},
-            {"SMARTRANK-27-database.csv", "SMARTRANK-27-sample.csv", "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "SMARTRANK-27-expectedresults.txt", 0},
-            {"SMARTRANK-42-database.csv", "SMARTRANK-42-sample.csv", "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "SMARTRANK-42-expectedresults.txt", 2},
-            {"SMARTRANK-49-database.csv", "SMARTRANK-49-sample.csv", "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "SMARTRANK-49-expectedresults.txt", 4}
+            {"database_codis_generated_100.csv", "FOEC0000BE#08-GBCX0000LU#09.csv", null, "str_base_validation_file.xml", 0.0003, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "FOEC0000BE#08-GBCX0000LU#09-expectedresults.txt", 0},
+            {"SMARTRANK-27-database.csv", "SMARTRANK-27-sample.csv", null, "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "SMARTRANK-27-expectedresults.txt", 0},
+            {"SMARTRANK-42-database.csv", "SMARTRANK-42-sample.csv", null, "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "SMARTRANK-42-expectedresults.txt", 2},
+            {"SMARTRANK-49-database.csv", "SMARTRANK-49-sample.csv", null, "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0.03, 2, 0.03, "SMARTRANK-49-expectedresults.txt", 4},
+            {"SMARTRANK-210-database.csv", "SMARTRANK-210-sample.csv", new Donor[]{new Donor("SMARTRANK-210-known.csv", 0)}, "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0, 2, 0, "SMARTRANK-210-expectedresults.txt", 0},
+            {"SMARTRANK-234-database.csv", "SMARTRANK-234-sample.csv", null, "str_base_validation_file.xml", 0.0001, 0.05, 0.01, 0.03, 1, 0, 2, 0, "SMARTRANK-234-expectedresults.txt", 0}
         });
     }
 
@@ -73,36 +101,39 @@ public class ValidationTest {
     public String _crimeSample;
 
     @Parameter(2)
-    public String _stats;
+    public Donor[] _knownDonors;
 
     @Parameter(3)
-    public double _rareFreq;
+    public String _stats;
 
     @Parameter(4)
-    public double _dropin;
+    public double _rareFreq;
 
     @Parameter(5)
-    public double _theta;
+    public double _dropin;
 
     @Parameter(6)
-    public double _hpCandidatePd;
+    public double _theta;
 
     @Parameter(7)
-    public int _hpUnknownCount;
+    public double _hpCandidatePd;
 
     @Parameter(8)
-    public double _hpUnknownPd;
+    public int _hpUnknownCount;
 
     @Parameter(9)
-    public int _hdUnknownCount;
+    public double _hpUnknownPd;
 
     @Parameter(10)
-    public double _hdUnknownPd;
+    public int _hdUnknownCount;
 
     @Parameter(11)
-    public String _resultsFileName;
+    public double _hdUnknownPd;
 
     @Parameter(12)
+    public String _resultsFileName;
+
+    @Parameter(13)
     public Integer _problemCount;
 
     private HashMap<String, Double> _expectedResults;
@@ -176,6 +207,14 @@ public class ValidationTest {
                 _messageBus.send(this, new AddCrimeSceneFilesMessage(new File(getClass().getResource(_crimeSample).toURI())));
                 break;
             case WAIT_POPULATION_STATISTICS:
+                if (_knownDonors != null && _knownDonors.length > 0) {
+                    LOG.info("Loading known donors: {}", (Object[]) _knownDonors);
+                    final ArrayList<File> filesList = new ArrayList<>();
+                    for (final Donor donor : _knownDonors) {
+                        filesList.add(new File(getClass().getResource(donor.getFile()).toURI()));
+                    }
+                    _messageBus.send(this, new AddKnownFilesMessage(filesList));
+                }
                 LOG.info("Loading statistics");
                 _messageBus.send(this, new PopulationStatisticsFileMessage(new File(getClass().getResource(_stats).toURI())));
                 _messageBus.send(this, new RareAlleleFrequencyMessage(_rareFreq));
@@ -187,13 +226,29 @@ public class ValidationTest {
                     def.setThetaCorrection(_theta);
                     def.setUnknownCount(_hdUnknownCount);
                     def.setUnknownDropoutProbability(_hdUnknownPd);
-
+                    if (_knownDonors != null && _knownDonors.length > 0) {
+                        for (final Contributor contributor : def.getContributors()) {
+                            for (final Donor donor : _knownDonors) {
+                                if (contributor.getSample().getSourceFile().endsWith(donor.getFile())) {
+                                    contributor.setDropoutProbability(donor.getDropout());
+                                }
+                            }
+                        }
+                    }
                     final ProsecutionHypothesis pro = _messageBus.query(ProsecutionHypothesisMessage.class);
                     pro.setUnknownCount(_hpUnknownCount);
                     pro.setUnknownDropoutProbability(_hpUnknownPd);
                     pro.setDropInProbability(_dropin);
                     pro.setThetaCorrection(_theta);
-                    Thread.sleep(1000);
+                    if (_knownDonors != null && _knownDonors.length > 0) {
+                        for (final Contributor contributor : pro.getContributors()) {
+                            for (final Donor donor : _knownDonors) {
+                                if (contributor.getSample().getSourceFile().endsWith(donor.getFile())) {
+                                    contributor.setDropoutProbability(donor.getDropout());
+                                }
+                            }
+                        }
+                    }
                     LOG.info("Initiating search");
                     _messageBus.send(this, new StartAnalysisCommand());
                 }
@@ -217,7 +272,7 @@ public class ValidationTest {
         synchronized (_problemCount) {
             for (final ProblemLocation problemLocation : problemLocations) {
                 if (_problemCount == 0) {
-                    fail(String.format("Unexpected failure at record %d, specimen %s, locus %s: %s", problemLocation.getLocation(), problemLocation.getSpecimen(), problemLocation.getLocus(), problemLocation.getDescription()));
+                    fail(String.format("Unexpected failure at specimen %s, locus %s: %s", problemLocation.getSpecimen(), problemLocation.getLocus(), problemLocation.getDescription()));
                 }
                 _problemCount--;
             }
