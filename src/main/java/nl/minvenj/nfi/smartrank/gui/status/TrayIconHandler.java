@@ -32,6 +32,7 @@ import javax.swing.SwingUtilities;
 
 import nl.minvenj.nfi.smartrank.SmartRank;
 import nl.minvenj.nfi.smartrank.analysis.SearchResults;
+import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 import nl.minvenj.nfi.smartrank.messages.status.ErrorStringMessage;
 import nl.minvenj.nfi.smartrank.messages.status.SearchCompletedMessage;
 import nl.minvenj.nfi.smartrank.raven.ApplicationStatus;
@@ -80,25 +81,29 @@ public class TrayIconHandler {
 
     @RavenMessageHandler(ErrorStringMessage.class)
     public void onUpdateErrorMessage(final String message) {
-        final JFrame parentFrame = (JFrame) SwingUtilities.windowForComponent(_parent);
-        if (!parentFrame.isActive()) {
-            if (_trayIcon != null) {
-                _trayIcon.displayMessage(_versionString, removeHtml(message), TrayIcon.MessageType.ERROR);
+        if (!SmartRankRestrictions.isBatchMode()) {
+            final JFrame parentFrame = (JFrame) SwingUtilities.windowForComponent(_parent);
+            if (!parentFrame.isActive()) {
+                if (_trayIcon != null) {
+                    _trayIcon.displayMessage(_versionString, removeHtml(message), TrayIcon.MessageType.ERROR);
+                }
             }
         }
     }
 
     @RavenMessageHandler(SearchCompletedMessage.class)
     void onSearchCompleted(final SearchResults results) {
-        final JFrame parentFrame = (JFrame) SwingUtilities.windowForComponent(_parent);
-        if (!parentFrame.isActive()) {
-            if (_trayIcon != null) {
-                final String message = String.format(
-                                                     "<html>Search completed.<br>  Number of specimens evaluated: <b>%d</b><br>  Number of LRs > 1: <b>%d</b><br>  Duration: <b>%s</b>",
-                                                     results.getNumberOfLRs(),
-                                                     results.getNumberOfLRsOver1(),
-                                                     TimeUtils.formatDuration(results.getDuration()));
-                _trayIcon.displayMessage(_versionString, removeHtml(message), TrayIcon.MessageType.INFO);
+        if (!SmartRankRestrictions.isBatchMode()) {
+            final JFrame parentFrame = (JFrame) SwingUtilities.windowForComponent(_parent);
+            if (!parentFrame.isActive()) {
+                if (_trayIcon != null) {
+                    final String message = String.format(
+                                                         "<html>Search completed.<br>  Number of specimens evaluated: <b>%d</b><br>  Number of LRs > 1: <b>%d</b><br>  Duration: <b>%s</b>",
+                                                         results.getNumberOfLRs(),
+                                                         results.getNumberOfLRsOver1(),
+                                                         TimeUtils.formatDuration(results.getDuration()));
+                    _trayIcon.displayMessage(_versionString, removeHtml(message), TrayIcon.MessageType.INFO);
+                }
             }
         }
     }
@@ -135,7 +140,7 @@ public class TrayIconHandler {
 
     void setPercentReady(final int percent) {
         if (SystemTray.isSupported()) {
-            final int iconIndex = (percent * (_busyIcons.size() - 1)) / 100;
+            final int iconIndex = Math.min((percent * (_busyIcons.size() - 1)) / 100, _busyIcons.size() - 1);
             _trayIcon.setImage(_busyIcons.get(iconIndex));
             _trayIcon.setToolTip(_versionString + "\n" + _statusMessage + "\n" + ((_detailMessage == null || _detailMessage.isEmpty()) ? "" : _detailMessage + "\n") + (percent + "% done"));
         }

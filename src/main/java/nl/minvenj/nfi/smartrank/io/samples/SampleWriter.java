@@ -42,12 +42,14 @@ public class SampleWriter {
     }
 
     /**
-     * Writes a sample to the file indicated in the constructor. If the target file is not empty, the new sample is appended to the end.
+     * Writes a sample to the file indicated in the constructor. If the target file already exists, the filename is modified by adding '-copy-' and an
+     * index counter to generate a unique name.
      *
      * @param profile the sample to write
+     * @return a File representing the file to which the sample was written
      * @throws IOException if an error occurred writing the the file
      */
-    public void write(final Sample profile) throws IOException {
+    public File write(final Sample profile) throws IOException {
 
         File outFile = _outputFile;
         int copyIndex = 0;
@@ -66,9 +68,7 @@ public class SampleWriter {
 
         try (FileOutputStream fos = new FileOutputStream(outFile, true)) {
             // Write header if necessary
-            if (_outputFile.length() == 0) {
-                fos.write("SampleName,Marker,Allele1,Allele2,Allele3,Allele4\n".getBytes());
-            }
+            fos.write("SampleName,Marker,Allele1,Allele2,Allele3,Allele4\n".getBytes());
             for (final Locus locus : profile.getLoci()) {
                 fos.write((profile.getName() + "," + locus.getName() + ",").getBytes());
                 int count = 0;
@@ -79,6 +79,7 @@ public class SampleWriter {
                 fos.write(",,,\n".substring(count).getBytes());
             }
         }
+        return outFile;
     }
 
 }

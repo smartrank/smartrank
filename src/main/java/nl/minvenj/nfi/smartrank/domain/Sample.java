@@ -25,6 +25,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nl.minvenj.nfi.smartrank.raven.NullUtils;
+
 /**
  * The Sample class represents a DNA sample containing a number of Loci which in
  * turn contain a number of alleles.
@@ -38,6 +40,7 @@ public class Sample {
     private final String _sourceFile;
     private String _sourceFileHash = null;
     private Locus _locus;
+    private String _additionalData;
 
     /**
      * Creates a new DNASample object
@@ -181,5 +184,13 @@ public class Sample {
             _loci.remove(locus.getName());
         if (_locus != null && _locus.equals(locus))
             _locus = null;
+    }
+
+    public void setAdditionalData(final String additionalData) {
+        _additionalData = additionalData;
+    }
+
+    public String getAdditionalData() {
+        return NullUtils.getValue(_additionalData, "");
     }
 }

@@ -46,7 +46,6 @@ import nl.minvenj.nfi.smartrank.messages.data.CrimeSceneProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DefenseHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.EnabledLociMessage;
-import nl.minvenj.nfi.smartrank.messages.data.LikelihoodRatiosMessage;
 import nl.minvenj.nfi.smartrank.messages.data.ProsecutionHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.SearchResultsMessage;
 import nl.minvenj.nfi.smartrank.messages.status.ApplicationStatusMessage;
@@ -58,7 +57,6 @@ import nl.minvenj.nfi.smartrank.messages.status.SearchCompletedMessage;
 import nl.minvenj.nfi.smartrank.model.StatisticalModel;
 import nl.minvenj.nfi.smartrank.model.smartrank.SmartRankModel;
 import nl.minvenj.nfi.smartrank.raven.ApplicationStatus;
-import nl.minvenj.nfi.smartrank.raven.NullUtils;
 import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 import nl.minvenj.nfi.smartrank.report.jasper.ReportGenerator;
 import nl.minvenj.nfi.smartrank.utils.FileNameSanitizer;
@@ -96,20 +94,18 @@ public class SmartRankAnalysis extends Thread {
     public void run() {
         ProsecutionHypothesis hp = null;
         DefenseHypothesis hd = null;
-        int specimenIndex = 0;
         int analysedSpecimens = 0;
-        int percentReady = 0;
+        final int percentReady = 0;
+
+        System.gc();
 
         final DNADatabase db = _messageBus.query(DatabaseMessage.class);
-        final Iterator<Sample> samplesIterator = db.iterator();
         boolean headerLogged = false;
 
-        final SearchResults searchResults = new SearchResults(db.getRecordCount());
+        final SearchResults searchResults = new SearchResults(db.getRecordCount(), db.getConfiguration());
         searchResults.setLogFileName(_caseLogger.getFilename());
-        searchResults.addExcludedProfiles(db.getBadRecordList());
 
         try {
-            _messageBus.send(this, new LikelihoodRatiosMessage(new ArrayList<LikelihoodRatio>()));
             final AnalysisParameters parameters = _messageBus.query(AnalysisParametersMessage.class);
             searchResults.setParameters(parameters);
 
@@ -118,17 +114,8 @@ public class SmartRankAnalysis extends Thread {
 
             _model = new SmartRankModel();
 
-            if (SmartRankRestrictions.isAutomaticParameterEstimationEnabled() || parameters.isAutomaticParameterEstimationToBePerformed()) {
-                final DropoutEstimator estimator = new DropoutEstimator(null);
-                final Collection<String> enabledLoci = _messageBus.query(EnabledLociMessage.class);
-                final Collection<Sample> crimesceneProfiles = _messageBus.query(CrimeSceneProfilesMessage.class);
-                _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.ESTIMATING_DROPOUT));
-                final DropoutEstimation estimation = estimator.estimate(hd, enabledLoci, crimesceneProfiles);
-                searchResults.getParameters().setDropoutEstimation(estimation);
-                final double dropout = estimation.getMaximum().doubleValue();
-                setDropout(hd, dropout);
-                setDropout(hp, dropout);
-            }
+            performDropoutEstimation(hp, hd, searchResults, parameters);
+
             if (searchResults.getParameters().getDropoutEstimation() != null) {
                 _caseLogger.logHeader(_model.getModelName(), searchResults.getParameters().getDropoutEstimation());
             }
@@ -155,53 +142,19 @@ public class SmartRankAnalysis extends Thread {
 
             _messageBus.send(this, new SearchResultsMessage(searchResults));
 
-            final int minimumNumberOfLoci = SmartRankRestrictions.getMinimumNumberOfLoci();
-            while (!_interrupted && !isInterrupted() && samplesIterator.hasNext()) {
-                final Sample candidateSample = samplesIterator.next();
-                LOG.debug("Handling sample {}", candidateSample);
-
-                _messageBus.send(this, new DetailStringMessage("Calculating Pr(E|Hp) for " + candidateSample));
-                percentReady = (specimenIndex++ * 100) / db.getRecordCount();
-                _messageBus.send(this, new PercentReadyMessage(percentReady));
-
-                if (getEnabledLocusCount(candidateSample) < minimumNumberOfLoci) {
-                    searchResults.addExcludedProfile(candidateSample, ExclusionReason.NOT_ENOUGH_LOCI);
-                    continue;
-                }
-
-                if (!parameters.isCalculateHdOnce()) {
-                    _messageBus.send(this, new DetailStringMessage("Calculating Pr(E|Hd) for " + candidateSample));
-                    final Hypothesis realHd = hd.copy();
-                    realHd.addNonContributor(candidateSample, hp.getCandidateDropout());
-                    prD = _model.calculateLikelihood(realHd, parameters);
-                    _model.reset();
-                }
-
-                hp.setCandidate(candidateSample);
-                analysedSpecimens++;
-
-                LocusLikelihoods prP = null;
-                try {
-                    prP = _model.calculateLikelihood(hp, parameters);
-                }
-                catch (final Throwable t) {
-                    LOG.error("Error evaluating candidate {}!", candidateSample.getName(), t);
-                }
-                if (prP != null) {
-                    final LikelihoodRatio lr = new LikelihoodRatio(candidateSample, prP, prD);
-                    LOG.debug(" {} = {}", candidateSample, lr.getOverallRatio());
-                    updateResults(candidateSample, searchResults, lr);
-                }
-                _model.reset();
-            }
+            analysedSpecimens = iterateOverSpecimens(hp, hd, db, searchResults, parameters, prD);
 
             if (isInterrupted() || _interrupted) {
                 throw new InterruptedException();
             }
 
+            searchResults.addExcludedProfiles(db.getBadRecordList());
+            searchResults.setProfileMetadataStatistics(db.getMetadataStatistics());
+
             _caseLogger.logExcludedProfiles(searchResults);
-            _caseLogger.logRanking();
-            _caseLogger.logFooter(analysedSpecimens);
+            _caseLogger.logRanking(searchResults);
+            _caseLogger.logFooter(searchResults, analysedSpecimens);
+
             searchResults.setDuration(_caseLogger.getDuration());
             searchResults.setSucceeded();
 
@@ -210,66 +163,21 @@ public class SmartRankAnalysis extends Thread {
             final String reportName = new ReportGenerator().generateAndWait(_caseLogger.getStartTime());
             searchResults.setReportName(reportName);
 
-            if (SmartRankRestrictions.isProfileExportEnabled()) {
-                final Thread t = new Thread() {
-                    @Override
-                    public void run() {
-                        final File outputFolder = new File(reportName).getParentFile();
-                        String profileName = "";
-                        try {
-                            final List<LikelihoodRatio> positiveLRs = new ArrayList<>(searchResults.getPositiveLRs());
-                            Collections.sort(positiveLRs, new Comparator<LikelihoodRatio>() {
-                                @Override
-                                public int compare(final LikelihoodRatio o1, final LikelihoodRatio o2) {
-                                    return -o1.compareTo(o2);
-                                }
-                            });
-
-                            final int total = positiveLRs.size();
-                            boolean overThreshold = true;
-                            for (int idx = 0; idx < Math.min(total, searchResults.getParameters().getMaximumNumberOfResults()) && overThreshold; idx++) {
-                                final LikelihoodRatio lr = positiveLRs.get(idx);
-                                final Sample profile = lr.getProfile();
-
-                                if (lr.getOverallRatio().getRatio() < searchResults.getParameters().getLrThreshold()) {
-                                    overThreshold = false;
-                                    break;
-                                }
-
-                                _messageBus.send(this, new PercentReadyMessage((idx * 100) / total));
-                                _messageBus.send(this, new DetailStringMessage("Exporting profile " + profileName));
-                                profileName = profile.getName();
-                                new SampleWriter(new File(outputFolder, FileNameSanitizer.sanitize(profile.getName()) + ".csv")).write(profile);
-                            }
-                        }
-                        catch (final Throwable e) {
-                            LOG.error("Error saving profile after search: profile {} failed.", profileName, e);
-                            _messageBus.send(this, new ErrorStringMessage("Error saving profile after search. profile " + profileName + " failed: " + e.getMessage()));
-                        }
-                    };
-                };
-                t.start();
-                t.join();
-            }
+            exportTopProfiles(searchResults, reportName);
             _messageBus.send(this, new SearchCompletedMessage(searchResults));
         }
-        catch (final InterruptedException ie) {
-            _caseLogger.logExcludedProfiles(searchResults);
-            _caseLogger.logRanking();
-            _caseLogger.logFooter(ie, percentReady, analysedSpecimens);
-            searchResults.setFailed(ie);
-            _messageBus.send(this, new SearchAbortedMessage(searchResults));
-        }
         catch (final Throwable e) {
+            searchResults.setProfileMetadataStatistics(db.getMetadataStatistics());
+            searchResults.setFailed(e);
             if (!headerLogged) {
                 _caseLogger.logHeader(_model == null ? "" : _model.getModelName());
                 _caseLogger.logHypothesis(hp);
                 _caseLogger.logHypothesis(hd);
             }
             _caseLogger.logExcludedProfiles(searchResults);
-            _caseLogger.logRanking();
-            _caseLogger.logFooter(e);
-            searchResults.setFailed(e);
+            _caseLogger.logRanking(searchResults);
+            _caseLogger.logFooter(searchResults, percentReady, analysedSpecimens);
+            searchResults.setDuration(_caseLogger.getDuration());
             _messageBus.send(this, new SearchAbortedMessage(searchResults));
         }
         finally {
@@ -280,34 +188,108 @@ public class SmartRankAnalysis extends Thread {
         }
     }
 
-    private int getEnabledLocusCount(final Sample profile) {
-        int count = 0;
-        final Collection<String> enabledLoci = MessageBus.getInstance().query(EnabledLociMessage.class);
-        for (final String locus : enabledLoci) {
-            if (profile.hasLocus(locus)) {
-                count++;
-            }
+    private void performDropoutEstimation(final ProsecutionHypothesis hp, final DefenseHypothesis hd, final SearchResults searchResults, final AnalysisParameters parameters) {
+        if (SmartRankRestrictions.isAutomaticParameterEstimationEnabled() || parameters.isAutomaticParameterEstimationToBePerformed()) {
+            final DropoutEstimator estimator = new DropoutEstimator(null);
+            final Collection<String> enabledLoci = _messageBus.query(EnabledLociMessage.class);
+            final Collection<Sample> crimesceneProfiles = _messageBus.query(CrimeSceneProfilesMessage.class);
+            _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.ESTIMATING_DROPOUT));
+            final DropoutEstimation estimation = estimator.estimate(hd, enabledLoci, crimesceneProfiles);
+            searchResults.getParameters().setDropoutEstimation(estimation);
+            final double dropout = estimation.getEstimatedDropout().doubleValue();
+            setDropout(hd, dropout);
+            setDropout(hp, dropout);
         }
-        return count;
+    }
+
+    private void exportTopProfiles(final SearchResults searchResults, final String reportName) throws InterruptedException {
+        if (SmartRankRestrictions.isProfileExportEnabled()) {
+            final Thread t = new Thread() {
+                @Override
+                public void run() {
+                    final File outputFolder = new File(reportName).getParentFile();
+                    String profileName = "";
+                    try {
+                        final List<LikelihoodRatio> positiveLRs = new ArrayList<>(searchResults.getPositiveLRs());
+                        Collections.sort(positiveLRs, new Comparator<LikelihoodRatio>() {
+                            @Override
+                            public int compare(final LikelihoodRatio o1, final LikelihoodRatio o2) {
+                                return -o1.compareTo(o2);
+                            }
+                        });
+
+                        final int total = positiveLRs.size();
+                        boolean overThreshold = true;
+                        for (int idx = 0; idx < Math.min(total, searchResults.getParameters().getMaximumNumberOfResults()) && overThreshold; idx++) {
+                            final LikelihoodRatio lr = positiveLRs.get(idx);
+                            final Sample profile = lr.getProfile();
+
+                            if (lr.getOverallRatio().getRatio() < searchResults.getParameters().getLrThreshold()) {
+                                overThreshold = false;
+                                break;
+                            }
+
+                            _messageBus.send(this, new PercentReadyMessage((idx * 100) / total));
+                            _messageBus.send(this, new DetailStringMessage("Exporting profile " + profileName));
+                            profileName = profile.getName();
+                            new SampleWriter(new File(outputFolder, FileNameSanitizer.sanitize(profile.getName()) + ".csv")).write(profile);
+                        }
+                    }
+                    catch (final Throwable e) {
+                        LOG.error("Error saving profile after search: profile {} failed.", profileName, e);
+                        _messageBus.send(this, new ErrorStringMessage("Error saving profile after search. profile " + profileName + " failed: " + e.getMessage()));
+                    }
+                };
+            };
+            t.start();
+            t.join();
+        }
+    }
+
+    private int iterateOverSpecimens(final ProsecutionHypothesis hp, final DefenseHypothesis hd, final DNADatabase db, final SearchResults searchResults, final AnalysisParameters parameters, final LocusLikelihoods prD) throws InterruptedException {
+        LocusLikelihoods localPrD = prD;
+        int specimenCount = 0;
+        final Iterator<Sample> samplesIterator = db.iterator();
+        while (!_interrupted && !isInterrupted() && samplesIterator.hasNext()) {
+            final Sample candidateSample = samplesIterator.next();
+            LOG.debug("Handling sample {}", candidateSample);
+
+            if (!parameters.isCalculateHdOnce()) {
+                _messageBus.send(this, new DetailStringMessage("Calculating Pr(E|Hd) for " + candidateSample));
+                final Hypothesis realHd = hd.copy();
+                realHd.addNonContributor(candidateSample, hp.getCandidateDropout());
+                localPrD = _model.calculateLikelihood(realHd, parameters);
+                _model.reset();
+            }
+
+            hp.setCandidate(candidateSample);
+            specimenCount++;
+
+            LocusLikelihoods prP = null;
+            try {
+                _messageBus.send(this, new PercentReadyMessage((int) ((specimenCount * 100L) / db.getRecordCount())));
+                _messageBus.send(this, new DetailStringMessage("Calculating Pr(E|Hp) for " + candidateSample));
+                prP = _model.calculateLikelihood(hp, parameters);
+            }
+            catch (final Throwable t) {
+                LOG.error("Error evaluating candidate {}!", candidateSample.getName(), t);
+            }
+            if (prP != null) {
+                final LikelihoodRatio lr = new LikelihoodRatio(candidateSample, prP, localPrD);
+                LOG.debug(" {} = {}", candidateSample, lr.getOverallRatio());
+                updateResults(candidateSample, searchResults, lr);
+            }
+            _model.reset();
+        }
+        return specimenCount;
     }
 
     private void updateResults(final Sample candidateSample, final SearchResults searchResults, final LikelihoodRatio lr) {
         searchResults.addLR(lr);
-        if (SmartRankRestrictions.isAllLRsStored() || lr.getOverallRatio().getRatio() > 1) {
-            if (lr.getOverallRatio().getRatio() > searchResults.getParameters().getLrThreshold()) {
-                _caseLogger.logResult(candidateSample, lr);
-            }
-            final List<LikelihoodRatio> lrs = new ArrayList<>(NullUtils.getValue(_messageBus.query(LikelihoodRatiosMessage.class), new ArrayList<LikelihoodRatio>()));
-            lrs.add(lr);
-            Collections.sort(lrs, new Comparator<LikelihoodRatio>() {
-                @Override
-                public int compare(final LikelihoodRatio o1, final LikelihoodRatio o2) {
-                    return -o1.compareTo(o2);
-                }
-            });
-
-            _messageBus.send(this, new LikelihoodRatiosMessage(lrs));
+        if (SmartRankRestrictions.isAllLRsStored() || (lr.getOverallRatio().isReal() && lr.getOverallRatio().getRatio() > searchResults.getParameters().getLrThreshold())) {
+            _caseLogger.logResult(candidateSample, lr);
         }
+        _messageBus.send(this, new SearchResultsMessage(searchResults));
     }
 
     private void setDropout(final Hypothesis hypothesis, final double dropout) {

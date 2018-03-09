@@ -22,6 +22,7 @@ import nl.minvenj.nfi.smartrank.domain.Sample;
 public class CodisFileReaderTest {
 
     private static final String XML_FILE = "Codis-Single-Profile.xml";
+    private static final String XML_FILE_WITH_BOM_HEADER = "Codis-Mix-Profile-With-BOM-Header.xml";
 
     @Rule
     public ExpectedException _expected = ExpectedException.none();
@@ -53,6 +54,30 @@ public class CodisFileReaderTest {
 
         final Sample sample = samples.iterator().next();
         assertEquals("ABCD1234NL#01", sample.getName());
+
+        final Collection<Locus> loci = sample.getLoci();
+        assertNotNull(loci);
+
+        final ArrayList<String> expectedLoci = new ArrayList<>(Arrays.asList("D16S539", "D18S51", "D21S11", "D3S1358", "D8S1179", "FGA", "TH01", "VWA", "AMELOGENIN", "D19S433", "D2S1338", "D1S1656", "D2S441", "D10S1248", "D12S391", "D22S1045"));
+        for (final Locus locus : loci) {
+            final String locusName = locus.getName();
+            assertTrue("Unexpected locus in sample: " + locusName, expectedLoci.contains(locusName));
+            expectedLoci.remove(locusName);
+        }
+        assertTrue("Expected loci not found: " + expectedLoci, expectedLoci.isEmpty());
+    }
+
+    @Test
+    public final void testGetSamplesFromBOMHeaderFile() throws IOException {
+        final CodisFileReader reader = new CodisFileReader(getTestFile(XML_FILE_WITH_BOM_HEADER));
+        reader.getCaseNumber(); // to test initialization of the reader.
+
+        final Collection<Sample> samples = reader.getSamples();
+        assertNotNull(samples);
+        assertEquals(1, samples.size());
+
+        final Sample sample = samples.iterator().next();
+        assertEquals("DUMMYSPECIMENID", sample.getName());
 
         final Collection<Locus> loci = sample.getLoci();
         assertNotNull(loci);

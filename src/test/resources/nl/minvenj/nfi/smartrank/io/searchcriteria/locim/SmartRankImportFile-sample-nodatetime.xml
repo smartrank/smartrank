@@ -1,0 +1,53 @@
+<SmartRankImportFile version="1.0" xmlns="urn:SmartRankImportFile-schema">
+               <CaseFolder>2016/01 januari/2016.01.01.001</CaseFolder>
+	<userid>MASLA</userid>
+               <Replicates>
+                              <Replicate name="CEDU0059FR#07-KOEL0126LU#21"/>
+               </Replicates>
+               <Dropin>0.05</Dropin>
+               <Theta>0.03</Theta>
+               <LrThreshold>1234</LrThreshold>
+               <RareAlleleFrequency>0.000239808153477218</RareAlleleFrequency>
+               <HP candidateDropout="0.10">
+                              <Contributors>
+                                             <Contributor name="CEDU0059FR#07" dropout="0.11"/>
+                              </Contributors>
+                              <Unknowns count="1" dropout="0.12"/>
+               </HP>
+               <HD>
+                              <Contributors>
+                                             <Contributor name="CEDU0059FR#07" dropout="0.13"/>
+                              </Contributors>
+                              <Unknowns count="2" dropout="0.14"/>
+                </HD>
+               <Specimen name="CEDU0059FR#07-KOEL0126LU#21">
+                              <Locus name="D16S539">
+                                             <Allele value="11"/>
+                                             <Allele value="12"/>
+                              </Locus>
+                              <Locus name="D18S51">
+                                             <Allele value="14"/>
+                                             <Allele value="15"/>
+                              </Locus>
+               </Specimen>                
+               <Specimen name="KOEL0126LU#21">
+                              <Locus name="D16S539">
+                                             <Allele value="11"/>
+                                             <Allele value="12"/>
+                              </Locus>
+                              <Locus name="D18S51">
+                                             <Allele value="14"/>
+                                             <Allele value="15"/>
+                              </Locus>
+               </Specimen>                
+               <Specimen name="CEDU0059FR#07">
+                              <Locus name="D16S539">
+                                             <Allele value="11"/>
+                                             <Allele value="12"/>
+                              </Locus>
+                              <Locus name="D18S51">
+                                             <Allele value="14"/>
+                                             <Allele value="15"/>
+                              </Locus>
+               </Specimen>                
+</SmartRankImportFile>

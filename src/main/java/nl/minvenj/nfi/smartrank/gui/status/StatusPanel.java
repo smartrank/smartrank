@@ -32,10 +32,11 @@ import org.slf4j.LoggerFactory;
 
 import net.miginfocom.swing.MigLayout;
 import nl.minvenj.nfi.smartrank.SmartRank;
+import nl.minvenj.nfi.smartrank.SmartRankManager;
 import nl.minvenj.nfi.smartrank.analysis.SearchResults;
+import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 import nl.minvenj.nfi.smartrank.gui.TimeUpdater;
 import nl.minvenj.nfi.smartrank.gui.tabs.SmartRankPanel;
-import nl.minvenj.nfi.smartrank.messages.commands.StopCurrentOperationCommand;
 import nl.minvenj.nfi.smartrank.messages.status.ApplicationStatusMessage;
 import nl.minvenj.nfi.smartrank.messages.status.DetailStringMessage;
 import nl.minvenj.nfi.smartrank.messages.status.ErrorStringMessage;
@@ -44,7 +45,6 @@ import nl.minvenj.nfi.smartrank.messages.status.SearchCompletedMessage;
 import nl.minvenj.nfi.smartrank.raven.ApplicationStatus;
 import nl.minvenj.nfi.smartrank.raven.annotations.ExecuteOnSwingEventThread;
 import nl.minvenj.nfi.smartrank.raven.annotations.RavenMessageHandler;
-import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
 import nl.minvenj.nfi.smartrank.raven.timeformat.TimeUtils;
 
 public class StatusPanel extends SmartRankPanel {
@@ -129,7 +129,7 @@ public class StatusPanel extends SmartRankPanel {
         _stopButton.setEnabled(false);
         _stopButton.repaint();
         if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(SwingUtilities.windowForComponent(this), "Abort the current operation?", "SmartRank " + SmartRank.getVersion(), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)) {
-            MessageBus.getInstance().send(this, new StopCurrentOperationCommand());
+            SmartRankManager.getInstance().onStopAnalysis();
         }
         _stopButton.setEnabled(true);
     }
@@ -160,9 +160,10 @@ public class StatusPanel extends SmartRankPanel {
     @RavenMessageHandler(PercentReadyMessage.class)
     @ExecuteOnSwingEventThread
     void onPercentReady(final int percent) {
+        _progressBar.setIndeterminate(percent < 0);
         _progressBar.setValue(percent);
         if (_detailMessage != null && !_detailMessage.isEmpty())
-            _progressBar.setString(_detailMessage + " (" + percent + "%)");
+            _progressBar.setString(_detailMessage + (percent >= 0 ? " (" + percent + "%)" : ""));
         TimeUpdater.getInstance().setPercentReady(percent);
         _trayIconHandler.setPercentReady(percent);
     }
@@ -171,17 +172,21 @@ public class StatusPanel extends SmartRankPanel {
     @ExecuteOnSwingEventThread
     void onErrorMessageChanged(final String message) {
         LOG.error("Displaying error message: {}", message);
-        JOptionPane.showMessageDialog(getParent(), message, "SmartRank error", JOptionPane.ERROR_MESSAGE);
+        if (!SmartRankRestrictions.isBatchMode()) {
+            JOptionPane.showMessageDialog(getParent(), message, "SmartRank error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     @RavenMessageHandler(SearchCompletedMessage.class)
     void onSearchCompleted(final SearchResults results) {
-        final String message = String.format("<html>Search completed.<br>  Number of specimens evaluated: <b>%d</b><br>  Number of LRs > 1: <b>%d</b><br>  Number of excluded profiles: <b>%d</b><br>  Duration: <b>%s</b>",
-                                             results.getNumberOfLRs(),
-                                             results.getNumberOfLRsOver1(),
-                                             results.getExcludedProfiles().size(),
-                                             TimeUtils.formatDuration(results.getDuration()));
-        JOptionPane.showMessageDialog(getParent(), message, "SmartRank Search Completed", JOptionPane.INFORMATION_MESSAGE);
+        if (!SmartRankRestrictions.isBatchMode()) {
+            final String message = String.format("<html>Search completed.<br>  Number of specimens evaluated: <b>%d</b><br>  Number of LRs > 1: <b>%d</b><br>  Number of excluded profiles: <b>%d</b><br>  Duration: <b>%s</b>",
+                                                 results.getNumberOfLRs(),
+                                                 results.getNumberOfLRsOver1(),
+                                                 results.getExcludedProfiles().size(),
+                                                 TimeUtils.formatDuration(results.getDuration()));
+            JOptionPane.showMessageDialog(getParent(), message, "SmartRank Search Completed", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     @RavenMessageHandler(DetailStringMessage.class)
@@ -192,7 +197,7 @@ public class StatusPanel extends SmartRankPanel {
             _progressBar.setString(null);
         }
         else {
-            _progressBar.setString(detailMessage + " (" + _progressBar.getValue() + "%)");
+            _progressBar.setString(detailMessage + (_progressBar.isIndeterminate() ? "" : " (" + _progressBar.getValue() + "%)"));
         }
         _trayIconHandler.setDetailMessage(detailMessage);
     }

@@ -59,7 +59,6 @@ import nl.minvenj.nfi.smartrank.messages.commands.EstimateDropoutMessage;
 import nl.minvenj.nfi.smartrank.messages.commands.RemoveCrimeSceneProfiles;
 import nl.minvenj.nfi.smartrank.messages.commands.RemoveKnownProfiles;
 import nl.minvenj.nfi.smartrank.messages.commands.StartAnalysisCommand;
-import nl.minvenj.nfi.smartrank.messages.commands.StopCurrentOperationCommand;
 import nl.minvenj.nfi.smartrank.messages.commands.UpdateCrimeSceneProfile;
 import nl.minvenj.nfi.smartrank.messages.commands.UpdateKnownProfile;
 import nl.minvenj.nfi.smartrank.messages.data.AddCrimeSceneFilesMessage;
@@ -141,14 +140,15 @@ public class SmartRankManager {
                 database.validate(new DatabaseValidationEventListener() {
                     @Override
                     public void onProgress(final long current, final long max) {
+                        // TODO: SMARTRANK-235: Make percentage calculations more robust
                         final int percentReady = (int) ((current * 100) / max);
                         _messageBus.send(database, new PercentReadyMessage(percentReady));
                     }
 
                     @Override
-                    public void onProblem(final long location, final String specimen, final String locus, final String message) {
-                        LOG.error("Problem {} {} {} {}", location, specimen, locus, message);
-                        _messageBus.send(database, new DatabaseFormatProblemMessage(new ProblemLocation(location, specimen, locus, message)));
+                    public void onProblem(final String specimen, final String locus, final String message) {
+                        LOG.error("Problem {} {} {}", specimen, locus, message);
+                        _messageBus.send(database, new DatabaseFormatProblemMessage(new ProblemLocation(specimen, locus, message)));
                     }
                 });
                 _messageBus.send(this, new DatabaseMessage(database));
@@ -180,14 +180,15 @@ public class SmartRankManager {
             database.validate(new DatabaseValidationEventListener() {
                 @Override
                 public void onProgress(final long current, final long max) {
+                    // SMARTRANK-235: Robustify percentage calculations
                     final int percentReady = (int) ((current * 100) / max);
                     _messageBus.send(database, new PercentReadyMessage(percentReady));
                 }
 
                 @Override
-                public void onProblem(final long location, final String specimen, final String locus, final String message) {
-                    LOG.error("Problem {} {} {} {}", location, specimen, locus, message);
-                    _messageBus.send(database, new DatabaseFormatProblemMessage(new ProblemLocation(location, specimen, locus, message)));
+                public void onProblem(final String specimen, final String locus, final String message) {
+                    LOG.error("Problem {} {} {}", specimen, locus, message);
+                    _messageBus.send(database, new DatabaseFormatProblemMessage(new ProblemLocation(specimen, locus, message)));
                 }
             });
             _messageBus.send(this, new DatabaseMessage(database));
@@ -347,6 +348,7 @@ public class SmartRankManager {
             _messageBus.send(this, new ErrorStringMessage(ex.getClass().getName() + " - " + ex.getLocalizedMessage()));
         }
         finally {
+            updateEnabledLoci();
             setApplicationStatus();
         }
     }
@@ -393,6 +395,7 @@ public class SmartRankManager {
         final AnalysisParameters parms = _messageBus.query(AnalysisParametersMessage.class);
         parms.setDropoutEstimation(null);
 
+        updateEnabledLoci();
         setApplicationStatus();
     }
 
@@ -445,7 +448,7 @@ public class SmartRankManager {
                 Thread.sleep(1000);
             }
             catch (final InterruptedException e) {
-                final SearchResults result = new SearchResults(0);
+                final SearchResults result = new SearchResults(0, _messageBus.query(DatabaseMessage.class).getConfiguration());
                 result.setFailed(new InterruptedException("Interrupted while waiting for current task to finish!"));
                 _messageBus.send(this, new SearchAbortedMessage(result));
                 return;
@@ -467,14 +470,40 @@ public class SmartRankManager {
         }
 
         if (_currentTask == null || !_currentTask.isAlive()) {
-            LOG.debug("Initializing search");
-            _currentTask = new SmartRankAnalysis();
-            LOG.debug("Starting search");
-            _currentTask.start();
+            // Revalidate the database if required
+            final DNADatabase database = _messageBus.query(DatabaseMessage.class);
+            try {
+                LOG.debug("Revalidating database");
+                _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.VERIFYING_DB));
+                database.revalidate(new DatabaseValidationEventListener() {
+                    @Override
+                    public void onProgress(final long current, final long max) {
+                        final int percentReady = (int) ((current * 100L) / max);
+                        _messageBus.send(database, new PercentReadyMessage(percentReady));
+                    }
+
+                    @Override
+                    public void onProblem(final String specimen, final String locus, final String message) {
+                        LOG.error("Problem {} {} {}", specimen, locus, message);
+                        _messageBus.send(database, new DatabaseFormatProblemMessage(new ProblemLocation(specimen, locus, message)));
+                    }
+                });
+                LOG.debug("Database revalidated");
+                LOG.debug("Initializing search");
+                _currentTask = new SmartRankAnalysis();
+                LOG.debug("Starting search");
+                _currentTask.start();
+            }
+            catch (final IOException | InterruptedException e) {
+                LOG.error("Error revalidating the database!", e);
+                final SearchResults result = new SearchResults(0, _messageBus.query(DatabaseMessage.class).getConfiguration());
+                result.setFailed(new IllegalArgumentException("Error revalidating the database!", e));
+                _messageBus.send(this, new SearchAbortedMessage(result));
+            }
         }
         else {
             LOG.error("Could not start search!");
-            final SearchResults result = new SearchResults(0);
+            final SearchResults result = new SearchResults(0, _messageBus.query(DatabaseMessage.class).getConfiguration());
             result.setFailed(new IllegalArgumentException("Could not start search!"));
             _messageBus.send(this, new SearchAbortedMessage(result));
         }
@@ -536,15 +565,15 @@ public class SmartRankManager {
             final Collection<Sample> crimesceneProfiles = _messageBus.query(CrimeSceneProfilesMessage.class);
             final DropoutEstimation estimation = estimator.estimate(hd, enabledLoci, crimesceneProfiles);
             LOG.debug("Dropout estimation: {}", estimation);
-            final double dropout = estimation.getMaximum().doubleValue();
+            final double dropout = estimation.getEstimatedDropout().doubleValue();
 
             if (dropout > SmartRankRestrictions.getDropoutMaximum()) {
-                _messageBus.send(this, new ErrorStringMessage(String.format("The result of the dropout estimation (%s ) exceeds the maximum allowed value for dropout (%s )!\nEstimation result cannot be used.", NumberUtils.formatNoExponent(2, dropout), NumberUtils.formatNoExponent(2, SmartRankRestrictions.getDropoutMaximum()))));
+                _messageBus.send(this, new ErrorStringMessage(String.format("The result of the dropout estimation (%s) exceeds the maximum allowed value for dropout (%s)!\nEstimation result cannot be used.", NumberUtils.formatNoExponent(2, dropout), NumberUtils.formatNoExponent(2, SmartRankRestrictions.getDropoutMaximum()))));
                 return;
             }
 
             if (dropout < SmartRankRestrictions.getDropoutMinimum()) {
-                _messageBus.send(this, new ErrorStringMessage(String.format("The result of the dropout estimation (%s ) falls below the minimum allowed value for dropout (%s )!\nEstimation result cannot be used.", NumberUtils.formatNoExponent(2, dropout), NumberUtils.formatNoExponent(2, SmartRankRestrictions.getDropoutMinimum()))));
+                _messageBus.send(this, new ErrorStringMessage(String.format("The result of the dropout estimation (%s) falls below the minimum allowed value for dropout (%s)!\nEstimation result cannot be used.", NumberUtils.formatNoExponent(2, dropout), NumberUtils.formatNoExponent(2, SmartRankRestrictions.getDropoutMinimum()))));
                 return;
             }
 
@@ -577,7 +606,9 @@ public class SmartRankManager {
         }
     }
 
-    @RavenMessageHandler(StopCurrentOperationCommand.class)
+    /**
+     * Can be called to stop the current analysis and return the application to a passive state.
+     */
     public void onStopAnalysis() {
         LOG.debug("Stopping analysis");
         if (_currentTask != null) {
@@ -683,13 +714,13 @@ public class SmartRankManager {
 
         final DefenseHypothesis defenseHypothesis = new DefenseHypothesis();
         defenseHypothesis.setStatistics(_messageBus.query(PopulationStatisticsMessage.class));
-        defenseHypothesis.setThetaCorrection(_messageBus.query(ThetaMessage.class));
-        defenseHypothesis.setDropInProbability(_messageBus.query(DropinMessage.class));
+        defenseHypothesis.setThetaCorrection(NullUtils.getValue(_messageBus.query(ThetaMessage.class), SmartRankRestrictions.getThetaDefault()));
+        defenseHypothesis.setDropInProbability(NullUtils.getValue(_messageBus.query(DropinMessage.class), SmartRankRestrictions.getDropinDefault()));
 
         final ProsecutionHypothesis prosecutionHypothesis = new ProsecutionHypothesis();
         prosecutionHypothesis.setStatistics(_messageBus.query(PopulationStatisticsMessage.class));
-        prosecutionHypothesis.setThetaCorrection(_messageBus.query(ThetaMessage.class));
-        prosecutionHypothesis.setDropInProbability(_messageBus.query(DropinMessage.class));
+        prosecutionHypothesis.setThetaCorrection(NullUtils.getValue(_messageBus.query(ThetaMessage.class), SmartRankRestrictions.getThetaDefault()));
+        prosecutionHypothesis.setDropInProbability(NullUtils.getValue(_messageBus.query(DropinMessage.class), SmartRankRestrictions.getDropinDefault()));
 
         _messageBus.send(this, new CrimeSceneProfilesMessage(new ArrayList<Sample>()));
         updateEnabledLoci();
@@ -719,6 +750,11 @@ public class SmartRankManager {
             final SearchCriteriaReader reader = SearchCriteriaReaderFactory.getReader(criteriaFile);
             onClearSearchCriteria();
 
+            final PopulationStatistics statistics = reader.getPopulationStatistics();
+            if (statistics != null) {
+                _messageBus.send(this, new PopulationStatisticsMessage(statistics));
+            }
+
             _messageBus.send(this, new CrimeSceneProfilesMessage(reader.getCrimesceneSamples()));
             updateEnabledLoci();
 
@@ -727,10 +763,12 @@ public class SmartRankManager {
             parms.setParameterEstimation(reader.isAutomaticParameterEstimationToBePerformed());
 
             if (reader.getMaximumNumberOfResults() != -1) {
+                parms.setMaxReturnedResults(reader.getMaximumNumberOfResults());
                 _messageBus.send(this, new ReportTopMessage(reader.getMaximumNumberOfResults()));
             }
 
             if (reader.getLRThreshold() != null) {
+                parms.setLrThreshold(reader.getLRThreshold());
                 _messageBus.send(this, new LRThresholdMessage(reader.getLRThreshold()));
             }
 
@@ -745,10 +783,7 @@ public class SmartRankManager {
                 _messageBus.send(this, new DropinMessage(reader.getDropin()));
             }
 
-            final PopulationStatistics statistics = reader.getPopulationStatistics();
-            if (statistics != null) {
-                _messageBus.send(this, new PopulationStatisticsMessage(statistics));
-            }
+            updateEnabledLoci();
 
             final DefenseHypothesis defenseHypothesis = new DefenseHypothesis();
             defenseHypothesis.setStatistics(_messageBus.query(PopulationStatisticsMessage.class));
@@ -812,13 +847,18 @@ public class SmartRankManager {
             status = ApplicationStatus.WAIT_DB;
         }
         else {
-            final Collection<Sample> crimesceneProfiles = _messageBus.query(CrimeSceneProfilesMessage.class);
-            if (crimesceneProfiles == null || getEnabledCount(crimesceneProfiles) == 0) {
-                status = ApplicationStatus.WAIT_CRIMESCENE_PROFILES;
+            if (SmartRankRestrictions.isBatchMode()) {
+                status = ApplicationStatus.BATCHMODE_IDLE;
             }
             else {
-                if (_messageBus.query(PopulationStatisticsMessage.class) == null) {
-                    status = ApplicationStatus.WAIT_POPULATION_STATISTICS;
+                final Collection<Sample> crimesceneProfiles = _messageBus.query(CrimeSceneProfilesMessage.class);
+                if (crimesceneProfiles == null || getEnabledCount(crimesceneProfiles) == 0) {
+                    status = ApplicationStatus.WAIT_CRIMESCENE_PROFILES;
+                }
+                else {
+                    if (_messageBus.query(PopulationStatisticsMessage.class) == null) {
+                        status = ApplicationStatus.WAIT_POPULATION_STATISTICS;
+                    }
                 }
             }
         }
@@ -856,10 +896,22 @@ public class SmartRankManager {
 
     private void updateEnabledLoci() {
         final OrderMergedList<String> enabledLoci = new OrderMergedList<>();
-        final Collection<Sample> replicates = _messageBus.query(CrimeSceneProfilesMessage.class);
+        final Collection<Sample> replicates = NullUtils.getValue(_messageBus.query(CrimeSceneProfilesMessage.class), new ArrayList<Sample>());
         for (final Sample replicate : replicates) {
             for (final Locus replicateLocus : replicate.getLoci()) {
                 enabledLoci.add(replicateLocus.getName());
+            }
+        }
+
+        // If a locus was present in the sample but not in known profiles, it is ignored
+        final Collection<Sample> knowns = NullUtils.getValue(_messageBus.query(KnownProfilesMessage.class), new ArrayList<Sample>());
+        for (final Sample sample : knowns) {
+            final Iterator<String> iter = enabledLoci.iterator();
+            while (iter.hasNext()) {
+                final Locus locus = sample.getLocus(iter.next());
+                if (locus == null || locus.size() == 0) {
+                    iter.remove();
+                }
             }
         }
 

@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -39,12 +40,12 @@ import nl.minvenj.nfi.smartrank.domain.LikelihoodRatio;
 import nl.minvenj.nfi.smartrank.domain.Locus;
 import nl.minvenj.nfi.smartrank.domain.PopulationStatistics;
 import nl.minvenj.nfi.smartrank.domain.Sample;
+import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 import nl.minvenj.nfi.smartrank.messages.data.CrimeSceneProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DefenseHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.EnabledLociMessage;
 import nl.minvenj.nfi.smartrank.messages.data.KnownProfilesMessage;
-import nl.minvenj.nfi.smartrank.messages.data.LikelihoodRatiosMessage;
 import nl.minvenj.nfi.smartrank.messages.data.PopulationStatisticsMessage;
 import nl.minvenj.nfi.smartrank.messages.data.ProsecutionHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.SearchResultsMessage;
@@ -67,13 +68,21 @@ public class JasperDataSource implements JRDataSource {
 
     public static final String DROPOUT_ESTIMATION_DATA = "DropoutEstimationData";
     public static final String DROPOUT_ESTIMATION_ITERATIONS = "DropoutEstimationIterations";
+    public static final String DROPOUT_ESTIMATION_PERCENTILE = "DropoutEstimationPercentile";
+    public static final String DROPOUT_ESTIMATION_PERCENTILE_VALUE = "DropoutEstimationPercentileValue";
     public static final String DROPOUT_ESTIMATION_5PERCENT = "DropoutEstimation5Percent";
+    public static final String DROPOUT_ESTIMATION_50PERCENT = "DropoutEstimation50Percent";
     public static final String DROPOUT_ESTIMATION_95PERCENT = "DropoutEstimation95Percent";
 
     public static final String DATABASE_LOCATION = "DatabaseLocation";
     public static final String DATABASE_HASH = "DatabaseHash";
     public static final String DATABASE_RECORD_COUNT = "DatabaseRecordCount";
     public static final String DATABASE_COMPOSITION = "DatabaseComposition";
+    public static final String DATABASE_COMPOSITION_METADATA = "DatabaseCompositionMetadata";
+
+    public static final String DATABASE_KEYS_QUERY = "DatabaseKeysQuery";
+    public static final String DATABASE_REVISION_QUERY = "DatabaseRevisionQuery";
+    public static final String DATABASE_SPECIMENS_QUERY = "DatabaseSpecimensQuery";
 
     public static final String EXCLUDED_PROFILES = "ExcludedProfiles";
     public static final String CRIMESAMPLES = "CrimesceneSamples";
@@ -125,6 +134,7 @@ public class JasperDataSource implements JRDataSource {
         FIELDS.add(new JasperField(DATABASE_HASH, "The hash value for the database contents.", String.class));
         FIELDS.add(new JasperField(DATABASE_RECORD_COUNT, "The number of profiles in the database.", String.class));
         FIELDS.add(new JasperField(DATABASE_COMPOSITION, "The number of profiles in the database reported per number of loci.", Collection.class));
+        FIELDS.add(new JasperField(DATABASE_COMPOSITION_METADATA, "A list of metadata statistics. The actual contents depends on the configured query.", Collection.class));
 
         FIELDS.add(new JasperField(EXCLUDED_PROFILES, "The profiles in the database that were excluded from the search.", Collection.class));
         FIELDS.add(new JasperField(CRIMESAMPLES, "The replicates", Collection.class));
@@ -175,6 +185,8 @@ public class JasperDataSource implements JRDataSource {
                 return getSafeFileHash();
             case DATABASE_COMPOSITION:
                 return getSafeComposition();
+            case DATABASE_COMPOSITION_METADATA:
+                return getCompositionMetadata();
             case PROSECUTION_UNKNOWNS:
                 return MessageBus.getInstance().query(ProsecutionHypothesisMessage.class).getUnknownCount();
             case PROSECUTION_CONTRIBUTORS:
@@ -186,7 +198,7 @@ public class JasperDataSource implements JRDataSource {
             case EXCLUDED_PROFILES:
                 return getSearchResults().getExcludedProfileStatistics();
             case PROGRAM_VERSION:
-                return SmartRank.getVersion();
+                return SmartRank.getRevision();
             case THETA_CORRECTION:
                 return MessageBus.getInstance().query(DefenseHypothesisMessage.class).getThetaCorrection();
             case DROP_IN_PROBABILITY:
@@ -237,17 +249,28 @@ public class JasperDataSource implements JRDataSource {
                     }
                 }
                 return usedSamplesList;
-
+            case DATABASE_KEYS_QUERY:
+                return getSearchResults().getDatabaseConfiguration().getSpecimenKeyQuery();
+            case DATABASE_SPECIMENS_QUERY:
+                return getSearchResults().getDatabaseConfiguration().getSpecimenQuery();
+            case DATABASE_REVISION_QUERY:
+                return getSearchResults().getDatabaseConfiguration().getDatabaseRevisionQuery();
             case CRIMESAMPLES_LOCI:
                 return buildSampleContentList(MessageBus.getInstance().query(CrimeSceneProfilesMessage.class));
             case DROPOUT_ESTIMATION_DATA:
                 return getSearchResults().getParameters().getDropoutEstimation() == null ? null : getSearchResults().getParameters().getDropoutEstimation().getData();
             case DROPOUT_ESTIMATION_ITERATIONS:
                 return getSearchResults().getParameters().getDropoutEstimation() == null ? 0 : getSearchResults().getParameters().getDropoutEstimation().getIterations();
+            case DROPOUT_ESTIMATION_PERCENTILE:
+                return SmartRankRestrictions.getDropoutEstimationPercentile();
+            case DROPOUT_ESTIMATION_PERCENTILE_VALUE:
+                return getSearchResults().getParameters().getDropoutEstimation() == null ? 0 : getSearchResults().getParameters().getDropoutEstimation().getEstimatedDropout();
             case DROPOUT_ESTIMATION_5PERCENT:
-                return getSearchResults().getParameters().getDropoutEstimation() == null ? 0 : getSearchResults().getParameters().getDropoutEstimation().getMinimum();
+                return getSearchResults().getParameters().getDropoutEstimation() == null ? 0 : getSearchResults().getParameters().getDropoutEstimation().getPercentile(5);
+            case DROPOUT_ESTIMATION_50PERCENT:
+                return getSearchResults().getParameters().getDropoutEstimation() == null ? 0 : getSearchResults().getParameters().getDropoutEstimation().getPercentile(50);
             case DROPOUT_ESTIMATION_95PERCENT:
-                return getSearchResults().getParameters().getDropoutEstimation() == null ? 0 : getSearchResults().getParameters().getDropoutEstimation().getMaximum();
+                return getSearchResults().getParameters().getDropoutEstimation() == null ? 0 : getSearchResults().getParameters().getDropoutEstimation().getPercentile(95);
             case KNOWNPROFILES:
                 final ArrayList<Sample> usedKnownProfilesList = new ArrayList<>();
                 if (MessageBus.getInstance().query(KnownProfilesMessage.class) != null) {
@@ -282,13 +305,26 @@ public class JasperDataSource implements JRDataSource {
         }
     }
 
+    private List<MetaStat> getCompositionMetadata() {
+        final DNADatabase dnaDatabase = MessageBus.getInstance().query(DatabaseMessage.class);
+        final List<MetaStat> result = new ArrayList<>();
+        final Map<String, Map<String, Integer>> statistics = dnaDatabase.getMetadataStatistics();
+        for (final String type : statistics.keySet()) {
+            final Map<String, Integer> values = statistics.get(type);
+            for (final String name : values.keySet()) {
+                result.add(new MetaStat(type, name, values.get(name)));
+            }
+        }
+        return result;
+    }
+
     private List<SampleContents> buildSampleContentList(final List<Sample> sampleList) {
         final ArrayList<SampleContents> sampleContentsList = new ArrayList<>();
         if (sampleList == null || sampleList.isEmpty()) {
             return sampleContentsList;
         }
 
-        final OrderMergedList<String> oml = new OrderMergedList<String>();
+        final OrderMergedList<String> oml = new OrderMergedList<>();
         for (final Sample sample : sampleList) {
             for (final Locus locus : sample.getLoci()) {
                 oml.add(locus.getName());
@@ -377,7 +413,7 @@ public class JasperDataSource implements JRDataSource {
     }
 
     private ArrayList<Result> buildResultsList() {
-        final List<LikelihoodRatio> lrs = MessageBus.getInstance().query(LikelihoodRatiosMessage.class);
+        final List<LikelihoodRatio> lrs = getSearchResults().getPositiveLRs();
         final AnalysisParameters parameters = getSearchResults().getParameters();
         final PopulationStatistics statistics = MessageBus.getInstance().query(PopulationStatisticsMessage.class);
         final int lrThreshold = parameters.getLrThreshold();
@@ -394,7 +430,8 @@ public class JasperDataSource implements JRDataSource {
         int rank = 1;
         for (final LikelihoodRatio lr : lrs) {
             if (lr.getOverallRatio().getRatio() > lrThreshold) {
-                String comments = reportUnusedLoci("Specimen ", lr.getProfile().getLoci(), lr.getLoci());
+                String comments = lr.getProfile().getAdditionalData() + "\n";
+                comments += reportUnusedLoci("Specimen ", lr.getProfile().getLoci(), lr.getLoci());
                 comments += reportUnusedLoci("Crime Sample ", crimesampleLoci, lr.getLoci());
                 comments += reportLociNotInStatistics(statistics.getLoci(), lr.getProfile().getLoci());
                 results.add(new Result(rank++, lr.getProfile(), lr.getLocusCount(), lr.getOverallRatio().getRatio(), comments));
@@ -407,7 +444,7 @@ public class JasperDataSource implements JRDataSource {
     }
 
     private ArrayList<SampleContents> buildResultsLociList() {
-        final List<LikelihoodRatio> lrs = MessageBus.getInstance().query(LikelihoodRatiosMessage.class);
+        final List<LikelihoodRatio> lrs = getSearchResults().getPositiveLRs();
         final AnalysisParameters parameters = getSearchResults().getParameters();
         final int lrThreshold = parameters.getLrThreshold();
         final int numberOfResults = parameters.getMaximumNumberOfResults();
@@ -427,7 +464,7 @@ public class JasperDataSource implements JRDataSource {
             return sampleContentsList;
         }
 
-        final ArrayList<String> locusNames = new ArrayList<String>();
+        final ArrayList<String> locusNames = new ArrayList<>();
         final List<String> loci = MessageBus.getInstance().query(EnabledLociMessage.class);
 
         // Add enabled loci where at least one specimen contains that locus
@@ -593,6 +630,30 @@ public class JasperDataSource implements JRDataSource {
 
         public String getName() {
             return _name;
+        }
+    }
+
+    public static class MetaStat {
+        private final String _statType;
+        private final String _statName;
+        private final Integer _statCount;
+
+        public MetaStat(final String statType, final String statName, final Integer statCount) {
+            _statType = statType;
+            _statName = statName;
+            _statCount = statCount;
+        }
+
+        public String getStatType() {
+            return _statType;
+        }
+
+        public Integer getStatCount() {
+            return _statCount;
+        }
+
+        public String getStatName() {
+            return _statName;
         }
     }
 

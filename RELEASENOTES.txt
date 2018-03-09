@@ -4,14 +4,64 @@ SmartRank Release Notes
 SmartRank allows DNA database searches for individuals whose profiles lead to high LRs in favor of 
 the prosecution hypothesis through a fast and user-friendly GUI.
 
-Version ${project.version}
-Release date: ${buildTimestamp}
+Version 1.0.4
+Release date: 2017-06-27
+-------------------------
+SMARTRANK-259: When requester ID and/or request time are missing from a search criteria file, the file owner name and creation time are used instead.
+SMARTRANK-260: The current search will now fail properly when a database error occurs.
+SMARTRANK-261: An LR is only calculated for loci that are present and non-empty in all of the following: the crime scene sample, all known donors (if any), the population statistics, and the current specimen 
+SMARTRANK-262: Due to performance issues, the Q DEsignation Shutdown optimization that was disabled by default in SMARTRANK-253 is now re-enabled.
+
+Version 1.0.3
+Release date: 2017-05-22
+-------------------------
+SMARTRANK-205: Added a batch mode to allow automatic processing of search criteria files.
+SMARTRANK-210: Improved handling of calculations resulting in positive infinity (i.e. when Pr(E|Hd) = 0).
+SMARTRANK-212: Improved performance when reading database from a CSV file.  
+SMARTRANK-213: The 5%, 50% and 95% percentiles of a dropout estimation are now reported in the log and the report.
+SMARTRANK-217: If the dropout probability for the candidate is set to 0, any specimens requiring dropout to explain the evidence will be skipped.  
+SMARTRANK-219: Malformatted records are now excluded from the total record count of a database.
+SMARTRANK-220: In the report, added marker lines to the dropout estimation distribution graph for 5%, 50% and 95% quantiles, 
+               and to the result distribution graph for the LR Threshold.
+SMARTRANK-224: A problem was fixed when exporting profiles. If the target filename already existed, the csv was given an new unique 
+               name (samplename-copy-x.csv) but this file was not written correctly. 
+SMARTRANK-225: Fixed a problem where dropping a CSV file onto the database tab did not work if the file was dropped on the connection string edit box.
+SMARTRANK-226: Filenames for log files and reports will now be truncated if they exceed (by default) 128 characters. This value can be configured through the restrictions file. 
+SMARTRANK-228: The batch mode of the application can be configured to run only between a defined start and end time.
+SMARTRANK-229: Improved performance when reading specimens from a direct database connection.  
+SMARTRANK-234: Fixed a problem that would cause SmartRank to hang during the 'Filling Report' phase of a search.   
+SMARTRANK-235: Fixed a problem that would cause a crash if any process tried to display a progress percentage larger than 100.
+SMARTRANK-236: The batch mode screen now shows the time at which a particular job was run.
+SMARTRANK-237: When configuring a database connection, the user account could become locked when typing in the password field. 
+               This has been fixed by deferring all validation until the Connect button is clicked.
+SMARTRANK-241: Made the name and location of properties and restrictions files configurable through smartrankProperties and smartrankRestrictions system variables.
+			   Add -DsmartrankProperties=<filename> to the command line to set the name of the properties file, and add
+			   -DsmartrankRestrictions=<filename> to set the name and location of the restrictions file.
+SMARTRANK-243: Enhanced the handling of the specimen query so that statistics can be run over additional fields. If extra fields are specified,
+			   statistics over these fields are generated and written to the log and the report. 
+SMARTRANK-247: When reading profiles from a database, the log and report will now contain the queries used to obtain the data. 
+SMARTRANK-248: The location and name of the logging configuration file can be specified by defining the loggingConfigurationFile system property.
+               Add -DloggingConfigurationFile=<filename> to the command line to set the name of the logging configuration file ('./logback.xml' by default) 
+SMARTRANK-249: Window title can now be configured in SmartRank.properties.
+SMARTRANK-250: Changed the exported report to have a more logical flow and added a line stating the database revision. 
+SMARTRANK-251: Now built on Java 8. Earlier versions of Java are no longer supported. 
+SMARTRANK-252: Files that start with a binary byte order mark no longer cause an error.
+SMARTRANK-253: Shutting down of the Q designation is now disabled, leading to an LR that is closer to the one yielded by LRmixStudio.
+SMARTRANK-254: When in batch mode, deletion and renaming of Search Criteria files is now properly detected. 
+SMARTRANK-255: When a filename exceeds the configured maximum length, a 0-byte file with the original name is no longer created.
+SMARTRANK-256: When batch mode is currently running, the application window can no longer be closed. To close the window and terminate SmartRank, first stop batch processing then close the window.
+SMARTRANK-257: When the autoStart parameter is supplied when starting SmartRank, the application will automatically connect to the database and start the batch process.
+			     
+
+Version 1.0.2
+Release date: 2016-09-16
 -------------------------
 SMARTRANK-184: Added the ability to load search criteria from a file.
 SMARTRANK-185: If search criteria are loaded from a file (see SMARTRANK-184) and the file contains an output folder name, 
                the report is automatically generated and the matching profiles are exported to the specified location.
 SMARTRANK-187: Added ability to connect to a DNA database through JDBC.
 SMARTRANK-204: Added possibility to limit the number of reported profiles.
+SMARTRANK-221: When validating a CSV file, errors and statistics for the last locus of a line were not reported. This is now fixed.
 
 Version 1.0.1
 Release date: 2016-07-11

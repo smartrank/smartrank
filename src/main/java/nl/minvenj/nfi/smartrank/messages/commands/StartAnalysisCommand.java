@@ -8,4 +8,8 @@ public class StartAnalysisCommand extends RavenMessage<String> {
         super("");
     }
 
+    @Override
+    public boolean isWaitForIdleBus() {
+        return true;
+    }
 }

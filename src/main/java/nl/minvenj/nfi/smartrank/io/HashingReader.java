@@ -29,11 +29,11 @@ public class HashingReader extends Reader {
     private String _hash = null;
     private long _offset;
 
-    public HashingReader(Reader parent) {
+    public HashingReader(final Reader parent) {
         _parent = parent;
         try {
             _hasher = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException ex) {
+        } catch (final NoSuchAlgorithmException ex) {
             _hasher = new XORDigest();
         }
         _offset = 0;
@@ -41,8 +41,8 @@ public class HashingReader extends Reader {
 
     public String getHash() {
         if (_hash == null) {
-            StringBuilder builder = new StringBuilder(_hasher.getAlgorithm()).append("/");
-            byte[] digestBytes = _hasher.digest();
+            final StringBuilder builder = new StringBuilder(_hasher.getAlgorithm()).append("/");
+            final byte[] digestBytes = _hasher.digest();
             for (int idx = 0; idx < digestBytes.length; idx++) {
                 builder.append(HEXDIGITS[(digestBytes[idx] >> 4) & 0x0F]).append(HEXDIGITS[digestBytes[idx] & 0x0F]);
             }
@@ -53,18 +53,34 @@ public class HashingReader extends Reader {
     }
 
     @Override
-    public int read(char[] cbuf, int off, int len) throws IOException {
-        int value = _parent.read(cbuf, off, len);
-        if (value >= 0) {
-            byte[] bytes = new byte[value];
-            for (int idx = off; idx < (off + value); idx++) {
-                bytes[idx - off] = (byte) cbuf[idx];
+    public int read(final char[] cbuf, final int off, final int len) throws IOException {
+        final char[] temp = new char[len];
+        final int charsRead = _parent.read(temp, 0, len);
+        int reportedLength = charsRead;
+        if (charsRead >= 0) {
+            final byte[] bytes = new byte[charsRead];
+            for (int idx = 0; idx < charsRead; idx++) {
+                bytes[idx] = (byte) temp[idx];
             }
-            _hasher.update(bytes, 0, value);
-            _offset += value;
+            _hasher.update(bytes, 0, charsRead);
+
+            int copyFromIdx = 0;
+            if (_offset == 0) {
+                // Skip any non-printable characters at the start of the string and copy the rest to the output
+                while (copyFromIdx < charsRead && temp[copyFromIdx] >= 0x007F) {
+                    copyFromIdx++;
+                }
+            }
+
+            // Adjust the number of characters that we will report to the caller to compensate for any non-character bytes we skipped
+            reportedLength -= copyFromIdx;
+
+            // Copy the characters we read to the output array, skipping any non-character data prefix
+            System.arraycopy(temp, copyFromIdx, cbuf, off, len - copyFromIdx);
+            _offset += charsRead;
             _hash = null;
         }
-        return value;
+        return reportedLength;
     }
 
     @Override
@@ -86,12 +102,12 @@ public class HashingReader extends Reader {
         }
 
         @Override
-        protected void engineUpdate(byte input) {
+        protected void engineUpdate(final byte input) {
             _digest ^= input;
         }
 
         @Override
-        protected void engineUpdate(byte[] input, int offset, int len) {
+        protected void engineUpdate(final byte[] input, final int offset, final int len) {
             for (int idx = offset; idx < (offset + len); idx++) {
                 update(input[idx]);
             }

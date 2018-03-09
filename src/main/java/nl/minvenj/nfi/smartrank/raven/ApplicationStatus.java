@@ -29,7 +29,10 @@ public enum ApplicationStatus {
     LOADING_POPULATION_STATISTICS(true, false, "Loading population statistics"),
     ESTIMATING_DROPOUT(true, true, "Estimating Dropout"),
     SAVING_REPORT(true, true, "Saving report"),
-    LOADING_SEARCH_CRITERIA(true, true, "Loading search criteria");
+    LOADING_SEARCH_CRITERIA(true, true, "Loading search criteria"),
+    BATCHMODE_WAITINGTORUN(false, false, "Waiting for configured start time to start batch processing"),
+    BATCHMODE_RUNNING(false, false, "Scanning input folder for search criteria"),
+    BATCHMODE_IDLE(false, false, "Click Run to start batch processing");
 
     private final boolean _active;
     private final String _message;

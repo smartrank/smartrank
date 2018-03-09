@@ -11,6 +11,7 @@ public class RavenMessage<T> {
 
     private final T _payload;
     private boolean _coalescingEnabled;
+    private String _warningMessage;
 
     /**
      * Constructor for messages that can not be coalesced by the {@link MessageBus}.
@@ -32,6 +33,7 @@ public class RavenMessage<T> {
             throw new IllegalArgumentException("payload must be a List if coalescing is enabled!");
         _payload = payload;
         _coalescingEnabled = coalescingEnabled;
+        _warningMessage = null;
     }
 
     /**
@@ -50,5 +52,23 @@ public class RavenMessage<T> {
      */
     public boolean isCoalescingEnabled() {
         return _coalescingEnabled;
+    }
+
+    public boolean isWaitForIdleBus() {
+        return false;
+    }
+
+    /**
+     * @return the warningMessage
+     */
+    public String getWarningMessage() {
+        return _warningMessage;
+    }
+
+    /**
+     * @param warningMessage the warningMessage to set
+     */
+    public void setWarningMessage(final String warningMessage) {
+        _warningMessage = warningMessage;
     }
 }

@@ -30,7 +30,6 @@ import nl.minvenj.nfi.smartrank.messages.data.CrimeSceneProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DatabaseMessage;
 import nl.minvenj.nfi.smartrank.messages.data.DefenseHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.KnownProfilesMessage;
-import nl.minvenj.nfi.smartrank.messages.data.LikelihoodRatiosMessage;
 import nl.minvenj.nfi.smartrank.messages.data.PopulationStatisticsMessage;
 import nl.minvenj.nfi.smartrank.messages.data.ProsecutionHypothesisMessage;
 import nl.minvenj.nfi.smartrank.messages.data.SearchResultsMessage;
@@ -80,10 +79,10 @@ public class JasperDataSourceTest {
         when(_lr1.getOverallRatio()).thenReturn(new Ratio("Locus1", 0.1, 0.05));
         when(_lr2.getOverallRatio()).thenReturn(new Ratio("Locus1", 0.3, 0.35));
         when(_stats.getFileName()).thenReturn("Placeholder for Statistics Filename");
+        when(_results.getPositiveLRs()).thenReturn(Arrays.asList(_lr2, _lr1));
         when(_results.getParameters()).thenReturn(_parms);
         when(_parms.getLrThreshold()).thenReturn(1000);
 
-        MessageBus.getInstance().send("JasperDataSourceTest", new LikelihoodRatiosMessage(Arrays.asList(_lr1, _lr2)));
         MessageBus.getInstance().send("JasperDataSourceTest", new SearchResultsMessage(_results));
         MessageBus.getInstance().send("JasperDataSourceTest", new CrimeSceneProfilesMessage(Arrays.asList(_crimesceneProfile1, _crimesceneProfile2, _crimesceneProfile3)));
         MessageBus.getInstance().send("JasperDataSourceTest", new KnownProfilesMessage(new ArrayList<Sample>()));

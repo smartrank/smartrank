@@ -2,11 +2,13 @@ package nl.minvenj.nfi.smartrank.io.searchcriteria.locim;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +19,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import nl.minvenj.nfi.smartrank.domain.PopulationStatistics;
 import nl.minvenj.nfi.smartrank.domain.Sample;
+import nl.minvenj.nfi.smartrank.io.statistics.StatisticsReader;
 
 @RunWith(Parameterized.class)
 public class SmartRankImportFileReaderTest {
@@ -39,8 +43,132 @@ public class SmartRankImportFileReaderTest {
                 Arrays.asList(0.13), // 11, HD contributors dropout
                 2, // 12, HD unknowns
                 0.14, // 13, HD unknowns dropout
-                "2016/01 januari/2016.01.01.001" // 14, result location
+                "2016/01 januari/2016.01.01.001", // 14, result location
+                "MASLA", // 15, requested by
+                new Date(1471838400000L), // 16, request date and time
+                1234, // 17, LR threshold
+                0.000239808153477218, // 18, rare allele frequency
+                -1, // 19, maximum number of results
+                false, // 20, is automatic parameter estimation to be performed
+                null // 21, statistics filename
+        },
+            {"SmartRankImportFile-sample-nodropin.xml", //  0, filename
+                0.03, //  1, theta
+                0, //  2, dropin
+                Arrays.asList("CEDU0059FR#07-KOEL0126LU#21"), //  3, samples
+                Arrays.asList("CEDU0059FR#07"), //  4, knowns
+                0.1, //  5, HP candidate dropout
+                Arrays.asList("CEDU0059FR#07"), //  6, HP contributors
+                Arrays.asList(0.11), //  7, HP contributors dropout
+                1, //  8, HP unknowns
+                0.12, //  9, HP unknowns dropout
+                Arrays.asList("CEDU0059FR#07"), // 10, HD contributors
+                Arrays.asList(0.13), // 11, HD contributors dropout
+                2, // 12, HD unknowns
+                0.14, // 13, HD unknowns dropout
+                "2016/01 januari/2016.01.01.001", // 14, result location
+                "MASLA", // 15, requested by
+                new Date(1471838400000L), // 16, request date and time
+                1234, // 17, LR threshold
+                0.000239808153477218, // 18, rare allele frequency
+                -1, // 19, maximum number of results
+                false, // 20, is automatic parameter estimation to be performed
+                null // 21, statistics filename
+        },
+            {"SmartRankImportFile-sample-nodatetime.xml", //  0, filename
+                0.03, //  1, theta
+                0.05, //  2, dropin
+                Arrays.asList("CEDU0059FR#07-KOEL0126LU#21"), //  3, samples
+                Arrays.asList("CEDU0059FR#07"), //  4, knowns
+                0.1, //  5, HP candidate dropout
+                Arrays.asList("CEDU0059FR#07"), //  6, HP contributors
+                Arrays.asList(0.11), //  7, HP contributors dropout
+                1, //  8, HP unknowns
+                0.12, //  9, HP unknowns dropout
+                Arrays.asList("CEDU0059FR#07"), // 10, HD contributors
+                Arrays.asList(0.13), // 11, HD contributors dropout
+                2, // 12, HD unknowns
+                0.14, // 13, HD unknowns dropout
+                "2016/01 januari/2016.01.01.001", // 14, result location
+                "MASLA", // 15, requested by
+                null, // 16, request date and time
+                1234, // 17, LR threshold
+                0.000239808153477218, // 18, rare allele frequency
+                -1, // 19, maximum number of results
+                false, // 20, is automatic parameter estimation to be performed
+                null // 21, statistics filename
+        },
+            {"SmartRankImportFile-sample-malformatteddatetime.xml", //  0, filename
+                0.03, //  1, theta
+                0.05, //  2, dropin
+                Arrays.asList("CEDU0059FR#07-KOEL0126LU#21"), //  3, samples
+                Arrays.asList("CEDU0059FR#07"), //  4, knowns
+                0.1, //  5, HP candidate dropout
+                Arrays.asList("CEDU0059FR#07"), //  6, HP contributors
+                Arrays.asList(0.11), //  7, HP contributors dropout
+                1, //  8, HP unknowns
+                0.12, //  9, HP unknowns dropout
+                Arrays.asList("CEDU0059FR#07"), // 10, HD contributors
+                Arrays.asList(0.13), // 11, HD contributors dropout
+                2, // 12, HD unknowns
+                0.14, // 13, HD unknowns dropout
+                "2016/01 januari/2016.01.01.001", // 14, result location
+                "MASLA", // 15, requested by
+                null, // 16, request date and time
+                1234, // 17, LR threshold
+                0.000239808153477218, // 18, rare allele frequency
+                -1, // 19, maximum number of results
+                false, // 20, is automatic parameter estimation to be performed
+                null // 21, statistics filename
         }
+            ,
+            {"SmartRankImportFile-sample-statistics.xml", //  0, filename
+                0.03, //  1, theta
+                0.05, //  2, dropin
+                Arrays.asList("CEDU0059FR#07-KOEL0126LU#21"), //  3, samples
+                Arrays.asList("CEDU0059FR#07"), //  4, knowns
+                0.1, //  5, HP candidate dropout
+                Arrays.asList("CEDU0059FR#07"), //  6, HP contributors
+                Arrays.asList(0.11), //  7, HP contributors dropout
+                1, //  8, HP unknowns
+                0.12, //  9, HP unknowns dropout
+                Arrays.asList("CEDU0059FR#07"), // 10, HD contributors
+                Arrays.asList(0.13), // 11, HD contributors dropout
+                2, // 12, HD unknowns
+                0.14, // 13, HD unknowns dropout
+                "2016/01 januari/2016.01.01.001", // 14, result location
+                "MASLA", // 15, requested by
+                new Date(1471838400000L), // 16, request date and time
+                1234, // 17, LR threshold
+                0.000239808153477218, // 18, rare allele frequency
+                -1, // 19, maximum number of results
+                false, // 20, is automatic parameter estimation to be performed
+                "DummyStatistics.csv" // 21, statistics filename
+            }
+            ,
+            {"SmartRankImportFile-sample-automatic.xml", //  0, filename
+                0.03, //  1, theta
+                0.05, //  2, dropin
+                Arrays.asList("CEDU0059FR#07-KOEL0126LU#21"), //  3, samples
+                Arrays.asList("CEDU0059FR#07"), //  4, knowns
+                0, //  5, HP candidate dropout
+                Arrays.asList("CEDU0059FR#07"), //  6, HP contributors
+                Arrays.asList(0.0), //  7, HP contributors dropout
+                1, //  8, HP unknowns
+                0, //  9, HP unknowns dropout
+                Arrays.asList("CEDU0059FR#07"), // 10, HD contributors
+                Arrays.asList(0.0), // 11, HD contributors dropout
+                2, // 12, HD unknowns
+                0, // 13, HD unknowns dropout
+                "2016/01 januari/2016.01.01.001", // 14, result location
+                "MASLA", // 15, requested by
+                new Date(1471838400000L), // 16, request date and time
+                1234, // 17, LR threshold
+                0.000239808153477218, // 18, rare allele frequency
+                -1, // 19, maximum number of results
+                true, // 20, is automatic parameter estimation to be performed
+                null // 21, statistics filename
+            }
         });
     }
 
@@ -89,7 +217,30 @@ public class SmartRankImportFileReaderTest {
     @Parameter(14)
     public String _resultLocation;
 
+    @Parameter(15)
+    public String _requestedBy;
+
+    @Parameter(16)
+    public Date _requestDateTime;
+
+    @Parameter(17)
+    public Integer _lrThreshold;
+
+    @Parameter(18)
+    public Double _rareAlleleFrequency;
+
+    @Parameter(19)
+    public int _maximumNumberOfResults;
+
+    @Parameter(20)
+    public boolean _isAutomaticParameterEstimationToBePerformed;
+
+    @Parameter(21)
+    public String _populationStatisticsFilename;
+
     private SmartRankImportFileReader _reader;
+    private PopulationStatistics _populationStatistics;
+
 
     @Before
     public void setUp() throws Exception {
@@ -98,6 +249,10 @@ public class SmartRankImportFileReaderTest {
         }
         System.out.println("Reading from " + getClass().getResource(_fileName).toURI());
         _reader = new SmartRankImportFileReader(new File(getClass().getResource(_fileName).toURI()));
+
+        if (_populationStatisticsFilename != null) {
+            _populationStatistics = new StatisticsReader(new File(getClass().getResource(_populationStatisticsFilename).toURI())).getStatistics();
+        }
     }
 
     @Test
@@ -186,4 +341,53 @@ public class SmartRankImportFileReaderTest {
         assertEquals(_dropin, _reader.getDropin(), 0.001);
     }
 
+    @Test
+    public void testGetRequester() {
+        assertEquals(_requestedBy, _reader.getRequester());
+    }
+
+    @Test
+    public void testGetRequestDateTime() {
+        if (_requestDateTime != null) {
+            assertTrue(_requestDateTime.before(_reader.getRequestDateTime()));
+        }
+    }
+
+    @Test
+    public void testGetLRThreshold() {
+        assertEquals(_lrThreshold, _reader.getLRThreshold());
+    }
+
+    @Test
+    public void testGetRareAlleleFrequency() {
+        assertEquals(_rareAlleleFrequency, _reader.getRareAlleleFrequency());
+    }
+
+    @Test
+    public void testGetMaximumNumberOfResults() {
+        assertEquals(_maximumNumberOfResults, _reader.getMaximumNumberOfResults());
+    }
+
+    @Test
+    public void testIsAutomaticParameterEstimationToBePerformed() {
+        assertEquals(_isAutomaticParameterEstimationToBePerformed, _reader.isAutomaticParameterEstimationToBePerformed());
+    }
+
+    @Test
+    public void testGetPopulationStatistics() {
+        if (_populationStatistics == null)
+            assertNull(_reader.getPopulationStatistics());
+        else {
+            compareStatistics(_populationStatistics, _reader.getPopulationStatistics());
+            compareStatistics(_reader.getPopulationStatistics(), _populationStatistics);
+        }
+    }
+
+    private void compareStatistics(final PopulationStatistics stats, final PopulationStatistics otherStats) {
+        for (final String locusName : stats.getLoci()) {
+            for (final String allele : stats.getAlleles(locusName)) {
+                assertEquals("Stats differ at locus " + locusName + "." + allele, stats.getProbability(locusName, allele), otherStats.getProbability(locusName, allele));
+            }
+        }
+    }
 }

@@ -22,12 +22,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 import nl.minvenj.nfi.smartrank.domain.AnalysisParameters;
+import nl.minvenj.nfi.smartrank.domain.DatabaseConfiguration;
 import nl.minvenj.nfi.smartrank.domain.DefenseHypothesis;
 import nl.minvenj.nfi.smartrank.domain.Hypothesis;
 import nl.minvenj.nfi.smartrank.domain.LikelihoodRatio;
@@ -48,7 +51,7 @@ public class SearchResults {
     private String _logfileName;
     private boolean _succeeded;
     private Throwable _failureReason;
-    private final Collection<LikelihoodRatio> _positiveLRs;
+    private final List<LikelihoodRatio> _positiveLRs;
     private DefenseHypothesis _hd;
     private ProsecutionHypothesis _hp;
     private final ArrayList<ExcludedProfile> _excludedProfiles;
@@ -56,13 +59,15 @@ public class SearchResults {
     private final long _startTime;
     private AnalysisParameters _parameters;
     private final HashMap<ExclusionReason, ExcludedProfileStatistic> _exclusionStats;
+    private final Map<String, Map<String, Integer>> _metadataStatistics;
+    private final DatabaseConfiguration _config;
 
     /**
      * Constructor. Creates a {@link SearchResults} object to hold the specified number of results.
      *
      * @param databaseSize The number of records in the database. Used to initialize the internal structure of this object.
      */
-    public SearchResults(final int databaseSize) {
+    public SearchResults(final int databaseSize, final DatabaseConfiguration config) {
         _excludedProfiles = new ArrayList<>();
         _positiveLRs = new ArrayList<>();
         _minRatio = Double.MAX_VALUE;
@@ -70,6 +75,8 @@ public class SearchResults {
         _totalResultCount = 0;
         _startTime = System.currentTimeMillis();
         _exclusionStats = new HashMap<>();
+        _metadataStatistics = new HashMap<>();
+        _config = config;
         _lrs = new double[databaseSize];
     }
 
@@ -114,21 +121,27 @@ public class SearchResults {
         if (!ratio.isNaN() && !ratio.isInfinite()) {
             _maxRatio = Math.max(ratio, _maxRatio);
             _minRatio = Math.min(ratio, _minRatio);
-        }
 
-        if (ratio > 1) {
-            _positiveLRs.add(lr);
-            _resultsOver1++;
+            if (ratio > 1) {
+                _positiveLRs.add(lr);
+                Collections.sort(_positiveLRs, new Comparator<LikelihoodRatio>() {
+                    @Override
+                    public int compare(final LikelihoodRatio o1, final LikelihoodRatio o2) {
+                        return -o1.compareTo(o2);
+                    }
+                });
+                _resultsOver1++;
+            }
         }
     }
 
     /**
-     * Gets the unordered collection of positive LR results.
+     * Gets the collection of positive LR results, in descending order order.
      *
-     * @return an unordered {@link Collection} containing the LRs greater than 1 resulting from the search.
+     * @return a {@link Collection} containing the LRs greater than 1 resulting from the search in descending order.
      */
-    public Collection<LikelihoodRatio> getPositiveLRs() {
-        return Collections.unmodifiableCollection(_positiveLRs);
+    public List<LikelihoodRatio> getPositiveLRs() {
+        return _positiveLRs;
     }
 
     /**
@@ -137,7 +150,7 @@ public class SearchResults {
      * @return a {@link Collection} of {@link LikelihoodRatio} objects reflecting the search results
      */
     public List<Double> getLRs() {
-        final ArrayList<Double> lrs = new ArrayList<Double>();
+        final ArrayList<Double> lrs = new ArrayList<>();
         for (int idx = 0; idx < _totalResultCount; idx++) {
             lrs.add(_lrs[idx]);
         }
@@ -210,11 +223,14 @@ public class SearchResults {
      * @return The computed percentile value of the results
      */
     public double getPercentile(final int percentile) {
-        final Percentile p = new Percentile(0.05);
-        final double[] sorted = _lrs.clone();
+        final Percentile p = new Percentile(percentile);
+        final double[] sorted = new double[_totalResultCount];
+        for (int idx = 0; idx < _totalResultCount; idx++) {
+            sorted[idx] = _lrs[idx];
+        }
         Arrays.sort(sorted);
         p.setData(sorted);
-        return p.evaluate(percentile);
+        return p.evaluate();
     }
 
     /**
@@ -414,5 +430,33 @@ public class SearchResults {
 
     public AnalysisParameters getParameters() {
         return _parameters;
+    }
+
+    public boolean isInterrupted() {
+        Throwable reason = getFailureReason();
+        Throwable cause = reason;
+        if (reason != null)
+            cause = reason.getCause();
+        while (reason != cause) {
+            if (reason instanceof InterruptedException)
+                return true;
+            reason = cause;
+            if (reason != null)
+                cause = reason.getCause();
+        }
+        return false;
+    }
+
+    public void setProfileMetadataStatistics(final Map<String, Map<String, Integer>> stats) {
+        _metadataStatistics.clear();
+        _metadataStatistics.putAll(stats);
+    }
+
+    public Map<String, Map<String, Integer>> getProfileMetadataStatistics() {
+        return _metadataStatistics;
+    }
+
+    public DatabaseConfiguration getDatabaseConfiguration() {
+        return _config;
     }
 }

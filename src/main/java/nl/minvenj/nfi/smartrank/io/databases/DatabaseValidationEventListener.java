@@ -35,13 +35,9 @@ public interface DatabaseValidationEventListener {
     /**
      * Called when the reader encounters a problem in the database.
      *
-     * @param location A numerical value indicating the location in the database
-     *                 at which the problem is detected. Depending on the reader
-     *                 this can be the current record number, file offset or any
-     *                 other numerical value.
      * @param specimen
      * @param locus
      * @param message  A description of the encountered problem
      */
-    public void onProblem(long location, String specimen, String locus, String message);
+    public void onProblem(String specimen, String locus, String message);
 }

@@ -19,6 +19,8 @@ package nl.minvenj.nfi.smartrank.raven.components.zebra;
 import java.awt.Color;
 import java.awt.Component;
 
+import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.table.TableCellEditor;
@@ -27,41 +29,42 @@ import javax.swing.table.TableCellRenderer;
 public class ZebraTableCellRenderer implements TableCellRenderer {
 
     private final TableCellRenderer _proxyRenderer;
-    private final String _name;
+    private boolean _overrideOpacity;
 
-    public ZebraTableCellRenderer(final TableCellRenderer proxy, final String name) {
-        _proxyRenderer = proxy;
-        _name = name;
+    public ZebraTableCellRenderer(final TableCellRenderer proxy) {
+        this(proxy, false);
     }
 
-    public ZebraTableCellRenderer(final TableCellEditor proxy, final String name) {
+    public ZebraTableCellRenderer(final TableCellRenderer proxy, final boolean overrideOpacity) {
+        _proxyRenderer = proxy;
+        _overrideOpacity = overrideOpacity;
+    }
+
+    public ZebraTableCellRenderer(final TableCellEditor proxy) {
         _proxyRenderer = null;
-        _name = name;
     }
 
     @Override
     public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-        final Component component = _proxyRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        Color evenRowColor = Color.WHITE;
-        Color oddRowColor = Color.WHITE;
-        if (table instanceof ZebraTable) {
-            evenRowColor = ((ZebraTable) table).getEvenRowColor();
-            oddRowColor = ((ZebraTable) table).getOddRowColor();
-        }
+        final JComponent component = (JComponent) _proxyRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        Color backgroundColor = (row % 2) == 0 ? ((ZebraTable) table).getEvenRowColor() : ((ZebraTable) table).getOddRowColor();
 
-        if (isSelected) {
-            evenRowColor = table.getSelectionBackground();
-            oddRowColor = evenRowColor;
-        }
-
-        component.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
         component.setEnabled(table.isEnabled());
 
-        if (_name != null) {
+        if (row != -1 && (_overrideOpacity || !component.isOpaque())) {
+            component.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+            if (isSelected && table.isEnabled()) {
+                backgroundColor = table.getSelectionBackground();
+            }
+
             if (component instanceof JSpinner) {
-                ((JSpinner.DefaultEditor) ((JSpinner) component).getEditor()).getTextField().setBackground((row % 2) == 0 ? evenRowColor : oddRowColor);
-            } else {
-                component.setBackground((row % 2) == 0 ? evenRowColor : oddRowColor);
+                final JFormattedTextField textField = ((JSpinner.DefaultEditor) ((JSpinner) component).getEditor()).getTextField();
+                textField.setBackground(backgroundColor);
+                textField.setOpaque(true);
+            }
+            else {
+                component.setBackground(backgroundColor);
+                component.setOpaque(true);
             }
         }
         return component;
