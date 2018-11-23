@@ -45,7 +45,7 @@ public class SmartRankImportFileReaderTest {
                 0.14, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471838400000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
@@ -68,7 +68,7 @@ public class SmartRankImportFileReaderTest {
                 0.14, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471838400000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
@@ -138,7 +138,7 @@ public class SmartRankImportFileReaderTest {
                 0.14, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471838400000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
@@ -162,7 +162,7 @@ public class SmartRankImportFileReaderTest {
                 0, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471838400000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
@@ -349,7 +349,7 @@ public class SmartRankImportFileReaderTest {
     @Test
     public void testGetRequestDateTime() {
         if (_requestDateTime != null) {
-            assertTrue(_requestDateTime.before(_reader.getRequestDateTime()));
+            assertEquals(_requestDateTime, _reader.getRequestDateTime());
         }
     }
 
