@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package nl.minvenj.nfi.smartrank.gui.tabs.batchmode;
+package nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners;
 
 import java.awt.Desktop;
 import java.awt.event.ActionEvent;
@@ -26,13 +26,23 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.text.JTextComponent;
 
-public class OpenInDesktopActionListener implements ActionListener {
+/**
+ * Calls the desktop to open the parent of the location stored in the configured text component.
+ */
+public class OpenParentInDesktopActionListener implements ActionListener {
 
     private final JTextComponent _textComponent;
     private final JComponent _parent;
     private final String _description;
 
-    public OpenInDesktopActionListener(final JComponent parent, final JTextComponent textComponent, final String description) {
+    /**
+     * Constructor.
+     *
+     * @param parent the parent component, used as parent for any error message dialogs
+     * @param textComponent the text component holding the name of the resource for which the parent is to be opened in the desktop
+     * @param descriptiona descriptive string to be used in any error message dialogs
+     */
+    public OpenParentInDesktopActionListener(final JComponent parent, final JTextComponent textComponent, final String description) {
         _parent = parent;
         _textComponent = textComponent;
         _description = description;
@@ -41,7 +51,7 @@ public class OpenInDesktopActionListener implements ActionListener {
     @Override
     public void actionPerformed(final ActionEvent e) {
         try {
-            Desktop.getDesktop().open(new File(_textComponent.getText()));
+            Desktop.getDesktop().open(new File(_textComponent.getText()).getParentFile());
         }
         catch (final Throwable e1) {
             JOptionPane.showMessageDialog(_parent, "<html>Error " + _description + "!<br><i>" + sanitizeName(e1) + ": </i><br>" + e1.getMessage(), "SmartRank Error", JOptionPane.ERROR_MESSAGE);
