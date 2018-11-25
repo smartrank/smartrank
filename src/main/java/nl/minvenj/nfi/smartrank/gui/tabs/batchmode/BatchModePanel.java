@@ -21,25 +21,38 @@ import static nl.minvenj.nfi.smartrank.raven.ApplicationStatus.VERIFYING_DB;
 import static nl.minvenj.nfi.smartrank.raven.ApplicationStatus.WAIT_DB;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyVetoException;
+import java.beans.VetoableChangeListener;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -51,9 +64,14 @@ import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
+import javax.swing.SpinnerModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,24 +81,9 @@ import nl.minvenj.nfi.smartrank.analysis.SearchResults;
 import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 import nl.minvenj.nfi.smartrank.gui.tabs.SmartRankPanel;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.ButtonEnablingListSelectionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.CancelJobActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.ClearCompletedRowsActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.EditScriptButtonActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.FolderBrowseActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.MoveBottomActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.MoveDownActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.MoveTopActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.MoveUpActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.PopulationStatisticsBrowseActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.RestartJobActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.RunActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.StopActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.documentlisteners.InputFolderDocumentListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.documentlisteners.PopulationStatisticsDocumentListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.postprocessing.ConsoleWriter;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.postprocessing.FileUtilitiesForScript;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
+import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReaderFactory;
+import nl.minvenj.nfi.smartrank.io.statistics.StatisticsReader;
 import nl.minvenj.nfi.smartrank.messages.commands.StartAnalysisCommand;
 import nl.minvenj.nfi.smartrank.messages.data.DropinMessage;
 import nl.minvenj.nfi.smartrank.messages.data.LoadSearchCriteriaMessage;
@@ -100,40 +103,122 @@ public class BatchModePanel extends SmartRankPanel {
 
     private static final String TIME_REGEX = "^([0-1]?[0-9]|2[0-3])[0-5][0-9]$";
 
+    private final class TimeSpinnerModel implements SpinnerModel {
+        int _curTime = 0;
+        long _lastNext = 0;
+        int _nextCount = 0;
+        long _lastPrev = 0;
+        int _prevCount = 0;
+        private final Collection<ChangeListener> _listeners = new ArrayList<>();
+
+        public TimeSpinnerModel(final String initial) {
+            setValue(initial);
+        }
+
+        @Override
+        public Object getValue() {
+            return String.format("%02d:%02d", _curTime / 60, _curTime % 60);
+        }
+
+        @Override
+        public void setValue(final Object value) {
+            final Pattern pattern = Pattern.compile("([01][0-9]|2[0-3])\\:?([0-5][0-9])");
+            final Matcher matcher = pattern.matcher(value.toString().trim());
+            if (matcher.matches()) {
+                _curTime = Integer.parseInt(matcher.group(1)) * 60 + Integer.parseInt(matcher.group(2));
+            }
+            for (final ChangeListener l : _listeners) {
+                l.stateChanged(new ChangeEvent(this));
+            }
+        }
+
+        @Override
+        public Object getNextValue() {
+            final long now = System.currentTimeMillis();
+            _nextCount = (_lastNext == 0 || ((now - _lastNext) < 100)) ? _nextCount + 1 : 0;
+            final int delta = (_nextCount < 15 || _curTime % 15 != 0) ? 1 : 15;
+            _lastNext = now;
+            _nextCount++;
+            _prevCount = 0;
+            final int temp = (_curTime + delta) % 1440;
+            return String.format("%02d:%02d", temp / 60, temp % 60);
+        }
+
+        @Override
+        public Object getPreviousValue() {
+            final long now = System.currentTimeMillis();
+            _nextCount = (_lastPrev == 0 || ((now - _lastPrev) < 100)) ? _prevCount + 1 : 0;
+            final int delta = (_prevCount < 15 || _curTime % 15 != 0) ? 1 : 15;
+            _lastPrev = now;
+            _nextCount = 0;
+            _prevCount++;
+            int temp = (_curTime - delta);
+            if (temp < 0)
+                temp = 1440 + temp;
+            return String.format("%02d:%02d", temp / 60, temp % 60);
+        }
+
+        @Override
+        public void addChangeListener(final ChangeListener l) {
+            _listeners.add(l);
+        }
+
+        @Override
+        public void removeChangeListener(final ChangeListener l) {
+            _listeners.remove(l);
+        }
+    }
+
+    /**
+     * A task that starts a new search on the EDT.
+     */
+    private final class SearchTask implements Runnable {
+        @Override
+        public void run() {
+            EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    startSearch();
+                }
+            });
+        }
+    }
+
     private static final EnumSet<ApplicationStatus> DISABLED_STATUS_SET = EnumSet.of(WAIT_DB, VERIFYING_DB);
-    static final Logger LOG = LoggerFactory.getLogger(SmartRankPanel.class);
-    static final Logger BATCHLOG = LoggerFactory.getLogger("BatchLogger");
+    private static final Logger LOG = LoggerFactory.getLogger(SmartRankPanel.class);
+    private static final Logger BATCHLOG = LoggerFactory.getLogger("BatchLogger");
 
-    public final JTextField _inputFolderField;
+    private final JTextField _inputFolderField;
     private final JLabel _inputFolderLabel;
-    private final BatchProcessingTable _filesTable;
+    final BatchProcessingTable _filesTable;
 
-    public final MessageBus _messageBus;
-    public final AtomicBoolean _running;
+    private final MessageBus _messageBus;
+    private final AtomicBoolean _running;
 
     private File _currentFile;
     private File _inputFolder;
-    public File _processingFolder;
+    private File _processingFolder;
     private File _failedFolder;
-    public File _succeededFolder;
+    private File _succeededFolder;
     private final JButton _inputFolderBrowseButton;
     private final JButton _clearCompletedButton;
-    public final JButton _runButton;
-    public final JButton _stopButton;
+    private final JButton _runButton;
+    private final JButton _stopButton;
     private final JButton _moveUpButton;
     private final JButton _moveTopButton;
     private final JButton _moveDownButton;
     private final JButton _moveBottomButton;
     private final JButton _restartJobButton;
     private final JLabel _popStatsLabel;
-    public final JTextField _popStatsFilenameField;
+    private final JTextField _popStatsFilenameField;
     private final JButton _popStatsBrowseButton;
-    public final JLabel _statisticsErrorLabel;
+    private final JLabel _statisticsErrorLabel;
     private final JButton _cancelJobButton;
     private final JSpinner _fromTime;
     private final JLabel _andLabel;
     private final JSpinner _toTime;
     private boolean _waitingMessageLogged;
+    private final Component _horizontalStrut;
     private final ScheduledExecutorService _scheduler;
 
     public BatchModePanel() {
@@ -151,7 +236,39 @@ public class BatchModePanel extends SmartRankPanel {
         _inputFolderField = new JTextField();
         _inputFolderField.setName("inputFolder");
         _inputFolderField.setColumns(10);
-        _inputFolderField.getDocument().addDocumentListener(new InputFolderDocumentListener(this));
+        _inputFolderField.getDocument().addDocumentListener(new DocumentListener() {
+
+            @Override
+            public void removeUpdate(final DocumentEvent e) {
+                doUpdate();
+            }
+
+            @Override
+            public void insertUpdate(final DocumentEvent e) {
+                doUpdate();
+            }
+
+            @Override
+            public void changedUpdate(final DocumentEvent e) {
+                doUpdate();
+            }
+
+            private void doUpdate() {
+                synchronized (_messageBus) {
+                    if (_filesTable != null) {
+                        _filesTable.setRowCount(0);
+                    }
+                    _inputFolder = new File(_inputFolderField.getText());
+                    if (_inputFolder.exists() && _inputFolder.isDirectory()) {
+                        SmartRankGUISettings.setLastSelectedSearchCriteriaPath(_inputFolder.getAbsolutePath());
+                    }
+
+                    _processingFolder = new File(_inputFolder, "processing");
+                    _failedFolder = new File(_inputFolder, "failed");
+                    _succeededFolder = new File(_inputFolder, "succeeded");
+                }
+            }
+        });
         _inputFolderField.setText(SmartRankGUISettings.getLastSelectedSearchCriteriaPath());
         add(_inputFolderField, "flowx,cell 1 0 2 1,growx");
 
@@ -168,7 +285,50 @@ public class BatchModePanel extends SmartRankPanel {
         _popStatsFilenameField.setName("populationStatisticsFilename");
         _popStatsFilenameField.setToolTipText("This file will be used for any search criteria files that do not contain population statistics");
         _popStatsFilenameField.setColumns(10);
-        _popStatsFilenameField.getDocument().addDocumentListener(new PopulationStatisticsDocumentListener(this));
+        _popStatsFilenameField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void removeUpdate(final DocumentEvent e) {
+                doUpdate();
+            }
+
+            @Override
+            public void insertUpdate(final DocumentEvent e) {
+                doUpdate();
+            }
+
+            @Override
+            public void changedUpdate(final DocumentEvent e) {
+                doUpdate();
+            }
+
+            private void doUpdate() {
+                boolean enableRun = true;
+                _statisticsErrorLabel.setText("");
+                _statisticsErrorLabel.setVisible(false);
+                if (!_popStatsFilenameField.getText().isEmpty()) {
+                    try {
+                        new StatisticsReader(new File(_popStatsFilenameField.getText())).getStatistics();
+                        SmartRankGUISettings.setLastSelectedStatisticsFileName(_popStatsFilenameField.getText());
+                    }
+                    catch (final Throwable t) {
+                        String msg = t.getClass().getSimpleName().replaceAll("([a-z])([A-Z])", "$1 $2").replaceAll(" Exception", "");
+                        if (t.getLocalizedMessage() != null && !t.getLocalizedMessage().isEmpty()) {
+                            msg += ": " + t.getLocalizedMessage();
+                        }
+                        _statisticsErrorLabel.setText(msg);
+                        _statisticsErrorLabel.setVisible(true);
+                        enableRun = false;
+                    }
+                }
+                else {
+                    SmartRankGUISettings.setLastSelectedStatisticsFileName(_popStatsFilenameField.getText());
+                }
+
+                if (_runButton != null) {
+                    _runButton.setEnabled(enableRun);
+                }
+            }
+        });
         add(_popStatsFilenameField, "cell 1 1 2 1,growx");
 
         _popStatsBrowseButton = new JButton("Browse...", new ImageIcon(getClass().getResource("/images/16x16/folder.png")));
@@ -192,7 +352,7 @@ public class BatchModePanel extends SmartRankPanel {
         _filesTable = new BatchProcessingTable("inputFilesTable", detailPanel);
 
         final JScrollPane filesTableScrollPane = new JScrollPane();
-        filesTableScrollPane.setViewportView(getFilesTable());
+        filesTableScrollPane.setViewportView(_filesTable);
 
         final JToolBar toolBar = new JToolBar("toolbar");
         toolBar.setRollover(true);
@@ -202,7 +362,13 @@ public class BatchModePanel extends SmartRankPanel {
         _stopButton.setToolTipText("Stop processing the search criteria files");
         _stopButton.setName("stop");
         _stopButton.setEnabled(false);
-        _stopButton.addActionListener(new StopActionListener(this));
+        _stopButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                _stopButton.setEnabled(false);
+                _running.set(false);
+            }
+        });
         toolBar.add(_stopButton);
 
         _runButton = new JButton("Run between", new ImageIcon(getClass().getResource("/images/16x16/control_play_blue.png")));
@@ -210,8 +376,29 @@ public class BatchModePanel extends SmartRankPanel {
         _runButton.setToolTipText("Start processing the search criteria files");
         // This line will trigger enablement of the run button
         _popStatsFilenameField.setText(SmartRankGUISettings.getLastSelectedStatisticsFileName());
-        _runButton.addActionListener(new RunActionListener(this));
+        _runButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                _running.set(true);
+                updateControls();
+                startSearch();
+            }
+        });
         toolBar.add(_runButton);
+
+        _moveTopButton = new JButton("Top", new ImageIcon(getClass().getResource("/images/16x16/bullet_arrow_top.png")));
+        _moveTopButton.setName("moveTop");
+        _moveTopButton.setEnabled(false);
+        _moveTopButton.setToolTipText("Move the selected row to the top of the list");
+        _moveTopButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final int selectedRow = _filesTable.getSelectedRow();
+                if (selectedRow > 0) {
+                    _filesTable.moveRow(selectedRow, 0);
+                }
+            }
+        });
 
         _fromTime = new JSpinner(new TimeSpinnerModel(SmartRankGUISettings.getBatchModeStartTime()));
         _fromTime.setMinimumSize(new Dimension(60, 20));
@@ -220,6 +407,12 @@ public class BatchModePanel extends SmartRankPanel {
         _fromTime.setToolTipText("A time in 24-hour notation before which batch processing will not start");
         _fromTime.setName("fromTime");
         ((JSpinner.DefaultEditor) _fromTime.getEditor()).getTextField().setEditable(true);
+        _fromTime.addVetoableChangeListener(new VetoableChangeListener() {
+            @Override
+            public void vetoableChange(final PropertyChangeEvent evt) throws PropertyVetoException {
+                System.out.println(evt);
+            }
+        });
         toolBar.add(_fromTime);
 
         _andLabel = new JLabel("and");
@@ -235,40 +428,106 @@ public class BatchModePanel extends SmartRankPanel {
         ((JSpinner.DefaultEditor) _toTime.getEditor()).getTextField().setEditable(true);
         toolBar.add(_toTime);
 
-        toolBar.add(Box.createHorizontalStrut(8));
+        _horizontalStrut = Box.createHorizontalStrut(8);
+        toolBar.add(_horizontalStrut);
 
         final JSeparator separator = new JSeparator(JSeparator.VERTICAL);
         toolBar.add(separator);
-
-        _moveTopButton = getButton("Top", "Move the selected row to the top of the list", "moveTop", "/images/16x16/bullet_arrow_top.png", false, new MoveTopActionListener(this));
         toolBar.add(_moveTopButton);
 
-        _moveUpButton = getButton("Up", "Move the selected row up one position in the list", "moveUp", "/images/16x16/bullet_arrow_up.png", false, new MoveUpActionListener(this));
+        _moveUpButton = new JButton("Up", new ImageIcon(getClass().getResource("/images/16x16/bullet_arrow_up.png")));
+        _moveUpButton.setName("moveUp");
+        _moveUpButton.setEnabled(false);
+        _moveUpButton.setToolTipText("Move the selected row up one position in the list");
+        _moveUpButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final int selectedRow = _filesTable.getSelectedRow();
+                if (selectedRow > 0) {
+                    _filesTable.moveRow(selectedRow, selectedRow - 1);
+                }
+            }
+        });
         toolBar.add(_moveUpButton);
 
-        _moveDownButton = getButton("Down", "Move the selected row down one position in the list", "moveDown", "/images/16x16/bullet_arrow_down.png", false, new MoveDownActionListener(this));
+        _moveDownButton = new JButton("Down", new ImageIcon(getClass().getResource("/images/16x16/bullet_arrow_down.png")));
+        _moveDownButton.setName("moveDown");
+        _moveDownButton.setEnabled(false);
+        _moveDownButton.setToolTipText("Move the selected row down one position in the list");
+        _moveDownButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final int selectedRow = _filesTable.getSelectedRow();
+                _filesTable.moveRow(selectedRow, selectedRow + 1);
+            }
+        });
         toolBar.add(_moveDownButton);
 
-        _moveBottomButton = getButton("Bottom", "Move the selected row to the bottom of the list", "moveBottom", "/images/16x16/bullet_arrow_bottom.png", false, new MoveBottomActionListener(this));
+        _moveBottomButton = new JButton("Bottom", new ImageIcon(getClass().getResource("/images/16x16/bullet_arrow_bottom.png")));
+        _moveBottomButton.setName("moveBottom");
+        _moveBottomButton.setEnabled(false);
+        _moveBottomButton.setToolTipText("Move the selected row to the bottom of the list");
+        _moveBottomButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final int selectedRow = _filesTable.getSelectedRow();
+                _filesTable.moveRow(selectedRow, _filesTable.getRowCount() - 1);
+            }
+        });
         toolBar.add(_moveBottomButton);
 
         toolBar.add(new JSeparator(JSeparator.VERTICAL));
 
-        _clearCompletedButton = getButton("Clear completed", "Remove completed search criteria files from the list", "clearCompleted", "/images/16x16/table_row_delete.png", true, new ClearCompletedRowsActionListener(getFilesTable()));
+        _clearCompletedButton = new JButton("Clear completed", new ImageIcon(getClass().getResource("/images/16x16/table_row_delete.png")));
+        _clearCompletedButton.setName("clearCompleted");
+        _clearCompletedButton.setToolTipText("Remove completed search criteria files from the list");
+        _clearCompletedButton.addActionListener(new ClearCompletedRowsActionListener(_filesTable));
         toolBar.add(_clearCompletedButton);
 
         toolBar.add(new JSeparator(JSeparator.VERTICAL));
 
-        _restartJobButton = getButton("Restart", "Restart the selected interrupted job", "restart", "/images/16x16/control_repeat_blue.png", false, new RestartJobActionListener(this));
+        _restartJobButton = new JButton("Restart", new ImageIcon(getClass().getResource("/images/16x16/control_repeat_blue.png")));
+        _restartJobButton.setName("restart");
+        _restartJobButton.setEnabled(false);
+        _restartJobButton.setToolTipText("Restart the selected interrupted job");
+        _restartJobButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final int selectedRow = _filesTable.getSelectedRow();
+                final File file = (File) _filesTable.getValueAt(selectedRow, 0);
+                _filesTable.setValueAt(moveFileToFolder(file, _inputFolder), selectedRow, 0);
+
+                final BatchJobInfo jobInfo = (BatchJobInfo) _filesTable.getValueAt(selectedRow, 1);
+                jobInfo.setStatus(ScanStatus.PENDING);
+                jobInfo.setResults(null);
+
+                _filesTable.setValueAt(jobInfo, selectedRow, 1);
+                _filesTable.setValueAt(jobInfo, selectedRow, 2);
+            }
+        });
         toolBar.add(_restartJobButton);
 
-        _cancelJobButton = getButton("Cancel", "Cancels the selected job", "cancel", "/images/16x16/stop.png", false, new CancelJobActionListener(this));
+        _cancelJobButton = new JButton("Cancel", new ImageIcon(getClass().getResource("/images/16x16/stop.png")));
+        _cancelJobButton.setName("cancel");
+        _cancelJobButton.setEnabled(false);
+        _cancelJobButton.setToolTipText("Cancels the selected job");
+        _cancelJobButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final int selectedRow = _filesTable.getSelectedRow();
+                final File file = (File) _filesTable.getValueAt(selectedRow, 0);
+                _filesTable.setValueAt(moveFileToDatedFolder(file, _failedFolder), selectedRow, 0);
+
+                final BatchJobInfo jobInfo = (BatchJobInfo) _filesTable.getValueAt(selectedRow, 1);
+                jobInfo.setStatus(ScanStatus.CANCELLED);
+
+                _filesTable.setValueAt(jobInfo, selectedRow, 1);
+                _filesTable.setValueAt(jobInfo, selectedRow, 2);
+            }
+        });
         toolBar.add(_cancelJobButton);
 
-        final JButton editScriptButton = getButton("Edit PPScript", "Edits the post processing script", "editPostProcessing", "/images/16x16/script.png", true, new EditScriptButtonActionListener(this));
-        toolBar.add(editScriptButton);
-
-        getFilesTable().getSelectionModel().addListSelectionListener(new ButtonEnablingListSelectionListener(getFilesTable(), _moveUpButton, _moveDownButton, _moveTopButton, _moveBottomButton, _restartJobButton, _cancelJobButton));
+        _filesTable.getSelectionModel().addListSelectionListener(new ButtonEnablingListSelectionListener(_filesTable, _moveUpButton, _moveDownButton, _moveTopButton, _moveBottomButton, _restartJobButton, _cancelJobButton));
 
         final JPanel filesPanel = new JPanel();
         filesPanel.setBorder(new TitledBorder(null, "Search Criteria Files", TitledBorder.LEADING, TitledBorder.TOP, null, null));
@@ -282,23 +541,128 @@ public class BatchModePanel extends SmartRankPanel {
         startFilePolling();
     }
 
-    private JButton getButton(final String text, final String tooltip, final String name, final String iconResource, final boolean enabledByDefault, final ActionListener actionListener) {
-        final JButton button = new JButton(text, new ImageIcon(getClass().getResource(iconResource)));
-        button.setName(name);
-        button.setEnabled(enabledByDefault);
-        button.setToolTipText(tooltip);
-        button.addActionListener(actionListener);
-        return button;
-    }
-
     protected void startFilePolling() {
-        final Thread pollingThread = new FilePollingThread(this);
+        final Thread pollingThread = new Thread() {
+
+            HashMap<File, Integer> _retryCounts = new HashMap<>();
+
+            @Override
+            public void run() {
+                try {
+                    while (true) {
+                        synchronized (_messageBus) {
+                            if (_inputFolder != null && _inputFolder.exists() && _inputFolder.isDirectory()) {
+                                for (final File file : _inputFolder.listFiles(new FileFilter() {
+                                    @Override
+                                    public boolean accept(final File pathname) {
+                                        return pathname.isFile() && pathname.getName().endsWith(".xml");
+                                    }
+                                })) {
+                                    if (isNew(file)) {
+                                        try {
+                                            final SearchCriteriaReader reader = SearchCriteriaReaderFactory.getReader(file);
+                                            final BatchJobInfo jobInfo = new BatchJobInfo(reader, ScanStatus.PENDING);
+                                            _filesTable.addRow(new Object[]{file, jobInfo, jobInfo});
+                                            _retryCounts.remove(file);
+                                        }
+                                        catch (final Throwable e) {
+                                            if (_retryCounts.get(file) == null) {
+                                                _retryCounts.put(file, new Integer(1));
+                                            }
+                                            else {
+                                                _retryCounts.put(file, _retryCounts.get(file) + 1);
+                                                LOG.info("Found unreadable file {}. Retry count={}", file, _retryCounts.get(file));
+                                            }
+                                            if (_retryCounts.get(file) >= 20) {
+                                                LOG.info("Error loading file {}: {}", file.getName(), e.getMessage(), e);
+                                                BATCHLOG.info("=====================");
+                                                BATCHLOG.info("File: {}", file.getName());
+                                                BATCHLOG.info("Requested by {}", getOwner(file));
+                                                BATCHLOG.info("Requested at {}", getCreationTime(file));
+                                                BATCHLOG.info("Result: Failed");
+                                                BATCHLOG.info("Reason: {}", e.getMessage(), e);
+                                                final File movedFile = moveFileToDatedFolder(file, _failedFolder);
+                                                final BatchJobInfo jobInfo = new BatchJobInfo(ScanStatus.FAILED, NullUtils.getValue(e.getLocalizedMessage(), e.getClass().getSimpleName().replaceAll("([a-z])([A-Z])", "$1 $2") + " while reading the file!"));
+                                                _filesTable.addRow(new Object[]{movedFile, jobInfo, jobInfo});
+                                                _retryCounts.remove(file);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Remove any non-existent files still referenced in the table, or files processed longer than 30 days ago
+                                for (int row = _filesTable.getRowCount() - 1; row >= 0; row--) {
+                                    final File file = (File) _filesTable.getModel().getValueAt(row, 0);
+                                    final BatchJobInfo info = (BatchJobInfo) _filesTable.getModel().getValueAt(row, 1);
+
+                                    if (!file.exists()) {
+                                        _filesTable.removeRow(row);
+                                    }
+                                    else {
+                                        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                        try {
+                                            if (!EnumSet.of(ScanStatus.PENDING, ScanStatus.INTERRUPTED, ScanStatus.PROCESSING).contains(info.getStatus())) {
+                                                final Calendar processedAt = Calendar.getInstance();
+                                                processedAt.setTime(sdf.parse(info.getStatusTimestamp()));
+
+                                                final Calendar twoWeeksAgo = Calendar.getInstance();
+                                                twoWeeksAgo.add(Calendar.DAY_OF_MONTH, -14);
+
+                                                if (processedAt.before(twoWeeksAgo)) {
+                                                    _filesTable.removeRow(row);
+                                                }
+                                            }
+                                        }
+                                        catch (final ParseException e) {
+                                            LOG.debug("Error decoding status date for {}: {}", file.getName(), info.getStatusTimestamp());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Thread.sleep(2000);
+                    }
+                }
+                catch (final InterruptedException e) {
+                }
+            }
+
+            private String getCreationTime(final File file) {
+                try {
+                    final BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+                    final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    return sdf.format(new Date(attributes.creationTime().toMillis()));
+                }
+                catch (final Exception e) {
+                    LOG.info("Could not determine creation time of {}", file, e);
+                }
+                return "Could not be determined";
+            }
+
+            private String getOwner(final File file) {
+                try {
+                    return Files.getOwner(file.toPath(), LinkOption.NOFOLLOW_LINKS).getName();
+                }
+                catch (final Exception e) {
+                    LOG.info("Could not determine owner of file {}", file, e);
+                }
+                return "Could not be determined";
+            }
+
+            private boolean isNew(final File file) {
+                for (int idx = 0; idx < _filesTable.getModel().getRowCount(); idx++) {
+                    if (((File) _filesTable.getModel().getValueAt(idx, 0)).getName().equals(file.getName()) && ScanStatus.PENDING == (((BatchJobInfo) _filesTable.getModel().getValueAt(idx, 1)).getStatus()))
+                        return false;
+                }
+                return true;
+            }
+        };
         pollingThread.setName("InputFilePollingThread");
         pollingThread.setDaemon(true);
         pollingThread.start();
     }
 
-    public void startSearch() {
+    private void startSearch() {
 
         if (timeslotInvalid()) {
             waitAndSearchAgain();
@@ -308,14 +672,14 @@ public class BatchModePanel extends SmartRankPanel {
         LOG.debug("Scanning for next file");
         _currentFile = null;
         int idx;
-        for (idx = 0; _currentFile == null && idx < getFilesTable().getModel().getRowCount(); idx++) {
-            final BatchJobInfo info = (BatchJobInfo) getFilesTable().getModel().getValueAt(idx, 1);
+        for (idx = 0; _currentFile == null && idx < _filesTable.getModel().getRowCount(); idx++) {
+            final BatchJobInfo info = (BatchJobInfo) _filesTable.getModel().getValueAt(idx, 1);
             if (info.getStatus() == ScanStatus.PENDING) {
                 info.setStatus(ScanStatus.PROCESSING);
-                getFilesTable().setValueAt(info, idx, 1);
-                getFilesTable().setValueAt(info, idx, 2);
+                _filesTable.setValueAt(info, idx, 1);
+                _filesTable.setValueAt(info, idx, 2);
 
-                final File curFile = (File) getFilesTable().getModel().getValueAt(idx, 0);
+                final File curFile = (File) _filesTable.getModel().getValueAt(idx, 0);
 
                 String msg = "";
                 if (!curFile.exists()) {
@@ -332,7 +696,7 @@ public class BatchModePanel extends SmartRankPanel {
                 }
 
                 if (msg.isEmpty() && _popStatsFilenameField.getText().isEmpty()) {
-                    final SearchCriteriaReader reader = ((BatchJobInfo) getFilesTable().getValueAt(idx, 2)).getReader();
+                    final SearchCriteriaReader reader = ((BatchJobInfo) _filesTable.getValueAt(idx, 2)).getReader();
                     if (reader.getPopulationStatistics() == null) {
                         msg = "File contains no statistics and no default statistics are configured!";
                     }
@@ -346,16 +710,16 @@ public class BatchModePanel extends SmartRankPanel {
                     LOG.info("Error processing file {}: {}", curFile.getName(), msg);
                     BATCHLOG.info("Result: Failed");
                     BATCHLOG.info("Reason: {}", msg);
-                    getFilesTable().setValueAt(moveFileToDatedFolder(curFile, getFailedFolder()), idx, 0);
-                    info.setErrorMessage(msg);
+                    _filesTable.setValueAt(moveFileToDatedFolder(curFile, _failedFolder), idx, 0);
                     info.setStatus(ScanStatus.FAILED);
-                    getFilesTable().setValueAt(info, idx, 1);
-                    getFilesTable().setValueAt(info, idx, 2);
+                    info.setErrorMessage(msg);
+                    _filesTable.setValueAt(info, idx, 1);
+                    _filesTable.setValueAt(info, idx, 2);
                 }
                 else {
                     LOG.info("Starting next job: {}", curFile);
                     _currentFile = moveFileToFolder(curFile, _processingFolder);
-                    getFilesTable().getModel().setValueAt(_currentFile, idx, 0);
+                    _filesTable.getModel().setValueAt(_currentFile, idx, 0);
                 }
             }
         }
@@ -376,7 +740,7 @@ public class BatchModePanel extends SmartRankPanel {
         updateControls();
         if (_running.get()) {
             _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.BATCHMODE_RUNNING));
-            _scheduler.schedule(new SearchTask(this), 1, TimeUnit.SECONDS);
+            _scheduler.schedule(new SearchTask(), 1, TimeUnit.SECONDS);
         }
         else {
             _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.BATCHMODE_IDLE));
@@ -450,7 +814,7 @@ public class BatchModePanel extends SmartRankPanel {
         }
     }
 
-    public void updateControls() {
+    private void updateControls() {
         _inputFolderLabel.setEnabled(!_running.get());
         _inputFolderField.setEnabled(!_running.get());
         _inputFolderBrowseButton.setEnabled(!_running.get());
@@ -469,45 +833,16 @@ public class BatchModePanel extends SmartRankPanel {
     public void onSearchCompleted(final SearchResults results) {
         final File movedFile = moveFileToDatedFolder(_currentFile, _succeededFolder);
         logResults(results);
-        for (int idx = 0; idx < getFilesTable().getModel().getRowCount(); idx++) {
-            if (((File) getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
-                final BatchJobInfo info = (BatchJobInfo) getFilesTable().getValueAt(idx, 1);
-                info.setFileName(movedFile.getAbsolutePath());
+        for (int idx = 0; idx < _filesTable.getModel().getRowCount(); idx++) {
+            if (((File) _filesTable.getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
+                final BatchJobInfo info = (BatchJobInfo) _filesTable.getValueAt(idx, 1);
                 info.setResults(results);
-                getFilesTable().getModel().setValueAt(info, idx, 1);
-                getFilesTable().getModel().setValueAt(info, idx, 2);
-                getFilesTable().getModel().setValueAt(movedFile, idx, 0);
-                runPostProcessingScript(info);
+                _filesTable.getModel().setValueAt(info, idx, 1);
+                _filesTable.getModel().setValueAt(info, idx, 2);
+                _filesTable.getModel().setValueAt(movedFile, idx, 0);
             }
         }
         searchAgain();
-    }
-
-    private void runPostProcessingScript(final BatchJobInfo info) {
-        if (SmartRankGUISettings.getBatchModePostProcessingScript().length() > 0) {
-            LOG.info("Starting post processing script");
-            final ScriptEngineManager mgr = new ScriptEngineManager();
-            final ScriptEngine engine = mgr.getEngineByMimeType("application/javascript");
-            engine.put("job", info);
-            engine.put("log", LOG);
-            engine.put("console", new ConsoleWriter());
-            engine.put("FileUtils", new FileUtilitiesForScript());
-            try {
-                final Object retval = engine.eval(SmartRankGUISettings.getBatchModePostProcessingScript());
-                LOG.info("Post processing script returned {}", retval);
-            }
-            catch (final Throwable se) {
-                LOG.error("Error running post-processing script on {}!", info.getFileName(), se);
-                info.setStatus(ScanStatus.POST_PROCESSING_SCRIPT_ERROR);
-                final String msg = NullUtils.getValue(info.getErrorMessage(), "");
-                if (msg.length() > 0) {
-                    info.setErrorMessage("Search failed with '" + info.getErrorMessage() + "' and after this, the post pcocessing script failed with '" + se.getMessage() + "'");
-                }
-                else {
-                    info.setErrorMessage("The post pcocessing script failed with '" + se.getMessage() + "'");
-                }
-            }
-        }
     }
 
     @RavenMessageHandler(SearchAbortedMessage.class)
@@ -520,21 +855,19 @@ public class BatchModePanel extends SmartRankPanel {
                 _running.set(false);
             }
 
-            movedFile = moveFileToFolder(_currentFile, getInputFolder());
+            movedFile = moveFileToFolder(_currentFile, _inputFolder);
         }
         else {
-            movedFile = moveFileToDatedFolder(_currentFile, getFailedFolder());
+            movedFile = moveFileToDatedFolder(_currentFile, _failedFolder);
         }
 
-        for (int idx = 0; idx < getFilesTable().getModel().getRowCount(); idx++) {
-            if (((File) getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
-                final BatchJobInfo info = (BatchJobInfo) getFilesTable().getValueAt(idx, 1);
+        for (int idx = 0; idx < _filesTable.getModel().getRowCount(); idx++) {
+            if (((File) _filesTable.getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
+                final BatchJobInfo info = (BatchJobInfo) _filesTable.getValueAt(idx, 1);
                 info.setResults(results);
-                info.setFileName(movedFile.getAbsolutePath());
-                getFilesTable().getModel().setValueAt(info, idx, 1);
-                getFilesTable().getModel().setValueAt(info, idx, 2);
-                getFilesTable().getModel().setValueAt(movedFile, idx, 0);
-                runPostProcessingScript(info);
+                _filesTable.getModel().setValueAt(info, idx, 1);
+                _filesTable.getModel().setValueAt(info, idx, 2);
+                _filesTable.getModel().setValueAt(movedFile, idx, 0);
             }
         }
 
@@ -563,7 +896,7 @@ public class BatchModePanel extends SmartRankPanel {
         }
     }
 
-    public File moveFileToFolder(final File sourceFile, final File targetFolder) {
+    private File moveFileToFolder(final File sourceFile, final File targetFolder) {
         targetFolder.mkdirs();
         final File destinationFile = new File(targetFolder, sourceFile.getName());
         try {
@@ -576,7 +909,7 @@ public class BatchModePanel extends SmartRankPanel {
         return sourceFile;
     }
 
-    public File moveFileToDatedFolder(final File sourceFile, final File targetFolder) {
+    private File moveFileToDatedFolder(final File sourceFile, final File targetFolder) {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         final File datedFolder = new File(targetFolder, sdf.format(new Date()));
         datedFolder.mkdirs();
@@ -611,40 +944,5 @@ public class BatchModePanel extends SmartRankPanel {
      */
     public void doRun() {
         _runButton.doClick();
-    }
-
-    /**
-     * @return the filesTable
-     */
-    public BatchProcessingTable getFilesTable() {
-        return _filesTable;
-    }
-
-    /**
-     * @return the failedFolder
-     */
-    public File getFailedFolder() {
-        return _failedFolder;
-    }
-
-    /**
-     * @param failedFolder the failedFolder to set
-     */
-    public void setFailedFolder(File failedFolder) {
-        _failedFolder = failedFolder;
-    }
-
-    /**
-     * @return the inputFolder
-     */
-    public File getInputFolder() {
-        return _inputFolder;
-    }
-
-    /**
-     * @param inputFolder the inputFolder to set
-     */
-    public void setInputFolder(File inputFolder) {
-        _inputFolder = inputFolder;
     }
 }

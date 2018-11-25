@@ -36,8 +36,8 @@ public class PopulationStatistics {
     private final String _fileName;
 
     private String _fileHash;
-    private final double[][] _probs = new double[1024][1024];
-    private final boolean[][] _rare = new boolean[1024][1024];
+    private final double[][] _probs = new double[50][1024];
+    private final boolean[][] _rare = new boolean[50][1024];
     private double _rareAlleleFrequency = DEFAULT_FREQUENCY;
 
     public PopulationStatistics(final String fileNamez) {

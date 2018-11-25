@@ -25,8 +25,6 @@ import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 
 import net.miginfocom.swing.MigLayout;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.OpenInDesktopActionListener;
-import nl.minvenj.nfi.smartrank.gui.tabs.batchmode.actionlisteners.OpenParentInDesktopActionListener;
 
 public class BatchModeDetailPanel extends JPanel {
     private final JTextField _criteriaFileName;

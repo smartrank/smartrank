@@ -59,13 +59,6 @@ final class BatchProcessingStatusTableCellRenderer implements TableCellRenderer 
                 component.setForeground(Color.BLACK);
                 component.setOpaque(true);
                 break;
-            case POST_PROCESSING_SCRIPT_ERROR:
-                component.setBackground(adaptToSelection(isSelected, Color.PINK));
-                component.setForeground(Color.BLACK);
-                component.setOpaque(true);
-                break;
-            default:
-                break;
         }
         return component;
     }

@@ -57,7 +57,6 @@ public class SmartRankGUISettings {
     private static final String DATABASE_QUERY_ALLELE_COLUMN_INDEX = "jdbc.query.columns.allele";
     private static final String BATCHMODE_START_TIME = "batchmode.startTime";
     private static final String BATCHMODE_END_TIME = "batchmode.endTime";
-    private static final String BATCHMODE_POSTPROCESSING_SCRIPT = "batchmode.postprocessing";
     private static final String WINDOW_TITLE = "windowTitle";
 
     private static String _propertiesFileName = System.getProperty("smartrankProperties");
@@ -220,14 +219,6 @@ public class SmartRankGUISettings {
 
     public static void setBatchModeEndTime(final String time) {
         set(BATCHMODE_END_TIME, time);
-    }
-
-    public static String getBatchModePostProcessingScript() {
-        return get(BATCHMODE_POSTPROCESSING_SCRIPT, "");
-    }
-
-    public static void setBatchModePostProcessingScript(final String script) {
-        set(BATCHMODE_POSTPROCESSING_SCRIPT, script);
     }
 
     public static int getDatabaseSpecimenBatchSize() {

@@ -18,7 +18,7 @@
 package nl.minvenj.nfi.smartrank.gui.tabs.batchmode;
 
 public enum ScanStatus {
-    PENDING("Pending"), PROCESSING("Processing"), SUCCEEDED("Succeeded"), FAILED("Failed"), INTERRUPTED("Interrupted"), CANCELLED("Cancelled"), POST_PROCESSING_SCRIPT_ERROR("Post processing script failed");
+    PENDING("Pending"), PROCESSING("Processing"), SUCCEEDED("Succeeded"), FAILED("Failed"), INTERRUPTED("Interrupted"), CANCELLED("Cancelled");
     private final String _string;
 
     ScanStatus(final String s) {
