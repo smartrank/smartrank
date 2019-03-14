@@ -99,6 +99,22 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>copy-scripttestfile</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/scriptingtestfiles</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/resources/scriptingtestfiles</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-release-notes</id>
                         <phase>process-resources</phase>
                         <goals>

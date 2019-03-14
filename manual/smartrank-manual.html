@@ -924,6 +924,7 @@ li ol > li:before {
     			<tr><td>Clear completed</td><td>Removes Failed, Cancelled and Successful files from the list.</td></tr>
     			<tr><td>Restart</td><td>Sets the status of the selected file to Pending. This button is only enabled if a file with status Failed, Cancelled or Interrupted is selected.</td></tr>
     			<tr><td>Cancel</td><td>Sets the status of the currently selected file to Cancelled.</td></tr>
+    			<tr><td>Edit PPScript</td><td>Opens a script editor and allows editing and testing of the post-processing script.</td></tr>
     		</tbody>
     	</table>
     	</div>
@@ -933,7 +934,106 @@ li ol > li:before {
          <p>When all files have been processed, SmartRank will continue to monitor the selected directory, and automatically process any new search criteria files, 
          until the Stop button is clicked or SmartRank is closed.
          
+                <div class="subsection">
+        <h3 class="subsectiontitle">
+            <a id="ThePostProcessingScript">The post-processing script</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+        <p>SmartRank can perform post-processing steps after every search job. These steps are configured in JavaScript. Please note that the post-processing script is run after both successful and failed jobs. 
+        It is up to the script to determine whether specific actions need to be taken for either of these cases.  
+        Clicking the Edit PPScript button in the toolbar opens up the post-processing script editor.
+        <table class="imageTable">
+            <tr><td><img src="images/scripteditor1.png"></td></tr>
+            <tr><td><div class="imagecaption">the post-processing script editor</div></td></tr>
+        </table>
+
+		The post-processing editor consists of a number of different areas. The main area is the script editor, where the javascript code is shown that will be executed after each search. 
+		To the right of this, an informational area shows some details of the objects that the script can call to obtain attributes of the search job. Below these areas is the console, which shows 
+		the output of any <code>console.log</code> statements.<br>
+		In the toolbar, the following options are available:
+         <table>
+			<thead>
+				<tr>
+					<th>Button</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+    		<tbody>
+    			<tr><td>Save</td><td>Saves the contents of the script to a new file.</td></tr>
+    			<tr><td>Load</td><td>Loads a script from a file.</td></tr>
+    			<tr><td>Test</td><td>Executes the script in test mode. Test settings are loaded from the SearchCriteriaForTest.xml file located in the scriptingtestfiles 
+    			folder of the application directory. In test mode, the file copyToDir method supplied by the FileUtils object will not actually copy a file, but rather log a descriptive 
+    			text to the console window.</td></tr>
+    		</tbody>
+    	</table>
+  		A number of objects are available in the script to obtain the status and other attributes of the current job, and also to perform some very basic file operations. 
+  		The following sections contain a brief and by no means complete list of available objects and their available functions.
+  	
+  	<div class="subsubsection">
+        <h3 class="subsubsectiontitle">
+            <a id="TheJobHelper">The job helper object</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+  		The <code>job</code> helper object represents the current search job. It has functions to access the job's attributes such as whether the job finished successfully,
+  		the name of the search criteria file, the search result etc. Some of the available functions are listed here:
+         <table>
+			<thead>
+				<tr>
+					<th>Function</th>
+					<th>Parameters</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+    		<tbody>
+    			<tr><td>getFileName</td><td></td><td>Returns a string containing the absolute filename of the search criteria file.</td></tr>
+    			<tr><td>isSucceeded</td><td></td><td>returns true if the job was run successfully, false otherwise.</td></tr>
+    			<tr><td>getErrorMessage</td><td></td><td>If the job failed, this function returns a description of the error.</td></tr>
+    			<tr><td>getSearchResults</td><td></td><td>Returns an object descriubing the search results. See the information panel in the code editor for this object's porperties and functions.</td></tr>
+    		</tbody>
+    	</table>
+  		
+  	</div>
+
+  	<div class="subsubsection">
+        <h3 class="subsubsectiontitle">
+            <a id="TheLogHelper">The log helper object</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+  		The <code>log</code> helper object allows a script to write log lines into the application log.
+         <table>
+			<thead>
+				<tr>
+					<th>Function</th>
+					<th>Parameters</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+    		<tbody>
+    			<tr><td>info</td><td>String msg</td><td>Writes the supplied string to the application log at info level.</td></tr>
+    			<tr><td>warn</td><td>String msg</td><td>Writes the supplied string to the application log at warning level.</td></tr>
+    			<tr><td>error</td><td>String msg</td><td>Writes the supplied string to the application log at error level.</td></tr>
+    		</tbody>
+    	</table>  	
+   	</div>
+
+  	<div class="subsubsection">
+        <h3 class="subsubsectiontitle">
+            <a id="TheFileUtilsHelper">The FileUtils helper object</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span>
+        </h3>
+  		The <code>FileUtils</code> helper object allows a script to perform limited file manipulation operations.
+         <table>
+			<thead>
+				<tr>
+					<th>Function</th>
+					<th>Parameters</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+    		<tbody>
+    			<tr><td>fileName</td><td>String path</td><td>Parses the supplied absolute path and returns only the file's name and extension.</td></tr>
+    			<tr><td>copyToDir</td><td>String fileName, String outputDir</td><td>Copies a file to a directory. If a file of the same name already exists in the output directory, the new file's name is changed to make it unique.</td></tr>
+    		</tbody>
+    	</table>  	
+  	</div>
     </div>
+  	</div>
 
     <div class="section">
         <h2 class="sectiontitle">
