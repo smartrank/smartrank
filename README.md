@@ -5,7 +5,6 @@ The development of SmartRank  was co-funded by the **Prevention of and Fight aga
 
 To contact the authors please send an email to smartrank(at)nfi.minvenj.nl.
 
-[![Build Status](https://travis-ci.org/smartrank/smartrank.svg?branch=master)](https://travis-ci.org/smartrank/smartrank)
 [![Github Releases](https://img.shields.io/github/downloads/smartrank/smartrank/latest/total.svg)](https://github.com/smartrank/smartrank/releases/latest)
 
 
