@@ -19,7 +19,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import nl.minvenj.nfi.smartrank.analysis.SearchResults;
@@ -30,6 +29,9 @@ public class BatchJobInfoTest {
 
     @Mock
     SearchCriteriaReader _mockSearch;
+
+    @Mock
+    SearchResults _mockSearchResults;
 
     @Rule
     public ExpectedException _expected = ExpectedException.none();
@@ -149,23 +151,23 @@ public class BatchJobInfoTest {
 
     @Test
     public final void testSetGetResultsSucceeded() {
-        final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
-        assertThat(batchJobInfo.getResults(), is(nullValue()));
-        final SearchResults searchResults = Mockito.mock(SearchResults.class);
-        when(searchResults.isSucceeded()).thenReturn(true);
-        batchJobInfo.setResults(searchResults);
-        assertThat(batchJobInfo.getResults(), is(searchResults));
+    	final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
+        when(_mockSearchResults.isSucceeded()).thenReturn(true);
+        when(_mockSearchResults.getLogFileName()).thenReturn("DummyLogName");
+        batchJobInfo.setResults(_mockSearchResults);
+        assertThat(batchJobInfo.getLogFileName(), is("DummyLogName"));
+        assertThat(batchJobInfo.getReportFileName(), is(nullValue()));
         assertThat(batchJobInfo.getStatus(), is(ScanStatus.SUCCEEDED));
     }
 
     @Test
     public final void testSetGetResultsFailed() {
         final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
-        assertThat(batchJobInfo.getResults(), is(nullValue()));
-        final SearchResults searchResults = Mockito.mock(SearchResults.class);
-        when(searchResults.getFailureReason()).thenReturn(new Exception("testSetGetResultsFailed"));
-        batchJobInfo.setResults(searchResults);
-        assertThat(batchJobInfo.getResults(), is(searchResults));
+        when(_mockSearchResults.getFailureReason()).thenReturn(new Exception("testSetGetResultsFailed"));
+        when(_mockSearchResults.getLogFileName()).thenReturn("DummyLogName");
+        batchJobInfo.setResults(_mockSearchResults);
+        assertThat(batchJobInfo.getLogFileName(), is("DummyLogName"));
+        assertThat(batchJobInfo.getReportFileName(), is(nullValue()));
         assertThat(batchJobInfo.getStatus(), is(ScanStatus.FAILED));
         assertThat(batchJobInfo.getErrorMessage(), is("testSetGetResultsFailed"));
     }
@@ -173,20 +175,20 @@ public class BatchJobInfoTest {
     @Test
     public final void testSetGetResultsInterrupted() {
         final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
-        assertThat(batchJobInfo.getResults(), is(nullValue()));
-        final SearchResults searchResults = Mockito.mock(SearchResults.class);
-        when(searchResults.isInterrupted()).thenReturn(true);
-        batchJobInfo.setResults(searchResults);
-        assertThat(batchJobInfo.getResults(), is(searchResults));
+        when(_mockSearchResults.isInterrupted()).thenReturn(true);
+        when(_mockSearchResults.getLogFileName()).thenReturn("DummyLogName");
+        batchJobInfo.setResults(_mockSearchResults);
+        assertThat(batchJobInfo.getLogFileName(), is("DummyLogName"));
+        assertThat(batchJobInfo.getReportFileName(), is(nullValue()));
         assertThat(batchJobInfo.getStatus(), is(ScanStatus.INTERRUPTED));
     }
 
     @Test
     public final void testSetGetResultsNull() {
         final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
-        assertThat(batchJobInfo.getResults(), is(nullValue()));
         batchJobInfo.setResults(null);
-        assertThat(batchJobInfo.getResults(), is(nullValue()));
+        assertThat(batchJobInfo.getLogFileName(), is(nullValue()));
+        assertThat(batchJobInfo.getReportFileName(), is(nullValue()));
         assertThat(batchJobInfo.getStatus(), is(ScanStatus.PENDING));
     }
 

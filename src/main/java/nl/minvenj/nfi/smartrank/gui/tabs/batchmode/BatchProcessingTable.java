@@ -71,15 +71,9 @@ public class BatchProcessingTable extends ZebraTable {
                 _detailPanel.setStatus("" + info.getStatus());
                 _detailPanel.setRemarks(info.getErrorMessage());
                 _detailPanel.setStatusTimestamp(info.getStatusTimestamp());
-                fillDetailsFromSearchResults(info.getResults());
+                _detailPanel.setLogFileName(NullUtils.getValue(info.getLogFileName(), ""));
+                _detailPanel.setReportFileName(NullUtils.getValue(info.getReportFileName(), ""));
             }
-        }
-    }
-
-    private void fillDetailsFromSearchResults(final SearchResults results) {
-        if (results != null) {
-            _detailPanel.setLogFileName(NullUtils.getValue(results.getLogFileName(), ""));
-            _detailPanel.setReportFileName(NullUtils.getValue(results.getReportFileName(), ""));
         }
     }
 

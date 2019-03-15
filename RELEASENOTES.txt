@@ -7,6 +7,7 @@ the prosecution hypothesis through a fast and user-friendly GUI.
 Version 1.0.6-SNAPSHOT
 Release date: Not released
 -------------------------
+SMARTRANK-274: Reduced memory usage when in batch mode.
 SMARTRANK-275: Added the batchmode.retentiondays setting that governs how many days the result of completed jobs is shown in the GUI. Defaults to 14.
 
 
