@@ -4,6 +4,12 @@ SmartRank Release Notes
 SmartRank allows DNA database searches for individuals whose profiles lead to high LRs in favor of 
 the prosecution hypothesis through a fast and user-friendly GUI.
 
+Version 1.0.5
+Release date: 2018-11-23
+-------------------------
+SMARTRANK-264: Added post-processing scripting for batch mode.
+
+
 Version 1.0.4
 Release date: 2017-06-27
 -------------------------
