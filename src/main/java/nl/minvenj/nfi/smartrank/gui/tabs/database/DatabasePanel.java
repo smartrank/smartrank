@@ -294,7 +294,7 @@ public class DatabasePanel extends SmartRankPanel {
     /**
      * Connects to the database using the last-used settings.
      *
-     * @return true if the settings were valid, false otherwize.
+     * @return true if the settings were valid, false otherwise.
      */
     public boolean doConnect() {
         final DBSettingsDialog dlg = new DBSettingsDialog((JFrame) SwingUtilities.getWindowAncestor(this), true);

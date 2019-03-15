@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 
+import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReaderFactory;
 import nl.minvenj.nfi.smartrank.raven.NullUtils;
@@ -88,10 +89,11 @@ public final class FilePollingThread extends Thread {
                         final Calendar processedAt = Calendar.getInstance();
                         processedAt.setTime(sdf.parse(info.getStatusTimestamp()));
 
-                        final Calendar twoWeeksAgo = Calendar.getInstance();
-                        twoWeeksAgo.add(Calendar.DAY_OF_MONTH, -14);
+                        
+                        final Calendar deleteJobsBeforeThisTime = Calendar.getInstance();
+                        deleteJobsBeforeThisTime.add(Calendar.DAY_OF_MONTH, -SmartRankGUISettings.getBatchJobRetentionDays());
 
-                        if (processedAt.before(twoWeeksAgo)) {
+                        if (processedAt.before(deleteJobsBeforeThisTime)) {
                             _batchModePanel.getFilesTable().removeRow(row);
                         }
                     }

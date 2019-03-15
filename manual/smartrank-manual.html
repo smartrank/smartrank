@@ -793,6 +793,11 @@ li ol > li:before {
                 <td><code>db</code> automatically connect to the database and start batch processing.<br>
                 <code>file</code> automatically load the last-loaded file and start batch processing.</td>
             </tr>
+            <tr>
+                <td>batchMode.retentiondays</td>
+                <td>When in batch mode, this option can be specified to automatically remove jobs that are older than the specified number of days.</td>
+                <td>a positive integer. Specifying 0 will clean up processed jobs immediately. Default value is 14.</td>
+            </tr>
             </tbody>
         </table>
     </div>
