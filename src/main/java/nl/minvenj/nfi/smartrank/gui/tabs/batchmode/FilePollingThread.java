@@ -29,6 +29,9 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReaderFactory;
@@ -39,6 +42,7 @@ import nl.minvenj.nfi.smartrank.raven.NullUtils;
  */
 public final class FilePollingThread extends Thread {
 
+    private static final Logger LOG = LoggerFactory.getLogger(FilePollingThread.class);
     private final BatchModePanel _batchModePanel;
     private final HashMap<File, Integer> _retryCounts;
 
@@ -71,6 +75,9 @@ public final class FilePollingThread extends Thread {
         }
         catch (final InterruptedException e) {
         }
+        catch (final Throwable t) {
+            LOG.error("File polling thread has stopped!", t);
+        }
     }
 
     private void cleanupFileList() {
@@ -89,7 +96,7 @@ public final class FilePollingThread extends Thread {
                         final Calendar processedAt = Calendar.getInstance();
                         processedAt.setTime(sdf.parse(info.getStatusTimestamp()));
 
-                        
+
                         final Calendar deleteJobsBeforeThisTime = Calendar.getInstance();
                         deleteJobsBeforeThisTime.add(Calendar.DAY_OF_MONTH, -SmartRankGUISettings.getBatchJobRetentionDays());
 
@@ -160,9 +167,10 @@ public final class FilePollingThread extends Thread {
 
     private boolean isNew(final File file) {
         for (int idx = 0; idx < _batchModePanel.getFilesTable().getModel().getRowCount(); idx++) {
-            if (((File) _batchModePanel.getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(file.getName()) && ScanStatus.PENDING == (((BatchJobInfo) _batchModePanel.getFilesTable().getModel().getValueAt(idx, 1)).getStatus()))
+            if (((File) _batchModePanel.getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(file.getName()) && ScanStatus.PENDING == (((BatchJobInfo) _batchModePanel.getFilesTable().getModel().getValueAt(idx, 1)).getStatus())) {
                 return false;
-        }
+            }
+            }
         return true;
     }
 }
