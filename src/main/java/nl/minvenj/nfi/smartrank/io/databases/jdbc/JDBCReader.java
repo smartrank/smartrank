@@ -261,17 +261,20 @@ public class JDBCReader implements DatabaseReader {
         Sample sample = null;
         while (!resultSet.isAfterLast() && isBadRecord(sample)) {
             sample = null;
-            if (_config.isSingleRowQuery())
+            if (_config.isSingleRowQuery()) {
                 sample = readSampleFromSingleRow(resultSet, validationMode);
-            else
+            }
+            else {
                 sample = readSampleFromMultipleRows(resultSet, validationMode);
+            }
         }
         return sample;
     }
 
     private boolean isBadRecord(final Sample sample) {
-        if (sample == null)
+        if (sample == null) {
             return true;
+        }
 
         for (final ExcludedProfile profile : _badRecordList) {
             if (profile.getSampleName().equalsIgnoreCase(sample.getName())) {
@@ -282,11 +285,13 @@ public class JDBCReader implements DatabaseReader {
     }
 
     private Sample readSampleFromSingleRow(final JDBCResultSetChunker resultSet, final boolean validationMode) throws SQLException {
-        if (resultSet.isAfterLast())
+        if (resultSet.isAfterLast()) {
             return null;
+        }
 
-        if (resultSet.isBeforeFirst() && !resultSet.next())
+        if (resultSet.isBeforeFirst() && !resultSet.next()) {
             throw new IllegalArgumentException("could not do next");
+        }
 
         final Sample sample = new Sample(resultSet.getString(1).trim());
 
@@ -294,7 +299,7 @@ public class JDBCReader implements DatabaseReader {
         while (idx < resultSet.getMetaData().getColumnCount()) {
             final String allele = NullUtils.getValue(resultSet.getString(idx), "NULL").trim();
             if (!allele.equalsIgnoreCase("NULL")) {
-                final String locusName = Locus.normalize(resultSet.getMetaData().getColumnName(idx).replaceFirst("_[1234]$", ""));
+                final String locusName = Locus.normalize(resultSet.getMetaData().getColumnLabel(idx).replaceFirst("_[1234]$", ""));
                 Locus locus = sample.getLocus(locusName);
                 if (locus == null) {
                     locus = new Locus(locusName);
@@ -311,8 +316,9 @@ public class JDBCReader implements DatabaseReader {
     }
 
     private Sample readSampleFromMultipleRows(final JDBCResultSetChunker resultSet, final boolean validationMode) throws SQLException {
-        if (resultSet.isAfterLast())
+        if (resultSet.isAfterLast()) {
             return null;
+        }
 
         if (resultSet.isBeforeFirst() && !resultSet.next()) {
             throw new IllegalArgumentException("could not do next");
@@ -331,8 +337,9 @@ public class JDBCReader implements DatabaseReader {
         final ResultSetMetaData metaData = resultSet.getMetaData();
         for (int idx = 1; !validationMode && idx <= metaData.getColumnCount(); idx++) {
             if (idx != _config.getSpecimenIdColumnIndex() && idx != _config.getLocusColumnIndex() && idx != _config.getAlleleColumnIndex()) {
-                if (additionalData.length() != 0)
+                if (additionalData.length() != 0) {
                     additionalData.append(", ");
+                }
                 final String metaName = metaData.getColumnLabel(idx);
                 final String metaValue = resultSet.getString(idx);
                 additionalData.append(metaName).append(": ").append(metaValue);

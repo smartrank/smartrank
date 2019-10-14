@@ -207,8 +207,9 @@ public class SmartRankRestrictions {
     private static void load() {
         if ((System.currentTimeMillis() - _loadedDate) > 2000L) {
             if (_propertiesFileName == null) {
-                if (!load(DEFAULT_PROPERTIES_FILENAME))
+                if (!load(DEFAULT_PROPERTIES_FILENAME)) {
                     load(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+                }
             }
             else {
                 load(_propertiesFileName);
@@ -219,15 +220,15 @@ public class SmartRankRestrictions {
 
     private static boolean load(final String fileName) {
         try (FileInputStream fis = new FileInputStream(fileName)) {
-            PROPERTIES.load(fis);
-            if (_propertiesFileName == null) {
-                LOG.info("Restrictions loaded from {}", fileName);
+            if (PROPERTIES.isEmpty()) {
+                LOG.info("Loading restrictions from {}", new File(fileName).getAbsolutePath());
             }
+            PROPERTIES.load(fis);
             _propertiesFileName = fileName;
             return true;
         }
         catch (final FileNotFoundException ex) {
-            LOG.debug("Properties file {} does not exist yet.", fileName);
+            LOG.debug("Properties file {} does not exist yet.", new File(fileName).getAbsolutePath());
         }
         catch (final Exception ex) {
             LOG.debug("Error loading properties file: \n" + ex.getLocalizedMessage());
@@ -237,8 +238,9 @@ public class SmartRankRestrictions {
 
     private static void store() {
         if (_propertiesFileName == null) {
-            if (!store(DEFAULT_PROPERTIES_FILENAME))
+            if (!store(DEFAULT_PROPERTIES_FILENAME)) {
                 store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+            }
         }
         else {
             store(_propertiesFileName);

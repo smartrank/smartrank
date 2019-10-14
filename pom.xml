@@ -22,6 +22,7 @@
         <version.jbehave-junit-runner>1.2.0.2</version.jbehave-junit-runner>
         <version.jtds>1.3.1</version.jtds>
         <version.jdt>3.1.1</version.jdt>
+        <version.h2>1.4.199</version.h2>
         <version.fifesoft-rsyntaxtextarea>2.6.1</version.fifesoft-rsyntaxtextarea>
         <version.fifesoft-languagesupport>2.6.0</version.fifesoft-languagesupport>
 
@@ -367,6 +368,12 @@
             <artifactId>hamcrest-all</artifactId>
             <version>${version.hamcrest}</version>
             <scope>test</scope>
+	</dependency>
+	<dependency>
+          <groupId>com.h2database</groupId>
+          <artifactId>h2</artifactId>
+          <version>${version.h2}</version>
+          <scope>runtime</scope>
         </dependency>
         <dependency>
           <groupId>net.sourceforge.jtds</groupId>

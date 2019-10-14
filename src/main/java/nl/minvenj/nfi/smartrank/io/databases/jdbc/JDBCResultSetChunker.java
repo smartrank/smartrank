@@ -116,8 +116,9 @@ public class JDBCResultSetChunker implements AutoCloseable {
     }
 
     private void updateResultSet(final boolean doNext) throws SQLException {
-        if (_resultSet != null && (_resultSet.isClosed() || !_resultSet.isAfterLast()))
+        if (_resultSet != null && (_resultSet.isClosed() || !_resultSet.isAfterLast())) {
             return;
+        }
 
         if (_resultSet != null) {
             _resultSet.getStatement().getConnection().close();
@@ -211,7 +212,8 @@ public class JDBCResultSetChunker implements AutoCloseable {
             return _resultSet.isClosed() || _resultSet.isAfterLast();
         }
         catch (final Throwable t) {
-            throw new SQLException("Error in JDBCResultSetChunker!", t);
+            return true;
+//            throw new SQLException("Error in JDBCResultSetChunker!", t);
         }
     }
 
@@ -220,14 +222,16 @@ public class JDBCResultSetChunker implements AutoCloseable {
     }
 
     public SQLWarning getWarnings() throws SQLException {
-        if (_resultSet == null)
+        if (_resultSet == null) {
             return null;
+        }
         return _resultSet.getWarnings();
     }
 
     public ResultSetMetaData getMetaData() throws SQLException {
-        if (_resultSet == null)
+        if (_resultSet == null) {
             return null;
+        }
         return _resultSet.getMetaData();
     }
 }
