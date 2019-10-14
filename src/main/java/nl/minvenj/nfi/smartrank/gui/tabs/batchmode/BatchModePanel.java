@@ -98,6 +98,8 @@ import nl.minvenj.nfi.smartrank.raven.timeformat.TimeUtils;
 
 public class BatchModePanel extends SmartRankPanel {
 
+    private static final long serialVersionUID = 1L;
+
     private static final String TIME_REGEX = "^([0-1]?[0-9]|2[0-3])[0-5][0-9]$";
 
     private static final EnumSet<ApplicationStatus> DISABLED_STATUS_SET = EnumSet.of(WAIT_DB, VERIFYING_DB);
@@ -135,6 +137,8 @@ public class BatchModePanel extends SmartRankPanel {
     private final JSpinner _toTime;
     private boolean _waitingMessageLogged;
     private final ScheduledExecutorService _scheduler;
+
+    private Thread _pollingThread;
 
     public BatchModePanel() {
         _running = new AtomicBoolean();
@@ -279,7 +283,22 @@ public class BatchModePanel extends SmartRankPanel {
 
         registerAsListener();
 
-        startFilePolling();
+        final Thread watchDog = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    while (true) {
+                        startFilePolling();
+                        Thread.sleep(2000);
+                    }
+                }
+                catch (final InterruptedException e) {
+                }
+            }
+        };
+        watchDog.setDaemon(true);
+        watchDog.setName("BatchModeFilePollingWatchDog");
+        watchDog.start();
     }
 
     private JButton getButton(final String text, final String tooltip, final String name, final String iconResource, final boolean enabledByDefault, final ActionListener actionListener) {
@@ -292,10 +311,12 @@ public class BatchModePanel extends SmartRankPanel {
     }
 
     protected void startFilePolling() {
-        final Thread pollingThread = new FilePollingThread(this);
-        pollingThread.setName("InputFilePollingThread");
-        pollingThread.setDaemon(true);
-        pollingThread.start();
+        if (_pollingThread == null || !_pollingThread.isAlive()) {
+            _pollingThread = new FilePollingThread(this);
+            _pollingThread.setName("InputFilePollingThread");
+            _pollingThread.setDaemon(true);
+            _pollingThread.start();
+        }
     }
 
     public void startSearch() {
@@ -417,8 +438,9 @@ public class BatchModePanel extends SmartRankPanel {
         }
 
         boolean mustWait = (fromTimeIsValidTime && !fromTimeEarlier) || (toTimeIsValidTime && !toTimeLater);
-        if (crossingMidnight)
+        if (crossingMidnight) {
             mustWait = !mustWait;
+        }
 
         if (mustWait) {
             if (!_waitingMessageLogged) {
@@ -501,7 +523,7 @@ public class BatchModePanel extends SmartRankPanel {
                 info.setStatus(ScanStatus.POST_PROCESSING_SCRIPT_ERROR);
                 final String msg = NullUtils.getValue(info.getErrorMessage(), "");
                 if (msg.length() > 0) {
-                    info.setErrorMessage("Search failed with '" + info.getErrorMessage() + "' and after this, the post pcocessing script failed with '" + se.getMessage() + "'");
+                    info.setErrorMessage("Search failed with '" + info.getErrorMessage() + "' and after this, the post processing script failed with '" + se.getMessage() + "'");
                 }
                 else {
                     info.setErrorMessage("The post pcocessing script failed with '" + se.getMessage() + "'");
@@ -630,7 +652,7 @@ public class BatchModePanel extends SmartRankPanel {
     /**
      * @param failedFolder the failedFolder to set
      */
-    public void setFailedFolder(File failedFolder) {
+    public void setFailedFolder(final File failedFolder) {
         _failedFolder = failedFolder;
     }
 
@@ -644,7 +666,7 @@ public class BatchModePanel extends SmartRankPanel {
     /**
      * @param inputFolder the inputFolder to set
      */
-    public void setInputFolder(File inputFolder) {
+    public void setInputFolder(final File inputFolder) {
         _inputFolder = inputFolder;
     }
 }
