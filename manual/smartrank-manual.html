@@ -239,7 +239,7 @@ li ol > li:before {
     <div class="subsection">
         <h3 class="subsectiontitle"><a id="ReadingSpecimensJDBC">Reading specimens through a direct database connection</a> <span class="no-print"><font size="1"><a href="#Top">Back to top</a></font></span></h3>
            <p>
-           SmartRank has the capability to connect directly to databases running on either Microsoft SQLServer or SAP Adaptive Server Enterprise. 
+           SmartRank has the capability to connect directly Microsoft SQLServer, SAP Adaptive Server Enterprise or H2 databases. 
            On the Database tab, click the Connect... button to bring up the Database Settings screen on which you can review or configure the connection to the database.
         <table class="imageTable">
             <tr><td><img src="images/database-connect-dialog.png"></td></tr>
@@ -463,6 +463,12 @@ li ol > li:before {
         </table>
         <p>The mix profile file must be in tab- or comma separated format. See <span class="reference">ProfileFormat</span> for more information.
         </p>
+        <p>
+	        <ul>
+    		    <li>Use the <b>Enable all</b> and <b>Disable all</b> buttons to collectively enable or disable all loaded profiles.</li>  
+        		<li>The <b>Enable added profiles</b> check-box controls whether profiles loaded through the 'Add' button are enabled by default.</li>
+        	</ul>  
+        </p>
         <p>To allow integration with other tools, it is possible to import search settings (samples, profiles, hypotheses etc.) from a single file. The format of 
         this file is described in <span class="reference">SearchCriteriaFormat</span>. Click the 'Load Search Criteria' button to select a file from which to 
         load the search criteria. Note that all current settings are discarded and reset to their defaults before loading the file. </p>
@@ -484,6 +490,12 @@ li ol > li:before {
         <p>
             The known profile file must be in tab- or comma separated format. See <a href="#ProfileFormat">Profile
                 Format</a> for more information.
+        </p>
+        <p>
+	        <ul>
+    		    <li>Use the <b>Enable all</b> and <b>Disable all</b> buttons to collectively enable or disable all loaded profiles.</li>  
+        		<li>The <b>Enable added profiles</b> check-box controls whether profiles loaded through the 'Add' button are enabled by default.</li>
+        	</ul>  
         </p>
     </div>
     
@@ -1033,7 +1045,7 @@ li ol > li:before {
 			</thead>
     		<tbody>
     			<tr><td>fileName</td><td>String path</td><td>Parses the supplied absolute path and returns only the file's name and extension.</td></tr>
-    			<tr><td>copyToDir</td><td>String fileName, String outputDir</td><td>Copies a file to a directory. If a file of the same name already exists in the output directory, the new file's name is changed to make it unique.</td></tr>
+    			<tr><td>copyToDir</td><td>String fileName, String outputDir</td><td>Copies a file to a directory. On Windows, both the standard <i>drive:\path</i> format and UNC format (e.g. <i>\\host\path</i>) can be used.<br>If a file of the same name already exists in the output directory, the new file's name is changed to make it unique.</td></tr>
     		</tbody>
     	</table>  	
   	</div>

@@ -28,11 +28,13 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
@@ -45,7 +47,7 @@ import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.gui.tabs.SmartRankPanel;
 import nl.minvenj.nfi.smartrank.messages.commands.ClearSearchCriteriaMessage;
 import nl.minvenj.nfi.smartrank.messages.commands.RemoveCrimeSceneProfiles;
-import nl.minvenj.nfi.smartrank.messages.commands.UpdateCrimeSceneProfile;
+import nl.minvenj.nfi.smartrank.messages.commands.UpdateCrimeSceneProfiles;
 import nl.minvenj.nfi.smartrank.messages.data.AddCrimeSceneFilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.CrimeSceneProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.LoadSearchCriteriaMessage;
@@ -63,6 +65,9 @@ public class CrimeSceneProfilesTopPanel extends SmartRankPanel {
     private final JButton _removeButton;
     private final JButton _loadButton;
     private final JButton _clearButton;
+    private final JButton _enableAllButton;
+    private final JButton _disableAllButton;
+    private final JCheckBox _enableAddedProfilesCheckbox;
 
     /**
      * Model for the table displaying the loaded profiles
@@ -96,9 +101,13 @@ public class CrimeSceneProfilesTopPanel extends SmartRankPanel {
             @Override
             public void tableChanged(final TableModelEvent e) {
                 if (e.getType() == TableModelEvent.UPDATE) {
-                    final Sample s = (Sample) _profileTable.getModel().getValueAt(e.getFirstRow(), 1);
-                    s.setEnabled((boolean) _profileTable.getModel().getValueAt(e.getFirstRow(), 0));
-                    MessageBus.getInstance().send(this, new UpdateCrimeSceneProfile(s));
+                    final List<Sample> samples = new ArrayList<>();
+                    for (int row = e.getFirstRow(); row <= e.getLastRow(); row++) {
+                        final Sample s = (Sample) _profileTable.getModel().getValueAt(row, 1);
+                        s.setEnabled((boolean) _profileTable.getModel().getValueAt(row, 0));
+                        samples.add(s);
+                    }
+                    MessageBus.getInstance().send(this, new UpdateCrimeSceneProfiles(samples));
                 }
             }
         });
@@ -109,6 +118,7 @@ public class CrimeSceneProfilesTopPanel extends SmartRankPanel {
                 _removeButton.setEnabled(_profileTable.getSelectedRowCount() > 0);
             }
         });
+
 
         final JScrollPane profileTableScrollPane = new JScrollPane();
         profileTableScrollPane.setViewportView(_profileTable);
@@ -142,7 +152,7 @@ public class CrimeSceneProfilesTopPanel extends SmartRankPanel {
                 removeButtonActionPerformed(evt);
             }
         });
-        add(_removeButton, "cell 2 1 1 2,growx,aligny top");
+        add(_removeButton, "flowy,cell 2 1 1 2,growx,aligny top");
 
         _loadButton = new JButton();
         _loadButton.setIcon(new ImageIcon(getClass().getResource("/images/16x16/zoom_in.png")));
@@ -170,7 +180,52 @@ public class CrimeSceneProfilesTopPanel extends SmartRankPanel {
         buttonPanel.add(_loadButton);
         buttonPanel.add(_clearButton);
         add(buttonPanel, "cell 1 2,growx");
+
+        add(new JSeparator(), "cell 2 1,growx,aligny top");
+
+        _enableAllButton = new JButton("Enable all");
+        _enableAllButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/16x16/icons8-todo-list-16.png")));
+        add(_enableAllButton, "cell 2 1,growx,aligny top");
+        _enableAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                enableAllActionPerformed();
+            }
+        });
+
+        _disableAllButton = new JButton("Disable all");
+        _disableAllButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/16x16/unchecked-todo-list-16.png")));
+        add(_disableAllButton, "cell 2 1,growx,aligny top");
+        _disableAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                disableAllActionPerformed();
+            }
+        });
+
+        _enableAddedProfilesCheckbox = new JCheckBox("Enable added profiles", SmartRankGUISettings.isNewCrimesceneProfilesEnabled());
+        _enableAddedProfilesCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                SmartRankGUISettings.setNewCrimesceneProfilesEnabled(_enableAddedProfilesCheckbox.isSelected());
+            }
+        });
+        _enableAddedProfilesCheckbox.setToolTipText("Check this box to automatically enable added profiles");
+        add(_enableAddedProfilesCheckbox, "cell 2 1");
+
         registerAsListener();
+    }
+
+    private void disableAllActionPerformed() {
+        for (int row = 0; row < _profileTable.getRowCount(); row++) {
+            _profileTable.setValueAt(Boolean.FALSE, row, 0);
+        }
+    }
+
+    protected void enableAllActionPerformed() {
+        for (int row = 0; row < _profileTable.getRowCount(); row++) {
+            _profileTable.setValueAt(Boolean.TRUE, row, 0);
+        }
     }
 
     private void addButtonActionPerformed(final ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
