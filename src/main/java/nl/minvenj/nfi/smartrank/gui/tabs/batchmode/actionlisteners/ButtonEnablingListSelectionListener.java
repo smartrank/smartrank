@@ -74,7 +74,7 @@ public final class ButtonEnablingListSelectionListener implements ListSelectionL
             boolean cancelEnabled = selectedRow >= 0;
             if (restartEnabled) {
                 final BatchJobInfo info = (BatchJobInfo) _table.getValueAt(selectedRow, 2);
-                restartEnabled = (info.getReader() != null) && !EnumSet.of(ScanStatus.PROCESSING, ScanStatus.PENDING).contains(info.getStatus());
+                restartEnabled = (info.getReader() != null) && !EnumSet.of(ScanStatus.PROCESSING, ScanStatus.PENDING, ScanStatus.REMOVED).contains(info.getStatus());
                 cancelEnabled = (info.getStatus() == ScanStatus.PENDING);
             }
             _restartButton.setEnabled(restartEnabled);

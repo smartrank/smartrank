@@ -72,7 +72,7 @@ public class SearchCriteriaWriter {
     public void write(final File file) throws Exception {
         final SmartRankImportFile xml = new SmartRankImportFile();
         xml.setUserid(_userName);
-        xml.setDateTime(new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss").format(new Date()));
+        xml.setDateTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date()));
         xml.setCaseFolder(_caseNumber);
         xml.setDropin(new BigDecimal(_defenseHypothesis.getDropInProbability()));
         xml.setTheta(new BigDecimal(_defenseHypothesis.getThetaCorrection()));

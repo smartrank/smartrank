@@ -58,7 +58,6 @@ public class SmartRankGUISettings {
     private static final String BATCHMODE_START_TIME = "batchmode.startTime";
     private static final String BATCHMODE_END_TIME = "batchmode.endTime";
     private static final String BATCHMODE_POSTPROCESSING_SCRIPT = "batchmode.postprocessing";
-	private static final String BATCHMODE_JOB_RETENTION_DAYS = "batchmode.retentiondays";
     private static final String WINDOW_TITLE = "windowTitle";
     private static final String SEARCHCRITERIA_EXPORT_INCLUDESTATISTICS = "searchcriteria.export.includestatistics";
     private static final String SEARCHCRITERIA_EXPORT_AUTOMATICDROPOUTESTIMATION = "searchcriteria.export.automaticdropoutestimation";
@@ -246,10 +245,6 @@ public class SmartRankGUISettings {
     public static String getWindowTitle() {
         return get(WINDOW_TITLE, "");
     }
-
-    public static int getBatchJobRetentionDays() {
-		return Integer.decode(get(BATCHMODE_JOB_RETENTION_DAYS, "14"));
-	}
 
     public static void setNewCrimesceneProfilesEnabled(final boolean enabled) {
         set(NEW_CRIMESCENE_PROFILES_ENABLED, Boolean.toString(enabled));

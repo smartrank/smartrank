@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import nl.minvenj.nfi.smartrank.analysis.SearchResults;
+import nl.minvenj.nfi.smartrank.domain.AnalysisParameters;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -35,6 +36,9 @@ public class BatchJobInfoTest {
 
     @Rule
     public ExpectedException _expected = ExpectedException.none();
+
+    @Mock
+    private AnalysisParameters _mockAnalysisParameters;
 
     @Before
     public void setUp() throws Exception {
@@ -154,6 +158,8 @@ public class BatchJobInfoTest {
     	final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
         when(_mockSearchResults.isSucceeded()).thenReturn(true);
         when(_mockSearchResults.getLogFileName()).thenReturn("DummyLogName");
+        when(_mockSearchResults.getParameters()).thenReturn(_mockAnalysisParameters);
+        when(_mockAnalysisParameters.getLrThreshold()).thenReturn(1234);
         batchJobInfo.setResults(_mockSearchResults);
         assertThat(batchJobInfo.getLogFileName(), is("DummyLogName"));
         assertThat(batchJobInfo.getReportFileName(), is(nullValue()));
@@ -165,6 +171,8 @@ public class BatchJobInfoTest {
         final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
         when(_mockSearchResults.getFailureReason()).thenReturn(new Exception("testSetGetResultsFailed"));
         when(_mockSearchResults.getLogFileName()).thenReturn("DummyLogName");
+        when(_mockSearchResults.getParameters()).thenReturn(_mockAnalysisParameters);
+        when(_mockAnalysisParameters.getLrThreshold()).thenReturn(1234);
         batchJobInfo.setResults(_mockSearchResults);
         assertThat(batchJobInfo.getLogFileName(), is("DummyLogName"));
         assertThat(batchJobInfo.getReportFileName(), is(nullValue()));
@@ -177,6 +185,8 @@ public class BatchJobInfoTest {
         final BatchJobInfo batchJobInfo = new BatchJobInfo(new File("notnull"), _mockSearch, ScanStatus.PENDING);
         when(_mockSearchResults.isInterrupted()).thenReturn(true);
         when(_mockSearchResults.getLogFileName()).thenReturn("DummyLogName");
+        when(_mockSearchResults.getParameters()).thenReturn(_mockAnalysisParameters);
+        when(_mockAnalysisParameters.getLrThreshold()).thenReturn(1234);
         batchJobInfo.setResults(_mockSearchResults);
         assertThat(batchJobInfo.getLogFileName(), is("DummyLogName"));
         assertThat(batchJobInfo.getReportFileName(), is(nullValue()));

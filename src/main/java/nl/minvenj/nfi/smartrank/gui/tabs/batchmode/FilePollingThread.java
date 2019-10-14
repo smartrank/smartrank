@@ -17,6 +17,7 @@
  */
 package nl.minvenj.nfi.smartrank.gui.tabs.batchmode;
 
+import java.awt.EventQueue;
 import java.io.File;
 import java.io.FileFilter;
 import java.nio.file.Files;
@@ -32,7 +33,7 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
+import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReaderFactory;
 import nl.minvenj.nfi.smartrank.raven.NullUtils;
@@ -60,17 +61,27 @@ public final class FilePollingThread extends Thread {
     public void run() {
         try {
             while (true) {
-                synchronized (_batchModePanel._messageBus) {
-                    if (_batchModePanel.getInputFolder() != null && _batchModePanel.getInputFolder().exists() && _batchModePanel.getInputFolder().isDirectory()) {
-                        for (final File file : _batchModePanel.getInputFolder().listFiles((FileFilter) pathname -> pathname.isFile() && pathname.getName().toLowerCase().endsWith(".xml"))) {
-                            if (isNew(file)) {
-                                processFile(file);
+                try {
+                    synchronized (_batchModePanel._messageBus) {
+                        if (_batchModePanel.getInputFolder() != null && _batchModePanel.getInputFolder().exists() && _batchModePanel.getInputFolder().isDirectory()) {
+                            for (final File file : _batchModePanel.getInputFolder().listFiles((FileFilter) pathname -> pathname.isFile() && (pathname.getName().toLowerCase().endsWith(".xml") || pathname.getName().toLowerCase().endsWith(".json")))) {
+                                if (isNew(file)) {
+                                    processFile(file);
+                                }
                             }
+                            cleanupFileList();
                         }
-                        cleanupFileList();
                     }
+                    Thread.sleep(2000);
                 }
-                Thread.sleep(2000);
+                catch (final InterruptedException ie) {
+                    // InterruptedExceptions are thrown to the outer level to abort the thread
+                    throw ie;
+                }
+                catch (final Throwable t) {
+                    // Anything throwable that is not an InterruptedException is logged and discarded
+                    LOG.warn("Error polling for new files", t);
+                }
             }
         }
         catch (final InterruptedException e) {
@@ -87,7 +98,8 @@ public final class FilePollingThread extends Thread {
             final BatchJobInfo info = (BatchJobInfo) _batchModePanel.getFilesTable().getModel().getValueAt(row, 1);
 
             if (!file.exists()) {
-                _batchModePanel.getFilesTable().removeRow(row);
+                info.setStatus(ScanStatus.REMOVED);
+                info.setErrorMessage("This file was detected by SmartRank, but was removed before it could be processed.");
             }
             else {
                 final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -98,7 +110,7 @@ public final class FilePollingThread extends Thread {
 
 
                         final Calendar deleteJobsBeforeThisTime = Calendar.getInstance();
-                        deleteJobsBeforeThisTime.add(Calendar.DAY_OF_MONTH, -SmartRankGUISettings.getBatchJobRetentionDays());
+                        deleteJobsBeforeThisTime.add(Calendar.DAY_OF_MONTH, -SmartRankRestrictions.getBatchJobRetentionDays());
 
                         if (processedAt.before(deleteJobsBeforeThisTime)) {
                             _batchModePanel.getFilesTable().removeRow(row);
@@ -110,6 +122,12 @@ public final class FilePollingThread extends Thread {
                 }
             }
         }
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                _batchModePanel.getFilesTable().updateUI();
+            }
+        });
     }
 
     private void processFile(final File file) {

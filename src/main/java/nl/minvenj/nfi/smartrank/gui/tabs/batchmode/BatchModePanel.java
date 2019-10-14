@@ -362,7 +362,15 @@ public class BatchModePanel extends SmartRankPanel {
                 BATCHLOG.info("=====================");
                 BATCHLOG.info("File: {}", curFile.getName());
                 BATCHLOG.info("Requested by {}", info.getReader().getRequester());
-                BATCHLOG.info("Requested at {}", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(info.getReader().getRequestDateTime()));
+
+                String requestTime;
+                if (info.getReader().getRequestDateTime() != null) {
+                    requestTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(info.getReader().getRequestDateTime());
+                }
+                else {
+                    requestTime = "Unknown time";
+                }
+                BATCHLOG.info("Requested at {}", requestTime);
                 if (!msg.isEmpty()) {
                     LOG.info("Error processing file {}: {}", curFile.getName(), msg);
                     BATCHLOG.info("Result: Failed");
@@ -526,10 +534,12 @@ public class BatchModePanel extends SmartRankPanel {
                     info.setErrorMessage("Search failed with '" + info.getErrorMessage() + "' and after this, the post processing script failed with '" + se.getMessage() + "'");
                 }
                 else {
-                    info.setErrorMessage("The post pcocessing script failed with '" + se.getMessage() + "'");
+                    info.setErrorMessage("The post processing script failed with '" + se.getMessage() + "'");
                 }
             }
         }
+        // If required, cleanup search results to avoid out of memory exceptions on large databases.
+        info.clearResults();
     }
 
     @RavenMessageHandler(SearchAbortedMessage.class)

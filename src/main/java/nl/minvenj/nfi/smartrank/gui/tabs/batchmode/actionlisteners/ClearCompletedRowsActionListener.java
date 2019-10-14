@@ -45,7 +45,7 @@ public class ClearCompletedRowsActionListener implements ActionListener {
     public void actionPerformed(final ActionEvent e) {
         for (int row = _filesTable.getRowCount() - 1; row >= 0; row--) {
             final BatchJobInfo info = (BatchJobInfo) _filesTable.getValueAt(row, 1);
-            if (EnumSet.of(ScanStatus.CANCELLED, ScanStatus.SUCCEEDED, ScanStatus.FAILED).contains(info.getStatus())) {
+            if (EnumSet.of(ScanStatus.CANCELLED, ScanStatus.SUCCEEDED, ScanStatus.FAILED, ScanStatus.REMOVED).contains(info.getStatus())) {
                 _filesTable.removeRow(row);
             }
         }
