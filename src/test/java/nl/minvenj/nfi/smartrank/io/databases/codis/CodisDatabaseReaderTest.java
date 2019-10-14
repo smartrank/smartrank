@@ -36,6 +36,15 @@ public class CodisDatabaseReaderTest {
                 new ArrayList<>(Arrays.asList("D16S539=44", "D18S51=44", "D22S1045=44", "D2S1338=44", "D5S818=44", "D7S820=44", "D2S441=44", "D12S391=44", "TPOX=44", "TH01=44", "FGA=44", "VWA=44", "D3S1358=44", "SE33=44", "CSF1PO=44", "PENTAE=44", "PENTAD=44", "D1S1656=44", "D8S1179=44", "D13S317=44", "D10S1248=44", "D19S433=44", "D21S11=44"))},
             {"database_codis_generated_10.csv", 10, Arrays.asList("SHA-1/FFD497A7F5566D8B54E7C4E9F384A7AD9463B8AB", "SHA-1/939DA2EA1DC4512BADF2754A93EBA2D0DB37EA19"), "CODIS",
                 new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 3, 2, 1, 0, 1, 0)),
+                new ArrayList<>(Arrays.asList("D7S820=6", "FGA=10", "D1S1656=1", "TPOX=6", "D19S433=7", "D5S818=8", "D10S1248=2", "PENTA_D=3", "D22S1045=2", "D2S1338=9", "PENTA_E=2", "D21S11=10", "D12S391=2", "D18S51=10", "TH01=10", "SE33=2", "D16S539=10", "D13S317=4", "CSF1PO=6", "D2S441=3", "D3S1358=10", "D8S1179=10"))},
+            {"database_codis_generated_10_2fields.csv", 10, Arrays.asList("SHA-1/E8E77A4943694E23BBCDB905238940B1D1C7C065", "SHA-1/B82F642E2EB0BFB8845CC7583DC45A8CEF005C55"), "CODIS",
+                new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 3, 2, 1, 0, 1, 0)),
+                new ArrayList<>(Arrays.asList("D7S820=6", "FGA=10", "D1S1656=1", "TPOX=6", "D19S433=7", "D5S818=8", "D10S1248=2", "PENTA_D=3", "D22S1045=2", "D2S1338=9", "PENTA_E=2", "D21S11=10", "D12S391=2", "D18S51=10", "TH01=10", "SE33=2", "D16S539=10", "D13S317=4", "CSF1PO=6", "D2S441=3", "D3S1358=10", "D8S1179=10"))},
+            {"database_codis_generated_10_3fields.csv", 10, Arrays.asList("SHA-1/3A04A704B49C284ED2566EAE49B21749A855F5A1", "SHA-1/D6C31B042E6D9493EAB2D7D613D1AEFA0E7ED02E"), "CODIS",
+                new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 3, 2, 1, 0, 1, 0)),
+                new ArrayList<>(Arrays.asList("D7S820=6", "FGA=10", "D1S1656=1", "TPOX=6", "D19S433=7", "D5S818=8", "D10S1248=2", "PENTA_D=3", "D22S1045=2", "D2S1338=9", "PENTA_E=2", "D21S11=10", "D12S391=2", "D18S51=10", "TH01=10", "SE33=2", "D16S539=10", "D13S317=4", "CSF1PO=6", "D2S441=3", "D3S1358=10", "D8S1179=10"))},
+            {"database_codis_generated_10_6fields.csv", 10, Arrays.asList("SHA-1/7AEC37D4DBBDE9D7AE7E105FD0F2327258D1DAD1", "SHA-1/7C5A2E1C91E9DE84BB2FCB8E48C5A149F2B9361C"), "CODIS",
+                new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 3, 2, 1, 0, 1, 0)),
                 new ArrayList<>(Arrays.asList("D7S820=6", "FGA=10", "D1S1656=1", "TPOX=6", "D19S433=7", "D5S818=8", "D10S1248=2", "PENTA_D=3", "D22S1045=2", "D2S1338=9", "PENTA_E=2", "D21S11=10", "D12S391=2", "D18S51=10", "TH01=10", "SE33=2", "D16S539=10", "D13S317=4", "CSF1PO=6", "D2S441=3", "D3S1358=10", "D8S1179=10"))}
         });
     }

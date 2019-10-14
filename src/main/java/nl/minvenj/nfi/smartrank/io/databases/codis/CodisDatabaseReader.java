@@ -45,7 +45,7 @@ import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
  */
 public class CodisDatabaseReader implements DatabaseReader, Iterable<Sample> {
 
-    private static final String LOCUS_FIELD_REGEX = "[\\w ]+_[1234]";
+    private static final String LOCUS_FIELD_REGEX = "[\\w ]+_\\d+";
     private static final String SPECIMEN_ID_FIELD_REGEX = "specimenId";
     private boolean _validated;
     private String[] _headers;
@@ -148,7 +148,7 @@ public class CodisDatabaseReader implements DatabaseReader, Iterable<Sample> {
                 while (!isInterrupted()) {
                     listener.onProgress(validationReader.getOffset(), _file.length());
                 }
-            };
+            }
         };
 
         progressReporter.start();

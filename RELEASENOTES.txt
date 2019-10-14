@@ -18,6 +18,7 @@ SMARTRANK-283: Improved the program's response when the file polling thread term
 SMARTRANK-284: Added optional additional properties to search criteria.
 SMARTRANK-285: Search criteria can now be loaded from JSON.
 SMARTRANK-287: Search criteria can now be saved from the GUI
+SMARTRANK-288: Added support for CSV database files with other than 4 fields per locus 
 
 Version 1.0.5
 Release date: 2018-11-23
