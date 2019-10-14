@@ -19,8 +19,8 @@ package nl.minvenj.nfi.smartrank.io.searchcriteria.logfile;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -65,7 +65,7 @@ public class SmartRankLogfileReader implements SearchCriteriaReader {
         public Double _dropout = 0.0;
     }
 
-    public SmartRankLogfileReader(final File file) throws IOException {
+    public SmartRankLogfileReader(final String fileName, final String criteria) throws IOException {
         _samples = new ArrayList<>();
         _profiles = new ArrayList<>();
         _hpContributors = new HashMap<>();
@@ -75,9 +75,7 @@ public class SmartRankLogfileReader implements SearchCriteriaReader {
         _resultLocation = "";
         _candidateDropout = 0.0;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            readFile(reader);
-        }
+        readFile(new BufferedReader(new StringReader(criteria)));
     }
 
     private void readFile(final BufferedReader reader) throws IOException {

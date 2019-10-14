@@ -764,10 +764,42 @@ public class SmartRankManager {
     @RavenMessageHandler(LoadSearchCriteriaMessage.class)
     public boolean onLoadSearchCriteria(final File criteriaFile) {
         LOG.debug("Loading Search Criteria from {}", criteriaFile);
+        try {
+            final boolean retval = onLoadSearchCriteria(SearchCriteriaReaderFactory.getReader(criteriaFile));
+            if (!retval) {
+                LOG.error("Failed to load search criteria from '" + criteriaFile.getAbsolutePath() + "'");
+            }
+            return retval;
+        }
+        catch (final IOException e) {
+            LOG.error("Failed to load search criteria from '" + criteriaFile + "'", e);
+            _messageBus.send(this, new ErrorStringMessage("<html>Failed to load search criteria:<br>" + e.getClass().getSimpleName() + (e.getLocalizedMessage() == null ? "" : ": " + e.getLocalizedMessage())));
+            return false;
+        }
+    }
+
+    public boolean onLoadSearchCriteria(final String context, final String criteria) {
+        NullUtils.argNotNull(criteria, "criteria");
+        LOG.debug("Loading Search Criteria from {}", context);
+        try {
+            final boolean retval = onLoadSearchCriteria(SearchCriteriaReaderFactory.getReader(context, criteria));
+            if (!retval) {
+                LOG.error("Failed to load search criteria from '" + context + "'");
+            }
+            return retval;
+        }
+        catch (final IOException e) {
+            LOG.error("Failed to load search criteria from '" + context + "'", e);
+            _messageBus.send(this, new ErrorStringMessage("<html>Failed to load search criteria:<br>" + e.getClass().getSimpleName() + (e.getLocalizedMessage() == null ? "" : ": " + e.getLocalizedMessage())));
+            return false;
+        }
+    }
+
+    private boolean onLoadSearchCriteria(final SearchCriteriaReader reader) {
+        NullUtils.argNotNull(reader, "reader");
         _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.LOADING_SEARCH_CRITERIA));
 
         try {
-            final SearchCriteriaReader reader = SearchCriteriaReaderFactory.getReader(criteriaFile);
             onClearSearchCriteria();
 
             final PopulationStatistics statistics = reader.getPopulationStatistics();
@@ -854,7 +886,7 @@ public class SmartRankManager {
             return true;
         }
         catch (final Throwable t) {
-            LOG.error("Failed to load search criteria from '" + criteriaFile + "'", t);
+            LOG.error("Failed to load search criteria!", t);
             _messageBus.send(this, new ErrorStringMessage("<html>Failed to load search criteria:<br>" + t.getClass().getSimpleName() + (t.getLocalizedMessage() == null ? "" : ": " + t.getLocalizedMessage())));
         }
         finally {

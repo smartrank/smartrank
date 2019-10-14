@@ -19,9 +19,9 @@ package nl.minvenj.nfi.smartrank.io.searchcriteria.locim;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -93,7 +93,7 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
         public Double _dropout = 0.0;
     }
 
-    public SmartRankImportFileReader(final File file) throws IOException {
+    public SmartRankImportFileReader(final String fileName, final String criteria) throws IOException {
         _samples = new ArrayList<>();
         _profiles = new ArrayList<>();
         _hpContributors = new HashMap<>();
@@ -102,10 +102,10 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
         _hpUnknowns = new UnknownDonorDefinition();
         _resultLocation = "";
         _candidateDropout = 0.0;
-        _fileName = file.getAbsolutePath();
+        _fileName = fileName;
         _properties = new Properties();
 
-        try (HashingReader reader = new HashingReader(new BufferedReader(new FileReader(file)))) {
+        try (HashingReader reader = new HashingReader(new BufferedReader(new StringReader(criteria)))) {
             readFile(reader);
             setHashes(reader.getHash());
         }
@@ -134,7 +134,7 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
                 _dateTime = sdf.parse(dateTime);
             }
             catch (final ParseException e) {
-                LOG.warn("File contained an unrecognized date:'{}'. expected yyyy-MM-ddTHH:mm:ss", dateTime);
+                LOG.warn("File '{}' contained an unrecognized date:'{}'. expected yyyy-MM-ddTHH:mm:ss", _fileName, dateTime);
             }
         }
         else {
@@ -143,7 +143,7 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
                 _dateTime = new Date(attributes.creationTime().toMillis());
             }
             catch (final IOException e) {
-                LOG.info("Could not determine creating time of {}: {}", _fileName, e.getMessage());
+                LOG.info("Could not determine creation time of {}: {}", _fileName, e.getMessage());
             }
         }
 
