@@ -243,7 +243,7 @@ public class SmartRankGUISettings {
     public static String getWindowTitle() {
         return get(WINDOW_TITLE, "");
     }
-	
+
     public static int getBatchJobRetentionDays() {
 		return Integer.decode(get(BATCHMODE_JOB_RETENTION_DAYS, "14"));
 	}
@@ -271,8 +271,9 @@ public class SmartRankGUISettings {
 
     private static void load() {
         if (_propertiesFileName == null) {
-            if (!load(DEFAULT_PROPERTIES_FILENAME))
+            if (!load(DEFAULT_PROPERTIES_FILENAME)) {
                 load(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+            }
         }
         else {
             load(_propertiesFileName);
@@ -283,7 +284,7 @@ public class SmartRankGUISettings {
         try (FileInputStream fis = new FileInputStream(fileName)) {
             PROPERTIES.load(fis);
             if (_propertiesFileName == null) {
-                LOG.info("Loaded GUI properties from {}", fileName);
+                LOG.info("Loaded GUI properties from {}", new File(fileName).getAbsolutePath());
             }
             _propertiesFileName = fileName;
             return true;
@@ -299,8 +300,9 @@ public class SmartRankGUISettings {
 
     private static void store() {
         if (_propertiesFileName == null) {
-            if (!store(DEFAULT_PROPERTIES_FILENAME))
+            if (!store(DEFAULT_PROPERTIES_FILENAME)) {
                 store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+            }
         }
         else {
             store(_propertiesFileName);

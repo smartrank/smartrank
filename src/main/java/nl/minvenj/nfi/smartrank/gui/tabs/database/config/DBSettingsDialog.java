@@ -54,6 +54,7 @@ import nl.minvenj.nfi.smartrank.domain.DatabaseConfiguration;
 import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.gui.utils.UndoDecorator;
 import nl.minvenj.nfi.smartrank.io.databases.jdbc.JDBCDriverWrapper;
+import nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.H2DriverWrapper;
 import nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.SQLServerDriverWrapper;
 import nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.SybaseDriverWrapper;
 
@@ -187,7 +188,7 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
         final JLabel dbTypeLabel = new JLabel("Database Type");
         contentPanel.add(dbTypeLabel, "cell 0 0,alignx trailing");
 
-        _databaseTypeCombo = new JComboBox<>(new JDBCDriverWrapper[]{new SQLServerDriverWrapper(), new SybaseDriverWrapper()});
+        _databaseTypeCombo = new JComboBox<>(new JDBCDriverWrapper[]{new SQLServerDriverWrapper(), new SybaseDriverWrapper(), new H2DriverWrapper()});
         _databaseTypeCombo.setName("databaseType");
         for (int idx = 0; idx < _databaseTypeCombo.getModel().getSize(); idx++) {
             if (_databaseTypeCombo.getModel().getElementAt(idx).toString().equalsIgnoreCase(SmartRankGUISettings.getDatabaseType())) {

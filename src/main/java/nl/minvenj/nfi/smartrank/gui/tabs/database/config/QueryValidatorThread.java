@@ -68,8 +68,9 @@ final class QueryValidatorThread extends Thread {
             SmartRankGUISettings.setDatabaseQueryAlleleColumnIndex(_databaseConfiguration.getAlleleColumnIndex());
             SmartRankGUISettings.setDatabaseSpecimenBatchSize(_dlg.getBatchSize());
 
-            if (_dlg.isSavePassword())
+            if (_dlg.isSavePassword()) {
                 SmartRankGUISettings.setDatabasePassword(new String(_dlg.getPassword()));
+            }
 
             _dlg.setDBSettings(_databaseConfiguration);
 
@@ -153,7 +154,7 @@ final class QueryValidatorThread extends Thread {
 
                 // If (some of) the column names contain locus names, we are dealing with a query that returns an entire specimen in one row
                 for (int col = 1; col <= metaData.getColumnCount(); col++) {
-                    final String colName = metaData.getColumnName(col).toUpperCase().replaceAll(" ", "");
+                    final String colName = metaData.getColumnLabel(col).toUpperCase().replaceAll(" ", "");
                     singleRowResult |= VALID_LOCI.contains(colName);
 
                     // But we might also be dealing with a query that returns multiple columns for a locus (VWA_1, VWA_2 etc)
@@ -172,7 +173,7 @@ final class QueryValidatorThread extends Thread {
                     }
 
                     for (int colIdx = 1; colIdx <= metaData.getColumnCount(); colIdx++) {
-                        final String colName = metaData.getColumnName(colIdx);
+                        final String colName = metaData.getColumnLabel(colIdx);
                         if (colName.equalsIgnoreCase("specimenId")) {
                             idColumn = colIdx;
                         }
@@ -185,8 +186,9 @@ final class QueryValidatorThread extends Thread {
                                     alleleColumn = colIdx;
                                 }
                                 else {
-                                    if (keyColumn == -1)
+                                    if (keyColumn == -1) {
                                         keyColumn = colIdx;
+                                    }
                                 }
                             }
                         }
