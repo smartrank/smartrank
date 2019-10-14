@@ -14,6 +14,7 @@ SMARTRANK-280: Added support for H2 databases.
 SMARTRANK-281: Fixed a bug that caused searches to fail with an ArrayIndexOutOfBoundsException if a profile was added to the database while a search was running.
 SMARTRANK-282: The SmartRankManager API is now public allowing easier integration into other applications.
 SMARTRANK-283: Improved the program's response when the file polling thread terminates unexpectedly in batch mode.
+SMARTRANK-284: Added optional additional properties to search criteria.
 
 Version 1.0.5
 Release date: 2018-11-23
