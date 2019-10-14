@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,8 +68,8 @@ public class SmartRankLogfileReader implements SearchCriteriaReader {
     public SmartRankLogfileReader(final File file) throws IOException {
         _samples = new ArrayList<>();
         _profiles = new ArrayList<>();
-        _hpContributors = new HashMap<String, Double>();
-        _hdContributors = new HashMap<String, Double>();
+        _hpContributors = new HashMap<>();
+        _hdContributors = new HashMap<>();
         _hdUnknowns = new UnknownDonorDefinition();
         _hpUnknowns = new UnknownDonorDefinition();
         _resultLocation = "";
@@ -281,8 +282,11 @@ public class SmartRankLogfileReader implements SearchCriteriaReader {
 
     @Override
     public Date getRequestDateTime() {
-        // TODO Auto-generated method stub
-        return null;
+        return _dateTime;
     }
 
+    @Override
+    public Properties getProperties() {
+        return new Properties();
+    }
 }

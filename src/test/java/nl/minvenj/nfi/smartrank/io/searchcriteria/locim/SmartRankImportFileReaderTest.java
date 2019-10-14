@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,13 +46,39 @@ public class SmartRankImportFileReaderTest {
                 0.14, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471879463000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
                 false, // 20, is automatic parameter estimation to be performed
-                null // 21, statistics filename
+                null, // 21, statistics filename
+                null // 22, properties
         },
+            {
+                "SmartRankImportFile-sample-withproperties.xml", //  0, filename
+                0.03, //  1, theta
+                0.05, //  2, dropin
+                Arrays.asList("CEDU0059FR#07-KOEL0126LU#21"), //  3, samples
+                Arrays.asList("CEDU0059FR#07"), //  4, knowns
+                0.1, //  5, HP candidate dropout
+                Arrays.asList("CEDU0059FR#07"), //  6, HP contributors
+                Arrays.asList(0.11), //  7, HP contributors dropout
+                1, //  8, HP unknowns
+                0.12, //  9, HP unknowns dropout
+                Arrays.asList("CEDU0059FR#07"), // 10, HD contributors
+                Arrays.asList(0.13), // 11, HD contributors dropout
+                2, // 12, HD unknowns
+                0.14, // 13, HD unknowns dropout
+                "2016/01 januari/2016.01.01.001", // 14, result location
+                "MASLA", // 15, requested by
+                new Date(1471872263000L), // 16, request date and time
+                1234, // 17, LR threshold
+                0.000239808153477218, // 18, rare allele frequency
+                -1, // 19, maximum number of results
+                false, // 20, is automatic parameter estimation to be performed
+                null, // 21, statistics filename
+                Arrays.asList("property1", "value1", "property2", "value2") // 22, properties
+            },
             {"SmartRankImportFile-sample-nodropin.xml", //  0, filename
                 0.03, //  1, theta
                 0, //  2, dropin
@@ -68,12 +95,13 @@ public class SmartRankImportFileReaderTest {
                 0.14, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471879463000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
                 false, // 20, is automatic parameter estimation to be performed
-                null // 21, statistics filename
+                null, // 21, statistics filename
+                null // 22, properties
         },
             {"SmartRankImportFile-sample-nodatetime.xml", //  0, filename
                 0.03, //  1, theta
@@ -96,7 +124,8 @@ public class SmartRankImportFileReaderTest {
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
                 false, // 20, is automatic parameter estimation to be performed
-                null // 21, statistics filename
+                null, // 21, statistics filename,
+                null // 22, properties
         },
             {"SmartRankImportFile-sample-malformatteddatetime.xml", //  0, filename
                 0.03, //  1, theta
@@ -119,7 +148,8 @@ public class SmartRankImportFileReaderTest {
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
                 false, // 20, is automatic parameter estimation to be performed
-                null // 21, statistics filename
+                null, // 21, statistics filename
+                null // 22, properties
         }
             ,
             {"SmartRankImportFile-sample-statistics.xml", //  0, filename
@@ -138,12 +168,13 @@ public class SmartRankImportFileReaderTest {
                 0.14, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471879463000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
                 false, // 20, is automatic parameter estimation to be performed
-                "DummyStatistics.csv" // 21, statistics filename
+                "DummyStatistics.csv", // 21, statistics filename
+                null // 22, properties
             }
             ,
             {"SmartRankImportFile-sample-automatic.xml", //  0, filename
@@ -162,12 +193,13 @@ public class SmartRankImportFileReaderTest {
                 0, // 13, HD unknowns dropout
                 "2016/01 januari/2016.01.01.001", // 14, result location
                 "MASLA", // 15, requested by
-                new Date(1471879463000L), // 16, request date and time
+                new Date(1471872263000L), // 16, request date and time
                 1234, // 17, LR threshold
                 0.000239808153477218, // 18, rare allele frequency
                 -1, // 19, maximum number of results
                 true, // 20, is automatic parameter estimation to be performed
-                null // 21, statistics filename
+                null, // 21, statistics filename
+                null // 22, properties
             }
         });
     }
@@ -238,8 +270,12 @@ public class SmartRankImportFileReaderTest {
     @Parameter(21)
     public String _populationStatisticsFilename;
 
+    @Parameter(22)
+    public List<String> _properties;
+
     private SmartRankImportFileReader _reader;
     private PopulationStatistics _populationStatistics;
+
 
 
     @Before
@@ -375,11 +411,31 @@ public class SmartRankImportFileReaderTest {
 
     @Test
     public void testGetPopulationStatistics() {
-        if (_populationStatistics == null)
+        if (_populationStatistics == null) {
             assertNull(_reader.getPopulationStatistics());
+        }
         else {
             compareStatistics(_populationStatistics, _reader.getPopulationStatistics());
             compareStatistics(_reader.getPopulationStatistics(), _populationStatistics);
+        }
+    }
+
+    @Test
+    public void testProperties() {
+        final Properties props = _reader.getProperties();
+        assertNotNull(props);
+        if (_properties != null) {
+            int idx = 0;
+            while (idx < _properties.size()) {
+                final String key = _properties.get(idx);
+                final String value = _properties.get(idx + 1);
+                assertTrue("Property " + key + " with value " + value + " not found in " + props, props.remove(key, value));
+                idx += 2;
+            }
+            assertTrue("Unexpected additional properties: " + props, props.isEmpty());
+        }
+        else {
+            assertEquals(new Properties(), props);
         }
     }
 

@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.xml.bind.JAXB;
 
@@ -50,6 +51,7 @@ import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.AlleleType;
 import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.ContributorType;
 import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.LocusStatisticsType;
 import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.LocusType;
+import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.PropertyType;
 import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.ReplicateType;
 import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.SmartRankImportFile;
 import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.SpecimenType;
@@ -81,6 +83,7 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
     private PopulationStatistics _statistics;
     private String _userId;
     private Date _dateTime;
+    private final Properties _properties;
 
     /**
      * A helper class to store the number and dropout probability of unknown contributors.
@@ -100,6 +103,7 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
         _resultLocation = "";
         _candidateDropout = 0.0;
         _fileName = file.getAbsolutePath();
+        _properties = new Properties();
 
         try (HashingReader reader = new HashingReader(new BufferedReader(new FileReader(file)))) {
             readFile(reader);
@@ -195,14 +199,22 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
         _lrThreshold = importFile.getLrThreshold();
         _maxReturnedResults = Integer.parseInt(NullUtils.getValue(importFile.getMaximumNumberOfResults(), "-1"));
 
-        if (importFile.getDropin() != null)
+        if (importFile.getDropin() != null) {
             _dropin = importFile.getDropin().doubleValue();
+        }
 
-        if (importFile.getTheta() != null)
+        if (importFile.getTheta() != null) {
             _theta = importFile.getTheta().doubleValue();
+        }
 
         if (importFile.getStatistics() != null) {
             readStatistics(importFile);
+        }
+
+        if (importFile.getProperties() != null) {
+            for (final PropertyType propertyType : importFile.getProperties().getProperty()) {
+                _properties.put(propertyType.getName(), propertyType.getValue());
+            }
         }
     }
 
@@ -370,5 +382,10 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
     @Override
     public Date getRequestDateTime() {
         return _dateTime;
+    }
+
+    @Override
+    public Properties getProperties() {
+        return _properties;
     }
 }
