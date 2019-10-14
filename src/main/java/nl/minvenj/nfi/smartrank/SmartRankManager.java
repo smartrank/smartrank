@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Netherlands Forensic Institute
+ * Copyright (C) 2015,2019 Netherlands Forensic Institute
  *
  * "SmartRankManager" program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -130,8 +130,16 @@ public class SmartRankManager {
         return _me;
     }
 
+    public synchronized MessageBus getMessageBus() {
+        return _messageBus;
+    }
+
+    public synchronized Thread getCurrentTask() {
+        return _currentTask;
+    }
+
     @RavenMessageHandler(DatabaseFileMessage.class)
-    void onNewDatabase(final File dbFile) {
+    public void onNewDatabase(final File dbFile) {
         LOG.debug("Loading new database: {}", dbFile);
         if (dbFile != null) {
             _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.VERIFYING_DB));
@@ -172,7 +180,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(DatabaseConnectionMessage.class)
-    void onNewDatabaseConnection(final DatabaseConfiguration config) {
+    public void onNewDatabaseConnection(final DatabaseConfiguration config) {
         LOG.debug("Connecting to database at {}", config.getConnectString());
         _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.VERIFYING_DB));
         _messageBus.send(this, new DetailStringMessage(""));
@@ -211,7 +219,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(AddCrimeSceneFilesMessage.class)
-    void onLoadCrimesceneProfiles(final File[] files) {
+    public void onLoadCrimesceneProfiles(final File[] files) {
         LOG.debug("Loading crimescene profiles: {}", Arrays.toString(files));
         try {
             _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.READING_SAMPLES));
@@ -268,7 +276,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(RemoveCrimeSceneProfiles.class)
-    void onRemoveCrimesceneProfile(final List<Sample> profiles) {
+    public void onRemoveCrimesceneProfile(final List<Sample> profiles) {
         LOG.debug("Removing crimescene profile {}", profiles);
         final List<Sample> curSamples = _messageBus.query(CrimeSceneProfilesMessage.class);
         curSamples.removeAll(profiles);
@@ -283,7 +291,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(UpdateCrimeSceneProfile.class)
-    void onCrimesceneProfileUpdated(final Sample s) {
+    public void onCrimesceneProfileUpdated(final Sample s) {
         LOG.debug("Updated crimescene profile {}", s);
 
         final AnalysisParameters parms = _messageBus.query(AnalysisParametersMessage.class);
@@ -295,7 +303,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(AddKnownFilesMessage.class)
-    void onLoadKnownProfiles(final File[] files) {
+    public void onLoadKnownProfiles(final File[] files) {
         LOG.debug("Load known profiles {}", Arrays.toString(files));
         try {
             final DefenseHypothesis defense = getDefenseHypothesis();
@@ -355,14 +363,14 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(ReportTopMessage.class)
-    void onReportTopChanged(final int top) {
+    public void onReportTopChanged(final int top) {
         LOG.debug("Setting max reported results to {}", top);
         final AnalysisParameters parms = _messageBus.query(AnalysisParametersMessage.class);
         parms.setMaxReturnedResults(top);
     }
 
     @RavenMessageHandler(RareAlleleFrequencyMessage.class)
-    void onUpdateRareAlleleFrequency(final double frequency) {
+    public void onUpdateRareAlleleFrequency(final double frequency) {
         LOG.debug("onChangedRareAlleleFrequency {}", frequency);
         final PopulationStatistics popstats = _messageBus.query(PopulationStatisticsMessage.class);
         if (popstats != null) {
@@ -376,7 +384,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(RemoveKnownProfiles.class)
-    void onRemoveKnownProfiles(final List<Sample> profiles) {
+    public void onRemoveKnownProfiles(final List<Sample> profiles) {
         LOG.debug("Removing known profile {}", profiles);
         final List<Sample> curSamples = _messageBus.query(KnownProfilesMessage.class);
         curSamples.removeAll(profiles);
@@ -401,7 +409,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(UpdateKnownProfile.class)
-    void onKnownProfileUpdated(final Sample s) {
+    public void onKnownProfileUpdated(final Sample s) {
         LOG.debug("Update known profile {}", s);
 
         final DefenseHypothesis defense = getDefenseHypothesis();
@@ -426,20 +434,20 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(SearchCompletedMessage.class)
-    void onSearchCompleted(final SearchResults results) {
+    public void onSearchCompleted(final SearchResults results) {
         LOG.debug("Search completed after {}", TimeUtils.formatDuration(results.getDuration()));
         LOG.debug("Logfile location: {}", results.getLogFileName());
         LOG.debug("Report location: {}", results.getReportFileName());
     }
 
     @RavenMessageHandler(SearchAbortedMessage.class)
-    void onSearchAborted(final SearchResults results) {
+    public void onSearchAborted(final SearchResults results) {
         LOG.debug("Search {} after {}", (results.isSucceeded() ? "completed" : "aborted"), TimeUtils.formatDuration(results.getDuration()));
         LOG.debug("Logfile location: {}", results.getLogFileName());
     }
 
     @RavenMessageHandler(StartAnalysisCommand.class)
-    void onStartAnalysis() {
+    public void onStartAnalysis() {
         LOG.debug("Start analysis command received");
 
         int seconds = 10;
@@ -511,7 +519,8 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(PopulationStatisticsFileMessage.class)
-    void onNewPopulationStatistics(final String popStats) {
+    public boolean onNewPopulationStatistics(final String popStats) {
+        boolean returnValue = false;
         LOG.debug("New population statistics {}", popStats);
         try {
             _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.LOADING_POPULATION_STATISTICS));
@@ -527,6 +536,7 @@ public class SmartRankManager {
             _messageBus.send(this, new ProsecutionHypothesisMessage(pro));
             _messageBus.send(this, new DefenseHypothesisMessage(def));
             updateEnabledLoci();
+            returnValue = true;
         }
         catch (final MalformedURLException ex) {
             _messageBus.send(this, new ErrorStringMessage(ex.getLocalizedMessage()));
@@ -537,10 +547,11 @@ public class SmartRankManager {
         finally {
             setApplicationStatus();
         }
+        return returnValue;
     }
 
     @RavenMessageHandler(EstimateDropoutMessage.class)
-    void onEstimateDropout() {
+    public void onEstimateDropout() {
         LOG.debug("Estimating Dropout parameters");
         try {
             _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.ESTIMATING_DROPOUT));
@@ -595,7 +606,7 @@ public class SmartRankManager {
         }
     }
 
-    private void setDropout(final Hypothesis hypothesis, final double dropout) {
+    public void setDropout(final Hypothesis hypothesis, final double dropout) {
         hypothesis.setUnknownDropoutProbability(dropout);
         for (final Contributor contributor : hypothesis.getContributors()) {
             if (contributor.isCandidate()) {
@@ -743,7 +754,7 @@ public class SmartRankManager {
     }
 
     @RavenMessageHandler(LoadSearchCriteriaMessage.class)
-    public void onLoadSearchCriteria(final File criteriaFile) {
+    public boolean onLoadSearchCriteria(final File criteriaFile) {
         LOG.debug("Loading Search Criteria from {}", criteriaFile);
         _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.LOADING_SEARCH_CRITERIA));
 
@@ -832,6 +843,7 @@ public class SmartRankManager {
 
             _messageBus.waitIdle(3000);
             LOG.debug("Succesfully loaded search criteria");
+            return true;
         }
         catch (final Throwable t) {
             LOG.error("Failed to load search criteria from '" + criteriaFile + "'", t);
@@ -840,6 +852,7 @@ public class SmartRankManager {
         finally {
             setApplicationStatus();
         }
+        return false;
     }
 
     private void setApplicationStatus() {
@@ -867,7 +880,7 @@ public class SmartRankManager {
         _messageBus.send(this, new ApplicationStatusMessage(status));
     }
 
-    private synchronized DefenseHypothesis getDefenseHypothesis() {
+    public synchronized DefenseHypothesis getDefenseHypothesis() {
         DefenseHypothesis hypothesis = _messageBus.query(DefenseHypothesisMessage.class);
         if (hypothesis == null) {
             hypothesis = new DefenseHypothesis();
@@ -876,7 +889,7 @@ public class SmartRankManager {
         return hypothesis;
     }
 
-    private synchronized ProsecutionHypothesis getProsecutionHypothesis() {
+    public synchronized ProsecutionHypothesis getProsecutionHypothesis() {
         ProsecutionHypothesis hypothesis = _messageBus.query(ProsecutionHypothesisMessage.class);
         if (hypothesis == null) {
             hypothesis = new ProsecutionHypothesis();
@@ -885,7 +898,7 @@ public class SmartRankManager {
         return hypothesis;
     }
 
-    private int getEnabledCount(final Collection<Sample> profiles) {
+    public int getEnabledCount(final Collection<Sample> profiles) {
         int enabledCount = 0;
         for (final Sample sample : profiles) {
             if (sample.isEnabled()) {
@@ -895,7 +908,7 @@ public class SmartRankManager {
         return enabledCount;
     }
 
-    private void updateEnabledLoci() {
+    public void updateEnabledLoci() {
         final OrderMergedList<String> enabledLoci = new OrderMergedList<>();
         final Collection<Sample> replicates = NullUtils.getValue(_messageBus.query(CrimeSceneProfilesMessage.class), new ArrayList<Sample>());
         for (final Sample replicate : replicates) {

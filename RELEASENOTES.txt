@@ -10,6 +10,7 @@ Release date: Not released
 SMARTRANK-274: Drastically reduced memory usage when in batch mode.
 SMARTRANK-275: Added the batchmode.retentiondays setting that governs how many days the result of completed jobs i shown in the GUI. Defaults to 14.
 SMARTRANK-281: Fixed a bug that caused searches to fail with an ArrayIndexOutOfBoundsException if a profile was added to the database while a search was running.
+SMARTRANK-282: The SmartRankManager API is now public allowing easier integration into other applications.
 
 Version 1.0.5
 Release date: 2018-11-23
