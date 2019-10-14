@@ -124,8 +124,9 @@ public class SmartRankManager {
     }
 
     public static synchronized SmartRankManager getInstance() {
-        if (_me == null)
+        if (_me == null) {
             _me = new SmartRankManager();
+        }
         return _me;
     }
 
@@ -448,7 +449,7 @@ public class SmartRankManager {
                 Thread.sleep(1000);
             }
             catch (final InterruptedException e) {
-                final SearchResults result = new SearchResults(0, _messageBus.query(DatabaseMessage.class).getConfiguration());
+                final SearchResults result = new SearchResults(_messageBus.query(DatabaseMessage.class).getConfiguration());
                 result.setFailed(new InterruptedException("Interrupted while waiting for current task to finish!"));
                 _messageBus.send(this, new SearchAbortedMessage(result));
                 return;
@@ -496,14 +497,14 @@ public class SmartRankManager {
             }
             catch (final IOException | InterruptedException e) {
                 LOG.error("Error revalidating the database!", e);
-                final SearchResults result = new SearchResults(0, _messageBus.query(DatabaseMessage.class).getConfiguration());
+                final SearchResults result = new SearchResults(_messageBus.query(DatabaseMessage.class).getConfiguration());
                 result.setFailed(new IllegalArgumentException("Error revalidating the database!", e));
                 _messageBus.send(this, new SearchAbortedMessage(result));
             }
         }
         else {
             LOG.error("Could not start search!");
-            final SearchResults result = new SearchResults(0, _messageBus.query(DatabaseMessage.class).getConfiguration());
+            final SearchResults result = new SearchResults(_messageBus.query(DatabaseMessage.class).getConfiguration());
             result.setFailed(new IllegalArgumentException("Could not start search!"));
             _messageBus.send(this, new SearchAbortedMessage(result));
         }

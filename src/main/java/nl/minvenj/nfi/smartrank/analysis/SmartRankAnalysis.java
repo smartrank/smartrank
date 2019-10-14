@@ -102,7 +102,7 @@ public class SmartRankAnalysis extends Thread {
         final DNADatabase db = _messageBus.query(DatabaseMessage.class);
         boolean headerLogged = false;
 
-        final SearchResults searchResults = new SearchResults(db.getRecordCount(), db.getConfiguration());
+        final SearchResults searchResults = new SearchResults(db.getConfiguration());
         searchResults.setLogFileName(_caseLogger.getFilename());
 
         try {
@@ -239,7 +239,7 @@ public class SmartRankAnalysis extends Thread {
                         LOG.error("Error saving profile after search: profile {} failed.", profileName, e);
                         _messageBus.send(this, new ErrorStringMessage("Error saving profile after search. profile " + profileName + " failed: " + e.getMessage()));
                     }
-                };
+                }
             };
             t.start();
             t.join();

@@ -77,13 +77,13 @@ public class SearchResultsTest {
 
     @Test
     public final void testSearchResults() {
-        final SearchResults results = new SearchResults(0, null);
+        final SearchResults results = new SearchResults(null);
         assertEquals(0, results.getNumberOfLRs());
     }
 
     @Test
     public final void testGetNumberOfLRsOver1() {
-        final SearchResults results = new SearchResults(10, null);
+        final SearchResults results = new SearchResults(null);
 
         assertEquals(0, results.getNumberOfLRs());
         assertEquals(0, results.getNumberOfLRsOver1());
@@ -100,7 +100,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetMaxRatio() {
-        final SearchResults results = new SearchResults(3, null);
+        final SearchResults results = new SearchResults(null);
 
         results.addLR(_lr1);
         results.addLR(_lr2);
@@ -110,7 +110,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetMinRatio() {
-        final SearchResults results = new SearchResults(3, null);
+        final SearchResults results = new SearchResults(null);
         results.addLR(_lr1);
         results.addLR(_lr2);
         results.addLR(_lr3);
@@ -119,7 +119,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testDuration() {
-        final SearchResults results = new SearchResults(0, null);
+        final SearchResults results = new SearchResults(null);
         assertEquals(0, results.getDuration());
         results.setDuration(1234);
         assertEquals(1234, results.getDuration());
@@ -127,7 +127,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetResultsPerNumberOfLoci() {
-        final SearchResults results = new SearchResults(3, null);
+        final SearchResults results = new SearchResults(null);
         results.addLR(_lr1);
         results.addLR(_lr2);
         results.addLR(_lr3);
@@ -138,7 +138,7 @@ public class SearchResultsTest {
 
     @Test
     public final void testGetPercentile() {
-        final SearchResults results = new SearchResults(3, null);
+        final SearchResults results = new SearchResults(null);
         results.addLR(_lr1);
         results.addLR(_lr2);
         results.addLR(_lr3);
@@ -150,13 +150,13 @@ public class SearchResultsTest {
     }
 
     public final void testGetDatabaseConfigurationNull() {
-        final SearchResults results = new SearchResults(0, null);
+        final SearchResults results = new SearchResults(null);
         assertNull(results.getDatabaseConfiguration());
     }
 
     public final void testGetDatabaseConfiguration() {
         final DatabaseConfiguration config = new DatabaseConfiguration(new File("fakefile"));
-        final SearchResults results = new SearchResults(0, config);
+        final SearchResults results = new SearchResults(config);
         assertNotNull(results.getDatabaseConfiguration());
         assertEquals(config, results.getDatabaseConfiguration());
     }
