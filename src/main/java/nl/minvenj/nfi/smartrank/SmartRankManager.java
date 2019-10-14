@@ -47,6 +47,7 @@ import nl.minvenj.nfi.smartrank.domain.PopulationStatistics;
 import nl.minvenj.nfi.smartrank.domain.ProblemLocation;
 import nl.minvenj.nfi.smartrank.domain.ProsecutionHypothesis;
 import nl.minvenj.nfi.smartrank.domain.Sample;
+import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
 import nl.minvenj.nfi.smartrank.gui.TimeUpdater;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
@@ -59,8 +60,8 @@ import nl.minvenj.nfi.smartrank.messages.commands.EstimateDropoutMessage;
 import nl.minvenj.nfi.smartrank.messages.commands.RemoveCrimeSceneProfiles;
 import nl.minvenj.nfi.smartrank.messages.commands.RemoveKnownProfiles;
 import nl.minvenj.nfi.smartrank.messages.commands.StartAnalysisCommand;
-import nl.minvenj.nfi.smartrank.messages.commands.UpdateCrimeSceneProfile;
-import nl.minvenj.nfi.smartrank.messages.commands.UpdateKnownProfile;
+import nl.minvenj.nfi.smartrank.messages.commands.UpdateCrimeSceneProfiles;
+import nl.minvenj.nfi.smartrank.messages.commands.UpdateKnownProfiles;
 import nl.minvenj.nfi.smartrank.messages.data.AddCrimeSceneFilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.AddKnownFilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.AnalysisParametersMessage;
@@ -234,7 +235,10 @@ public class SmartRankManager {
             for (final File file : files) {
                 final SampleReader reader = new SampleReader(file);
                 try {
-                    newProfiles.addAll(reader.getSamples());
+                    for (final Sample sample : reader.getSamples()) {
+                        sample.setEnabled(SmartRankGUISettings.isNewCrimesceneProfilesEnabled());
+                        newProfiles.add(sample);
+                    }
                     LOG.debug("CrimeScene file: '{}', Hash: '{}'", reader.getFile(), reader.getFileHash());
                 }
                 catch (final Exception ex) {
@@ -290,9 +294,9 @@ public class SmartRankManager {
         setApplicationStatus();
     }
 
-    @RavenMessageHandler(UpdateCrimeSceneProfile.class)
-    public void onCrimesceneProfileUpdated(final Sample s) {
-        LOG.debug("Updated crimescene profile {}", s);
+    @RavenMessageHandler(UpdateCrimeSceneProfiles.class)
+    public void onCrimesceneProfilesUpdated(final List<Sample> samples) {
+        LOG.debug("Updated crimescene profiles {}", samples);
 
         final AnalysisParameters parms = _messageBus.query(AnalysisParametersMessage.class);
         final Collection<Sample> profiles = _messageBus.query(CrimeSceneProfilesMessage.class);
@@ -321,13 +325,15 @@ public class SmartRankManager {
                 final SampleReader reader = new SampleReader(file);
                 try {
                     final Collection<Sample> newProfiles = reader.getSamples();
-                    allProfiles.addAll(newProfiles);
                     LOG.debug("KnownProfiles file: '{}', Hash: '{}'", reader.getFile(), reader.getFileHash());
-
                     for (final Sample sample : newProfiles) {
-                        prosecution.addContributor(sample, SmartRankRestrictions.getDropoutDefault());
-                        defense.addContributor(sample, SmartRankRestrictions.getDropoutDefault());
+                        sample.setEnabled(SmartRankGUISettings.isNewKnownProfilesEnabled());
+                        if (sample.isEnabled()) {
+                            prosecution.addContributor(sample, SmartRankRestrictions.getDropoutDefault());
+                            defense.addContributor(sample, SmartRankRestrictions.getDropoutDefault());
+                        }
                     }
+                    allProfiles.addAll(newProfiles);
                 }
                 catch (final Exception ex) {
                     if (ex.getMessage() != null) {
@@ -408,20 +414,22 @@ public class SmartRankManager {
         setApplicationStatus();
     }
 
-    @RavenMessageHandler(UpdateKnownProfile.class)
-    public void onKnownProfileUpdated(final Sample s) {
-        LOG.debug("Update known profile {}", s);
+    @RavenMessageHandler(UpdateKnownProfiles.class)
+    public void onKnownProfileUpdated(final List<Sample> samples) {
+        LOG.debug("Update known profile {}", samples);
 
         final DefenseHypothesis defense = getDefenseHypothesis();
         final ProsecutionHypothesis prosecution = getProsecutionHypothesis();
 
-        if (s.isEnabled()) {
-            defense.addContributor(s, SmartRankRestrictions.getDropoutDefault());
-            prosecution.addContributor(s, SmartRankRestrictions.getDropoutDefault());
-        }
-        else {
-            defense.removeContributor(s);
-            prosecution.removeContributor(s);
+        for (final Sample s : samples) {
+            if (s.isEnabled()) {
+                defense.addContributor(s, SmartRankRestrictions.getDropoutDefault());
+                prosecution.addContributor(s, SmartRankRestrictions.getDropoutDefault());
+            }
+            else {
+                defense.removeContributor(s);
+                prosecution.removeContributor(s);
+            }
         }
 
         _messageBus.send(this, new ProsecutionHypothesisMessage(prosecution));

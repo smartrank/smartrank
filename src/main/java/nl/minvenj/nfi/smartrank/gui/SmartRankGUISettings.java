@@ -42,6 +42,8 @@ public class SmartRankGUISettings {
     private static final String LAST_SELECTED_KNOWNPROFILE_PATH = "lastSelectedKnownProfilePath";
     private static final String LAST_SELECTED_STATISTICS_FILENAME = "lastSelectedStatisticsPath";
     private static final String LAST_SELECTED_SEARCH_CRITERIA_PATH = "lastSelectedSearchCriteriaPath";
+    private static final String NEW_CRIMESCENE_PROFILES_ENABLED = "newCrimesceneProfilesEnabled";
+    private static final String NEW_KNOWN_PROFILES_ENABLED = "newKnownProfilesEnabled";
     private static final String DATABASE_TYPE = "jdbc.databaseType";
     private static final String DATABASE_HOSTPORT = "jdbc.hostPort";
     private static final String DATABASE_SCHEMANAME = "jdbc.schemaName";
@@ -247,6 +249,22 @@ public class SmartRankGUISettings {
     public static int getBatchJobRetentionDays() {
 		return Integer.decode(get(BATCHMODE_JOB_RETENTION_DAYS, "14"));
 	}
+
+    public static void setNewCrimesceneProfilesEnabled(final boolean enabled) {
+        set(NEW_CRIMESCENE_PROFILES_ENABLED, Boolean.toString(enabled));
+    }
+
+    public static boolean isNewCrimesceneProfilesEnabled() {
+        return Boolean.valueOf(get(NEW_CRIMESCENE_PROFILES_ENABLED, "true"));
+    }
+
+    public static void setNewKnownProfilesEnabled(final boolean enabled) {
+        set(NEW_KNOWN_PROFILES_ENABLED, Boolean.toString(enabled));
+    }
+
+    public static boolean isNewKnownProfilesEnabled() {
+        return Boolean.valueOf(get(NEW_KNOWN_PROFILES_ENABLED, "true"));
+    }
 
     private static String get(final String key, final String defaultValue) {
         String value = System.getProperty(key);

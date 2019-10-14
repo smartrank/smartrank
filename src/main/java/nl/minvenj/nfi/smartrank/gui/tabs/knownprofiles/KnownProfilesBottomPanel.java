@@ -26,7 +26,7 @@ import net.miginfocom.swing.MigLayout;
 import nl.minvenj.nfi.smartrank.domain.Locus;
 import nl.minvenj.nfi.smartrank.domain.Sample;
 import nl.minvenj.nfi.smartrank.gui.tabs.SmartRankPanel;
-import nl.minvenj.nfi.smartrank.messages.commands.UpdateKnownProfile;
+import nl.minvenj.nfi.smartrank.messages.commands.UpdateKnownProfiles;
 import nl.minvenj.nfi.smartrank.messages.data.EnabledLociMessage;
 import nl.minvenj.nfi.smartrank.messages.data.KnownProfilesMessage;
 import nl.minvenj.nfi.smartrank.raven.NullUtils;
@@ -106,7 +106,7 @@ public class KnownProfilesBottomPanel extends SmartRankPanel {
         _profileOverviewTable.setModel(model);
     }
 
-    @RavenMessageHandler(UpdateKnownProfile.class)
+    @RavenMessageHandler(UpdateKnownProfiles.class)
     @ExecuteOnSwingEventThread
     public void onProfileUpdated() {
         onChangeProfiles(MessageBus.getInstance().query(KnownProfilesMessage.class));

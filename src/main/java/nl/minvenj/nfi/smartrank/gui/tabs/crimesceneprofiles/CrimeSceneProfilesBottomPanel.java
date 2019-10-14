@@ -26,7 +26,7 @@ import net.miginfocom.swing.MigLayout;
 import nl.minvenj.nfi.smartrank.domain.Locus;
 import nl.minvenj.nfi.smartrank.domain.Sample;
 import nl.minvenj.nfi.smartrank.gui.tabs.SmartRankPanel;
-import nl.minvenj.nfi.smartrank.messages.commands.UpdateCrimeSceneProfile;
+import nl.minvenj.nfi.smartrank.messages.commands.UpdateCrimeSceneProfiles;
 import nl.minvenj.nfi.smartrank.messages.data.CrimeSceneProfilesMessage;
 import nl.minvenj.nfi.smartrank.raven.annotations.ExecuteOnSwingEventThread;
 import nl.minvenj.nfi.smartrank.raven.annotations.RavenMessageHandler;
@@ -121,7 +121,7 @@ public class CrimeSceneProfilesBottomPanel extends SmartRankPanel {
         _profileOverviewTable.setModel(model);
     }
 
-    @RavenMessageHandler(UpdateCrimeSceneProfile.class)
+    @RavenMessageHandler(UpdateCrimeSceneProfiles.class)
     @ExecuteOnSwingEventThread
     public void onUpdatedProfile() {
         onChangeProfiles(MessageBus.getInstance().query(CrimeSceneProfilesMessage.class));

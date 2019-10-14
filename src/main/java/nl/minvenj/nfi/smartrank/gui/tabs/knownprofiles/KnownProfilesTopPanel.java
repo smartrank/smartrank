@@ -17,13 +17,18 @@
  */
 package nl.minvenj.nfi.smartrank.gui.tabs.knownprofiles;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
+import javax.swing.JSeparator;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
@@ -35,7 +40,7 @@ import nl.minvenj.nfi.smartrank.domain.Sample;
 import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.gui.tabs.SmartRankPanel;
 import nl.minvenj.nfi.smartrank.messages.commands.RemoveKnownProfiles;
-import nl.minvenj.nfi.smartrank.messages.commands.UpdateKnownProfile;
+import nl.minvenj.nfi.smartrank.messages.commands.UpdateKnownProfiles;
 import nl.minvenj.nfi.smartrank.messages.data.AddKnownFilesMessage;
 import nl.minvenj.nfi.smartrank.messages.data.KnownProfilesMessage;
 import nl.minvenj.nfi.smartrank.messages.status.ApplicationStatusMessage;
@@ -50,6 +55,9 @@ public class KnownProfilesTopPanel extends SmartRankPanel {
     private javax.swing.JButton _removeButton;
     private javax.swing.JLabel _iconLabel;
     private javax.swing.JScrollPane _profileTableScrollPane;
+    private JButton _enableAllButton;
+    private JButton _disableAllButton;
+    private JCheckBox _enableAddedProfilesCheckbox;
 
     /**
      * Model for the table displaying the loaded profiles
@@ -81,9 +89,13 @@ public class KnownProfilesTopPanel extends SmartRankPanel {
             @Override
             public void tableChanged(final TableModelEvent e) {
                 if (e.getType() == TableModelEvent.UPDATE) {
-                    final Sample s = (Sample) _profileTable.getModel().getValueAt(e.getFirstRow(), 1);
-                    s.setEnabled((boolean) _profileTable.getModel().getValueAt(e.getFirstRow(), 0));
-                    MessageBus.getInstance().send(this, new UpdateKnownProfile(s));
+                    final List<Sample> samples = new ArrayList<>();
+                    for (int row = e.getFirstRow(); row <= e.getLastRow(); row++) {
+                        final Sample s = (Sample) _profileTable.getModel().getValueAt(row, 1);
+                        s.setEnabled((boolean) _profileTable.getModel().getValueAt(row, 0));
+                        samples.add(s);
+                    }
+                    MessageBus.getInstance().send(this, new UpdateKnownProfiles(samples));
                 }
             }
         });
@@ -128,12 +140,57 @@ public class KnownProfilesTopPanel extends SmartRankPanel {
             }
         });
         add(_addButton, "cell 2 0,growx,aligny center");
-        add(_removeButton, "cell 2 1,growx,aligny top");
+        add(_removeButton, "flowy,cell 2 1,growx,aligny top");
 
         _iconLabel.setName("eppendorfIcon");
         _profileTable.setName("knownProfileTable");
         _addButton.setName("addKnownProfileButton");
         _removeButton.setName("removeKnownProfileButton");
+
+        add(new JSeparator(), "cell 2 1,growx");
+
+        _enableAllButton = new JButton("Enable all");
+        _enableAllButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/16x16/icons8-todo-list-16.png")));
+        _enableAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                enableAllActionPerformed();
+            }
+        });
+        add(_enableAllButton, "cell 2 1,growx,aligny top");
+
+        _disableAllButton = new JButton("Disable all");
+        _disableAllButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/16x16/unchecked-todo-list-16.png")));
+        _disableAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                disableAllActionPerformed();
+            }
+        });
+        add(_disableAllButton, "cell 2 1,growx,aligny top");
+
+        _enableAddedProfilesCheckbox = new JCheckBox("Enable added profiles", SmartRankGUISettings.isNewKnownProfilesEnabled());
+        _enableAddedProfilesCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                SmartRankGUISettings.setNewKnownProfilesEnabled(_enableAddedProfilesCheckbox.isSelected());
+            }
+        });
+        _enableAddedProfilesCheckbox.setToolTipText("Check this box to automatically enable added profiles");
+
+        add(_enableAddedProfilesCheckbox, "cell 2 1,alignx left,aligny bottom");
+    }
+
+    private void disableAllActionPerformed() {
+        for (int row = 0; row < _profileTable.getRowCount(); row++) {
+            _profileTable.setValueAt(Boolean.FALSE, row, 0);
+        }
+    }
+
+    protected void enableAllActionPerformed() {
+        for (int row = 0; row < _profileTable.getRowCount(); row++) {
+            _profileTable.setValueAt(Boolean.TRUE, row, 0);
+        }
     }
 
     private void addButtonActionPerformed(final java.awt.event.ActionEvent evt) {
