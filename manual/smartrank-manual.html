@@ -1029,7 +1029,12 @@ li ol > li:before {
     			<tr><td>getFileName</td><td></td><td>Returns a string containing the absolute filename of the search criteria file.</td></tr>
     			<tr><td>isSucceeded</td><td></td><td>returns true if the job was run successfully, false otherwise.</td></tr>
     			<tr><td>getErrorMessage</td><td></td><td>If the job failed, this function returns a description of the error.</td></tr>
-    			<tr><td>getSearchResults</td><td></td><td>Returns an object descriubing the search results. See the information panel in the code editor for this object's porperties and functions.</td></tr>
+    			<tr><td>getLogFileName</td><td></td><td>If available, this function returns the name of the job logfile.</td></tr>
+    			<tr><td>getReportFileName</td><td></td><td>If available, this function returns the name of the job's report file.</td></tr>
+    			<tr><td>getThreshold</td><td></td><td>returns the LR threshold. LRs below this threshold will not be reported.</td></tr>
+    			<tr><td>getNumberOfLRsOverThreshold</td><td></td><td>returns the number of profiles that yielded an LR exceeding the configured threshold. If the job failed, 0 is returned.</td></tr>
+    			<tr><td>getDuration</td><td></td><td>This function returns the duration in milliseconds of the search.</td></tr>
+    			<tr><td>getSearchResults</td><td></td><td>Returns an object describing the search results. See the information panel in the code editor for this object's properties and functions.</td></tr>
     		</tbody>
     	</table>
   		
@@ -1104,6 +1109,7 @@ li ol > li:before {
 				<li>The population statistics</li>
 			</UL>
         	If a locus is missing in any of these places, an LR will <b>not</b> be calculated for that locus, and a remarks will be added to the Comments section for the specimen in question.
+        </p>
         </li>
         <li><b>SmartRank says it has run out of memory</b>
             <p>
@@ -1111,13 +1117,15 @@ li ol > li:before {
                         alt="Screenshot of the Out-of-Memory dialog" src="images/out-of-memory-dialog.png"><br>it means
                     that SmartRank does not have enough memory to continue.
             </p>
-                <p>This is primarily associated with older versions of Java. SmartRank needs more memory than these
-                    older version allocate by default. To avoid this problem, try switching to a newer version of Java.</p>
-            <p>
-                Alternatively, you can start SmartRank with the following command line:<br>
-                <code>java -jar smartrank-${project.version}.jar -Xmx2048m -Xms2048m</code>
-                <br> This will start SmartRank with 2GB of memory.<br>
-                </p></li>
+            There are a number of possible causes for this:
+            <UL>
+            	<LI>You may be an older version of Java. SmartRank needs more memory than these older version allocate by default. Try switching to a newer version of Java.</LI>
+            	<LI>Alternatively, you can start SmartRank with the following command line:<br>
+            	<code>java -jar smartrank-${project.version}.jar -Xmx2048m -Xms2048m</code><br>
+            	This will start SmartRank with 2GB of memory.<br>
+            	</LI>
+            </UL>
+        </li>
     </ul>
     </div>
 

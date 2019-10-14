@@ -20,6 +20,7 @@ package nl.minvenj.nfi.smartrank.gui.tabs.batchmode;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 
 import nl.minvenj.nfi.smartrank.analysis.SearchResults;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
@@ -35,6 +36,9 @@ public class BatchJobInfo {
     private String _filename;
 	private String _logFileName;
 	private String _reportFileName;
+    private int _numberOfLRsOverThreshold;
+    private int _threshold;
+    private long _duration;
 
     /**
      * Constructor to represent a search job that was successfully loaded (and possibly partially processed).
@@ -120,9 +124,11 @@ public class BatchJobInfo {
      */
     public void setResults(final SearchResults results) {
         _errorMessage = "";
+        _results = results;
         if (results != null) {
             _logFileName = results.getLogFileName();
             _reportFileName = results.getReportFileName();
+            _duration = _results.getDuration();
             if (results.isInterrupted()) {
                 setStatus(ScanStatus.INTERRUPTED);
             }
@@ -135,11 +141,45 @@ public class BatchJobInfo {
                     setStatus(ScanStatus.FAILED);
                 }
             }
+
+            _threshold = results.getParameters().getLrThreshold();
+            for (final Double lr : results.getLRs()) {
+                if (lr > results.getParameters().getThreadCount()) {
+                    _numberOfLRsOverThreshold++;
+                }
+            }
         }
         else {
             _logFileName = null;
             _reportFileName = null;
+            _threshold = 0;
+            _numberOfLRsOverThreshold = 0;
         }
+    }
+
+    /**
+     * Clears the stored search results to conserve memory.
+     */
+    public void clearResults() {
+        _results = null;
+    }
+
+    /**
+     * @return the number of LRs over the configured threshold
+     */
+    public int getNumberOfLRsOverThreshold() {
+        return _numberOfLRsOverThreshold;
+    }
+
+    /**
+     * @return the configured threshold for LRs
+     */
+    public int getThreshold() {
+        return _threshold;
+    }
+
+    public SearchResults getSearchResults() {
+        return _results;
     }
 
     /**
@@ -173,9 +213,16 @@ public class BatchJobInfo {
 	}
 
     /**
-     * @return a {@link Properties} 
+     * @return a {@link Properties}
      */
     public Properties getProperties() {
         return _reader.getProperties();
+    }
+
+    /**
+     * @return the _duration
+     */
+    public long getDuration() {
+        return _duration;
     }
 }

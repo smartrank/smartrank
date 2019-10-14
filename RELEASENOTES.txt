@@ -4,9 +4,10 @@ SmartRank Release Notes
 SmartRank allows DNA database searches for individuals whose profiles lead to high LRs in favor of 
 the prosecution hypothesis through a fast and user-friendly GUI.
 
-Version 1.0.6-SNAPSHOT
-Release date: Not released
+Version 1.0.6
+Release date: 2019-10-14
 -------------------------
+SMARTRANK-266: In batch mode added 'Removed' status to signal that a detected XML file was removed before it could be processed.
 SMARTRANK-274: Drastically reduced memory usage when in batch mode.
 SMARTRANK-275: Added the batchmode.retentiondays setting that governs how many days the result of completed jobs i shown in the GUI. Defaults to 14.
 SMARTRANK-277: Added a disable/enable all button to the samples tab. 

@@ -44,6 +44,11 @@ final class BatchProcessingStatusTableCellRenderer implements TableCellRenderer 
                 component.setForeground(Color.WHITE);
                 component.setOpaque(true);
                 break;
+            case REMOVED:
+                component.setBackground(adaptToSelection(isSelected, Color.GRAY));
+                component.setForeground(Color.WHITE);
+                component.setOpaque(true);
+                break;
             case INTERRUPTED:
                 component.setBackground(adaptToSelection(isSelected, Color.YELLOW));
                 component.setForeground(Color.BLACK);

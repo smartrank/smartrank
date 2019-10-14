@@ -64,6 +64,7 @@ public class SmartRankRestrictions {
     private static final String Q_SHUTDOWN = "qDesignationShutdown";
     private static final String IS_WINDOW_CLOSE_BLOCKED_IN_BATCH_MODE = "windowCloseBlockedInBatchMode";
     private static final String BATCH_AUTOSTART_MODE = "batchMode.autoStart";
+    private static final String BATCHMODE_JOB_RETENTION_DAYS = "batchmode.retentiondays";
 
     private static String _propertiesFileName = System.getProperty("smartrankRestrictions");
 
@@ -183,6 +184,10 @@ public class SmartRankRestrictions {
 
     public static boolean isWindowCloseBlockedInBatchMode() {
         return Boolean.parseBoolean(get(IS_WINDOW_CLOSE_BLOCKED_IN_BATCH_MODE, "false"));
+    }
+
+    public static int getBatchJobRetentionDays() {
+        return Integer.decode(get(BATCHMODE_JOB_RETENTION_DAYS, "14"));
     }
 
     private static String get(final String key, final String defaultValue) {
