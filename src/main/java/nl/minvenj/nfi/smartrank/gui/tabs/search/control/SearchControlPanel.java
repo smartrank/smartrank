@@ -66,6 +66,7 @@ public class SearchControlPanel extends SmartRankPanel {
     private SearchResults _lastResult;
     private final SearchResultCache _resultCache;
     private final MessageBus _messageBus;
+    private final JButton _exportButton;
 
     /**
      * Creates new form AnalysisControlPanel
@@ -127,14 +128,24 @@ public class SearchControlPanel extends SmartRankPanel {
             }
         });
 
-        setLayout(new MigLayout("", "[430px]", "[25px][25px][][18px][28px][18px][28px]"));
+        setLayout(new MigLayout("", "[430px]", "[25px][][25px][][18px][28px][18px][28px]"));
         add(_startButton, "cell 0 0,growx,aligny top");
-        add(_showReportButton, "cell 0 1,growx,aligny top");
-        add(_showLogButton, "cell 0 2,grow");
-        add(_runningTime, "cell 0 4,alignx right,aligny top");
-        add(_runningTimeLabel, "cell 0 3,alignx right,growy");
-        add(_timeRemainingLabel, "cell 0 5,alignx right,growy");
-        add(_timeRemaining, "cell 0 6,alignx right,aligny top");
+
+        _exportButton = new JButton("Export Search Criteria");
+        _exportButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/16x16/disk.png"))); // NOI18N
+        _exportButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                exportSearchCriteria();
+            }
+        });
+        add(_exportButton, "cell 0 1,growx,aligny top");
+        add(_showReportButton, "cell 0 2,growx,aligny top");
+        add(_showLogButton, "cell 0 3,grow");
+        add(_runningTime, "cell 0 5,alignx right,aligny top");
+        add(_runningTimeLabel, "cell 0 4,alignx right,growy");
+        add(_timeRemainingLabel, "cell 0 6,alignx right,growy");
+        add(_timeRemaining, "cell 0 7,alignx right,aligny top");
 
         _startButton.setName("searchButton");
         _showReportButton.setName("showReportButton");
@@ -145,6 +156,12 @@ public class SearchControlPanel extends SmartRankPanel {
         _timeRemainingLabel.setLabelFor(_timeRemaining);
 
         registerAsListener();
+    }
+
+    private void exportSearchCriteria() {
+        final SearchCriteriaExportDialog dlg = new SearchCriteriaExportDialog();
+        dlg.setModal(true);
+        dlg.setVisible(true);
     }
 
     private void startButtonActionPerformed(final java.awt.event.ActionEvent evt) {
@@ -177,8 +194,9 @@ public class SearchControlPanel extends SmartRankPanel {
                 File file = new File(_lastResult.getLogFileName());
 
                 // Hold down control to open the file location instead of the file itself
-                if ((e.getModifiers() & InputEvent.CTRL_MASK) != 0)
+                if ((e.getModifiers() & InputEvent.CTRL_MASK) != 0) {
                     file = file.getParentFile();
+                }
 
                 try {
                     Desktop.getDesktop().open(file);
@@ -239,8 +257,9 @@ public class SearchControlPanel extends SmartRankPanel {
                     File file = new File(fileName);
 
                     // Hold down control to open the file location instead of the file itself
-                    if ((evt.getModifiers() & InputEvent.CTRL_MASK) != 0)
+                    if ((evt.getModifiers() & InputEvent.CTRL_MASK) != 0) {
                         file = file.getParentFile();
+                    }
 
                     Desktop.getDesktop().open(file);
                 }

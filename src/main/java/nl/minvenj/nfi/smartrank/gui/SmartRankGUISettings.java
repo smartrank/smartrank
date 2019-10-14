@@ -30,9 +30,6 @@ import nl.minvenj.nfi.smartrank.SmartRank;
 import nl.minvenj.nfi.smartrank.raven.NullUtils;
 
 public class SmartRankGUISettings {
-
-    private static final String DATABASE_QUERY_BATCH_SIZE = "jdbc.query.batchSize";
-
     private static final Logger LOG = LoggerFactory.getLogger(SmartRankGUISettings.class);
 
     private static final Properties PROPERTIES = new Properties();
@@ -49,6 +46,7 @@ public class SmartRankGUISettings {
     private static final String DATABASE_SCHEMANAME = "jdbc.schemaName";
     private static final String DATABASE_PASSWORD = "jdbc.userName";
     private static final String DATABASE_USERNAME = "jdbc.password";
+    private static final String DATABASE_QUERY_BATCH_SIZE = "jdbc.query.batchSize";
     private static final String DATABASE_QUERY_SPECIMENS = "jdbc.query.specimens";
     private static final String DATABASE_QUERY_SPECIMENKEYS = "jdbc.query.specimenkeys";
     private static final String DATABASE_QUERY_REVISION = "jdbc.query.revision";
@@ -62,7 +60,10 @@ public class SmartRankGUISettings {
     private static final String BATCHMODE_POSTPROCESSING_SCRIPT = "batchmode.postprocessing";
 	private static final String BATCHMODE_JOB_RETENTION_DAYS = "batchmode.retentiondays";
     private static final String WINDOW_TITLE = "windowTitle";
-
+    private static final String SEARCHCRITERIA_EXPORT_INCLUDESTATISTICS = "searchcriteria.export.includestatistics";
+    private static final String SEARCHCRITERIA_EXPORT_AUTOMATICDROPOUTESTIMATION = "searchcriteria.export.automaticdropoutestimation";
+    private static final String SEARCHCRITERIA_EXPORT_USERNAME = "searchcriteria.export.username";
+    private static final String SEARCHCRITERIA_EXPORT_PATH = "searchcriteria.export.path";
 
     private static String _propertiesFileName = System.getProperty("smartrankProperties");
 
@@ -337,5 +338,37 @@ public class SmartRankGUISettings {
             LOG.debug("Error writing properties file: \n" + ex.getLocalizedMessage());
         }
         return false;
+    }
+
+    public static boolean isExportPopulationStatistics() {
+        return Boolean.parseBoolean(get(SEARCHCRITERIA_EXPORT_INCLUDESTATISTICS, "false"));
+    }
+
+    public static void setExportPopulationStatistics(final boolean b) {
+        set(SEARCHCRITERIA_EXPORT_INCLUDESTATISTICS, "" + b);
+    }
+
+    public static boolean isAutomaticDropoutEstimation() {
+        return Boolean.parseBoolean(get(SEARCHCRITERIA_EXPORT_AUTOMATICDROPOUTESTIMATION, "false"));
+    }
+
+    public static void setExportAutomaticDropoutEstimation(final boolean b) {
+        set(SEARCHCRITERIA_EXPORT_AUTOMATICDROPOUTESTIMATION, "" + b);
+    }
+
+    public static void setLastSelectedSearchCriteriaExportPath(final String path) {
+        set(SEARCHCRITERIA_EXPORT_PATH, path);
+    }
+
+    public static String getLastSelectedSearchCriteriaExportPath() {
+        return get(SEARCHCRITERIA_EXPORT_PATH, "");
+    }
+
+    public static void setExportUserName(final String name) {
+        set(SEARCHCRITERIA_EXPORT_USERNAME, name);
+    }
+
+    public static String getExportUserName() {
+        return get(SEARCHCRITERIA_EXPORT_USERNAME, "");
     }
 }

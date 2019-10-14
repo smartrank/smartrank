@@ -560,6 +560,26 @@ li ol > li:before {
             <tr><td><img src="images/searching.png" alt="SmartRank searching"></td></tr>
             <tr><td><div class="imagecaption">SmartRank running a search</div></td></tr>
         </table>
+        
+	    <div class="subsection">
+	        <h3 class="subsectiontitle">
+	            <a id="SavingSearchCriteria">Saving the configured search criteria</a> <span class="no-print"><font size="1"><a
+	                    href="#Top">Back to top</a></font></span>
+	        </h3>
+	        By clicking the 'Export Search Criteria' button, the current search configuration can be stored in a file. The format is described in <span class="reference">SearchCriteriaFormat</span>.
+	        <table class="imageTable">
+	            <tr><td><img src="images/searchcritiaexportdialog.png" alt="Search criteria export dialog"></td></tr>
+	            <tr><td><div class="imagecaption">Search criteria export dialog</div></td></tr>
+	        </table>
+	        <UL>
+	        	<LI>In the <b>Casenumber</b> field, a value can be entered which determines where the search results will be written.</LI>
+	        	<LI>The <b>Username</b> field is populated by default with the OS username of the current user. change it to any desired value. By clicking the 'Always use this name' box, this field can be fixed to a certain value.</LI>
+	        	<LI>Check the <b>Export population statistics</b> box to include the currently loaded population statistics in the export.<BR> 
+	        		Leaving this unchecked will not include population statistics in the export. Once the search is performed, the configured default statistics file will be used.</LI>
+	        	<LI>Check the <b>Automatic dropout estimation</b> box to perform an automatic dropout estimation when the search is performed.</LI>
+	        	<LI>The <b>Additional properties</b> table can be used to add additional properties to the search criteria. These will not be actively used in the search but can play a role in pre and post processing</LI>
+	        </UL> 
+	    </div>        
     </div>
     
     <div class="section">
