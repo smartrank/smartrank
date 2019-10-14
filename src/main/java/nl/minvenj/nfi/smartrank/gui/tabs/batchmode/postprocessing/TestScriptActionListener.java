@@ -76,7 +76,7 @@ public class TestScriptActionListener implements ActionListener {
 
             final BatchJobInfo info = new BatchJobInfo(testFile, searchCriteriaReader, ScanStatus.PENDING);
 
-            final SearchResults searchResults = new SearchResults(1000, new DatabaseConfiguration(new File("DummyDatabase"))) {
+            final SearchResults searchResults = new SearchResults(new DatabaseConfiguration(new File("DummyDatabase"))) {
                 @Override
                 public List<Double> getLRs() {
                     return Arrays.asList(1000.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0);

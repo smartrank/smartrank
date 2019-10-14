@@ -42,8 +42,7 @@ import nl.minvenj.nfi.smartrank.domain.Sample;
  * Contains the results of the last search action.
  */
 public class SearchResults {
-    private final double[] _lrs;
-    private int _totalResultCount;
+    private final List<Double> _lrs;
     private Double _maxRatio;
     private Double _minRatio;
     private long _duration;
@@ -64,20 +63,17 @@ public class SearchResults {
 
     /**
      * Constructor. Creates a {@link SearchResults} object to hold the specified number of results.
-     *
-     * @param databaseSize The number of records in the database. Used to initialize the internal structure of this object.
      */
-    public SearchResults(final int databaseSize, final DatabaseConfiguration config) {
+    public SearchResults(final DatabaseConfiguration config) {
         _excludedProfiles = new ArrayList<>();
         _positiveLRs = new ArrayList<>();
         _minRatio = Double.MAX_VALUE;
         _maxRatio = Double.MIN_VALUE;
-        _totalResultCount = 0;
         _startTime = System.currentTimeMillis();
         _exclusionStats = new HashMap<>();
         _metadataStatistics = new HashMap<>();
         _config = config;
-        _lrs = new double[databaseSize];
+        _lrs = new ArrayList<>();
     }
 
     /**
@@ -97,7 +93,7 @@ public class SearchResults {
      * @return The number of search result LRs stored
      */
     public int getNumberOfLRs() {
-        return _totalResultCount;
+        return _lrs.size();
     }
 
     /**
@@ -116,7 +112,7 @@ public class SearchResults {
      */
     synchronized void addLR(final LikelihoodRatio lr) {
         final Double ratio = lr.getOverallRatio().getRatio();
-        _lrs[_totalResultCount++] = ratio;
+        _lrs.add(ratio);
 
         if (!ratio.isNaN() && !ratio.isInfinite()) {
             _maxRatio = Math.max(ratio, _maxRatio);
@@ -150,11 +146,7 @@ public class SearchResults {
      * @return a {@link Collection} of {@link LikelihoodRatio} objects reflecting the search results
      */
     public List<Double> getLRs() {
-        final ArrayList<Double> lrs = new ArrayList<>();
-        for (int idx = 0; idx < _totalResultCount; idx++) {
-            lrs.add(_lrs[idx]);
-        }
-        return Collections.unmodifiableList(lrs);
+        return Collections.unmodifiableList(_lrs);
     }
 
     /**
@@ -224,9 +216,9 @@ public class SearchResults {
      */
     public double getPercentile(final int percentile) {
         final Percentile p = new Percentile(percentile);
-        final double[] sorted = new double[_totalResultCount];
-        for (int idx = 0; idx < _totalResultCount; idx++) {
-            sorted[idx] = _lrs[idx];
+        final double[] sorted = new double[_lrs.size()];
+        for (int idx = 0; idx < _lrs.size(); idx++) {
+            sorted[idx] = _lrs.get(idx);
         }
         Arrays.sort(sorted);
         p.setData(sorted);
@@ -435,14 +427,17 @@ public class SearchResults {
     public boolean isInterrupted() {
         Throwable reason = getFailureReason();
         Throwable cause = reason;
-        if (reason != null)
+        if (reason != null) {
             cause = reason.getCause();
+        }
         while (reason != cause) {
-            if (reason instanceof InterruptedException)
+            if (reason instanceof InterruptedException) {
                 return true;
+            }
             reason = cause;
-            if (reason != null)
+            if (reason != null) {
                 cause = reason.getCause();
+            }
         }
         return false;
     }
