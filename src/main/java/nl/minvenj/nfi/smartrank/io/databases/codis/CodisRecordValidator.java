@@ -49,7 +49,7 @@ public class CodisRecordValidator implements Callable<DatabaseStatistics> {
         _locusNames = new String[headers.length];
         _alleleOrdinals = new String[headers.length];
         for (int idx = 0; idx < headers.length; idx++) {
-            _locusNames[idx] = headers[idx].replaceFirst("_[1234]$", "").toUpperCase();
+            _locusNames[idx] = headers[idx].replaceFirst("_\\d+$", "").toUpperCase();
             _alleleOrdinals[idx] = headers[idx].replaceFirst(".*_", "");
         }
     }
@@ -79,22 +79,11 @@ public class CodisRecordValidator implements Callable<DatabaseStatistics> {
                         int numberOfAllelesPerLocus = 0;
                         final ArrayList<String> alleleValues = new ArrayList<>();
                         while (fieldIndex < fields.length) {
-                            if (((fieldIndex - 1) % 4) == 0) {
-                                // Check if the fields are all valid alleles and that the record has no more than 2 alleles
-                                if (numberOfAllelesPerLocus > 2) {
-                                    _listener.onProblem(sampleName, currentLocusName, "Locus excluded as it has " + numberOfAllelesPerLocus + " alleles: " + alleleValues);
-                                }
-
-                                if (numberOfAllelesPerLocus > 0) {
-                                    loci.add(currentLocusName);
-
-                                    Integer specimensHavingThisLocus = stat.getSpecimenCountPerLocus().get(currentLocusName);
-                                    if (specimensHavingThisLocus == null) {
-                                        specimensHavingThisLocus = 0;
-                                    }
-                                    stat.getSpecimenCountPerLocus().put(currentLocusName, specimensHavingThisLocus + 1);
-                                }
-
+                            // If we have a complete locus, perform some sanity checks.
+                            // Note: the last locus will be checked after the 'while' block
+                            if (!currentLocusName.isEmpty() && !currentLocusName.equalsIgnoreCase(_locusNames[fieldIndex])) {
+                                checkNumberOfAlleles(sampleName, currentLocusName, numberOfAllelesPerLocus, alleleValues);
+                                updateLocusStats(stat, currentLocusName, loci, numberOfAllelesPerLocus);
                                 numberOfAllelesPerLocus = 0;
                                 alleleValues.clear();
                             }
@@ -117,20 +106,8 @@ public class CodisRecordValidator implements Callable<DatabaseStatistics> {
                             fieldIndex++;
                         }
 
-                        // Check the last locus
-                        if (numberOfAllelesPerLocus > 2) {
-                            _listener.onProblem(sampleName, currentLocusName, "Locus excluded as it has " + numberOfAllelesPerLocus + " alleles: " + alleleValues);
-                        }
-
-                        if (numberOfAllelesPerLocus > 0) {
-                            loci.add(currentLocusName);
-
-                            Integer specimensHavingThisLocus = stat.getSpecimenCountPerLocus().get(currentLocusName);
-                            if (specimensHavingThisLocus == null) {
-                                specimensHavingThisLocus = 0;
-                            }
-                            stat.getSpecimenCountPerLocus().put(currentLocusName, specimensHavingThisLocus + 1);
-                        }
+                        checkNumberOfAlleles(sampleName, currentLocusName, numberOfAllelesPerLocus, alleleValues);
+                        updateLocusStats(stat, currentLocusName, loci, numberOfAllelesPerLocus);
                         while (stat.getSpecimenCountPerNumberOfLoci().size() < (loci.size() + 1)) {
                             stat.getSpecimenCountPerNumberOfLoci().add(0);
                         }
@@ -149,5 +126,24 @@ public class CodisRecordValidator implements Callable<DatabaseStatistics> {
             MessageBus.getInstance().send(this, new ErrorStringMessage("Error reading from file '" + _reader.getFileName() + "'\n " + e.getMessage()));
         }
         return stat;
+    }
+
+    private void updateLocusStats(final DatabaseStatistics stat, final String currentLocusName, final ArrayList<String> loci, final int numberOfAllelesPerLocus) {
+        if (numberOfAllelesPerLocus > 0) {
+            loci.add(currentLocusName);
+
+            Integer specimensHavingThisLocus = stat.getSpecimenCountPerLocus().get(currentLocusName);
+            if (specimensHavingThisLocus == null) {
+                specimensHavingThisLocus = 0;
+            }
+            stat.getSpecimenCountPerLocus().put(currentLocusName, specimensHavingThisLocus + 1);
+        }
+    }
+
+    private void checkNumberOfAlleles(final String sampleName, final String currentLocusName, final int numberOfAllelesPerLocus, final ArrayList<String> alleleValues) {
+        // Check if the fields are all valid alleles and that the record has no more than 2 alleles
+        if (numberOfAllelesPerLocus > 2) {
+            _listener.onProblem(sampleName, currentLocusName, "Locus excluded as it has " + numberOfAllelesPerLocus + " alleles: " + alleleValues);
+        }
     }
 }
