@@ -17,7 +17,6 @@
  */
 package nl.minvenj.nfi.smartrank.io.searchcriteria.locim;
 
-import java.io.File;
 import java.io.IOException;
 
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
@@ -29,12 +28,12 @@ import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReaderFactory;
 public class SmartRankImportFileReaderFactory extends SearchCriteriaReaderFactory {
 
     @Override
-    public boolean accepts(final File file) {
-        return file.canRead() && file.isFile() && file.length() > 0 && file.getName().matches(".+\\.xml");
+    public boolean accepts(final String criteria) {
+        return criteria.contains("<SmartRankImportFile");
     }
 
     @Override
-    protected SearchCriteriaReader newInstance(final File file) throws IOException {
-        return new SmartRankImportFileReader(file);
+    protected SearchCriteriaReader newInstance(final String context, final String criteria) throws IOException {
+        return new SmartRankImportFileReader(context, criteria);
     }
 }

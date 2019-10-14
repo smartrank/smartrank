@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -276,15 +277,13 @@ public class SmartRankImportFileReaderTest {
     private SmartRankImportFileReader _reader;
     private PopulationStatistics _populationStatistics;
 
-
-
     @Before
     public void setUp() throws Exception {
         if (getClass().getResource(_fileName) == null) {
             fail("Testfile " + _fileName + " could not be found!");
         }
-        System.out.println("Reading from " + getClass().getResource(_fileName).toURI());
-        _reader = new SmartRankImportFileReader(new File(getClass().getResource(_fileName).toURI()));
+        final File file = new File(getClass().getResource(_fileName).toURI());
+        _reader = new SmartRankImportFileReader(file.getAbsolutePath(), FileUtils.readFileToString(file));
 
         if (_populationStatisticsFilename != null) {
             _populationStatistics = new StatisticsReader(new File(getClass().getResource(_populationStatisticsFilename).toURI())).getStatistics();

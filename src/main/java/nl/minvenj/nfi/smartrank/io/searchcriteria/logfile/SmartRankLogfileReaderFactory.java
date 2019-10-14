@@ -17,7 +17,6 @@
  */
 package nl.minvenj.nfi.smartrank.io.searchcriteria.logfile;
 
-import java.io.File;
 import java.io.IOException;
 
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
@@ -29,12 +28,12 @@ import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReaderFactory;
 public class SmartRankLogfileReaderFactory extends SearchCriteriaReaderFactory {
 
     @Override
-    public boolean accepts(final File file) {
-        return file.canRead() && file.isFile() && file.length() > 0 && file.getName().matches("SmartRank\\-.+\\d{8}\\-\\d{6}\\.log");
+    public boolean accepts(final String criteria) {
+        return criteria.length() > 19 && criteria.substring(0, 19).matches("\\d\\d\\d\\d/\\d\\d/\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d") && criteria.contains("SmartRank version") && criteria.contains("=================");
     }
 
     @Override
-    protected SearchCriteriaReader newInstance(final File file) throws IOException {
-        return new SmartRankLogfileReader(file);
+    protected SearchCriteriaReader newInstance(final String context, final String criteria) throws IOException {
+        return new SmartRankLogfileReader(context, criteria);
     }
 }

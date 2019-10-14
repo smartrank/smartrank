@@ -97,6 +97,12 @@ body {
     border: 1px solid black ;
 }
 
+.codesample {
+	border: 1px solid black; 
+	font-family: Courier New; 
+	background-color: #FBFCD8;
+}
+
 table {
 	border: 1px solid black;
 }
@@ -1102,7 +1108,7 @@ li ol > li:before {
         </h2>
 
         <p>Using the query below, a SmartRank-compatible database file can be exported from a CODIS SQLServer database.</p>
-        <pre style="color: blue; border: 1px solid black ;">
+        <pre class="sql codesample">
 <span class="sqlKeyword">SELECT</span> 
     specimenId, CSF1PO_1, CSF1PO_2, CSF1PO_3, CSF1PO_4,
     D10S1248_1, D10S1248_2, D10S1248_3, D10S1248_4, D12S391_1,
@@ -1237,8 +1243,8 @@ AS</span> p
             Appendix E. <a id="SearchCriteriaFormat">Search Criteria File Format</a> <span class="no-print"><font
                 size="1"><a href="#Top">Back to top</a></font></span>
         </h2>
-        <p>Search criteria can be imported from an XML file. An example of this file is shown below. See the xsd folder of the SmartRank installation folder for an XSD file describing the Search Criteria file format.</p>
-        <pre>
+        <p>Search criteria can be imported from an XML or JSON file. An example of search criteria in XML format is shown below. See the xsd folder of the SmartRank installation folder for an XSD file describing the Search Criteria file format.</p>
+        <pre class="codesample">
         <font color=blue>&lt;SmartRankImportFile <font color=purple>version=<font color=red><font color=red>"1.0"</font></font></font> <font color=purple>xmlns=<font color=red>"urn:SmartRankImportFile-schema"</font></font>&gt;</font>
             <font color=green>&lt;!-- The case folder is the place where logfiles and reports are written to. 
                     This overrides the location configured in the restrictions file --&gt;</font>
@@ -1316,6 +1322,153 @@ AS</span> p
             <font color=blue>&lt;/Specimen&gt;</font>                
         <font color=blue>&lt;/SmartRankImportFile&gt;</font>
         </pre>
+        <p>Below is an example of search criteria in JSON format</p>
+        <pre class="codesample">
+	{
+	    <font color=blue>"caseFolder"</font>: <font color=green>"2016/01 januari/2016.01.01.001"</font>,
+	    <font color=blue>"userid"</font>: <font color=green>"MASLA"</font>,
+	    <font color=blue>"dateTime"</font>: <font color=green>"2016-08-22 15:24:23"</font>,
+	    <font color=blue>"replicates"</font>: {
+	        <font color=blue>"replicate"</font>: [
+	            {
+	                <font color=blue>"name"</font>: <font color=green>"CEDU0059FR#07-KOEL0126LU#21"</font>
+	            }
+	        ]
+	    },
+	    <font color=blue>"dropin"</font>:  <font color=red>0.10</font>,
+	    <font color=blue>"theta"</font>:  <font color=red>0.03</font>,
+	    <font color=blue>"lrThreshold"</font>:  <font color=red>1234</font>,
+	    <font color=blue>"maximumNumberOfResults"</font>:  <font color=red>10</font>,
+	    <font color=blue>"rareAlleleFrequency"</font>:  <font color=red>0.000239808153477218</font>,
+	    <font color=blue>"hp"</font>: {
+	        <font color=blue>"contributors"</font>: {
+	            <font color=blue>"contributor"</font>: [
+	                {
+	                    <font color=blue>"name"</font>:  <font color=green>"CEDU0059FR#07"</font>,
+	                    <font color=blue>"dropout"</font>:  <font color=green>"0.11"</font>
+	                }
+	            ]
+	        },
+	        <font color=blue>"nonContributors"</font>: null,
+	        <font color=blue>"unknowns"</font>: {
+	            <font color=blue>"count"</font>:  <font color=red>1</font>,
+	            <font color=blue>"dropout"</font>:  <font color=green>"0.12"</font>
+	        },
+	        <font color=blue>"candidateDropout"</font>:  <font color=green>"0.10"</font>
+	    },
+	    <font color=blue>"hd"</font>: {
+	        <font color=blue>"contributors"</font>: {
+	            <font color=blue>"contributor"</font>: [
+	                {
+	                    <font color=blue>"name"</font>:  <font color=green>"CEDU0059FR#07"</font>,
+	                    <font color=blue>"dropout"</font>:  <font color=green>"0.13"</font>
+	                }
+	            ]
+	        },
+	        <font color=blue>"nonContributors"</font>: null,
+	        <font color=blue>"unknowns"</font>: {
+	            <font color=blue>"count"</font>:  <font color=red>2</font>,
+	            <font color=blue>"dropout"</font>:  <font color=green>"0.14"</font>
+	        }
+	    },
+	    <font color=blue>"specimen"</font>: [
+	        {
+	            <font color=blue>"locus"</font>: [
+	                {
+	                    <font color=blue>"allele"</font>: [
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"11"</font>
+	                        },
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"12"</font>
+	                        }
+	                    ],
+	                    <font color=blue>"name"</font>:  <font color=green>"D16S539"</font>
+	                },
+	                {
+	                    <font color=blue>"allele"</font>: [
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"14"</font>
+	                        },
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"15"</font>
+	                        }
+	                    ],
+	                    <font color=blue>"name"</font>:  <font color=green>"D18S51"</font>
+	                }
+	            ],
+	            <font color=blue>"name"</font>:  <font color=green>"CEDU0059FR#07-KOEL0126LU#21"</font>
+	        },
+	        {
+	            <font color=blue>"locus"</font>: [
+	                {
+	                    <font color=blue>"allele"</font>: [
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"11"</font>
+	                        },
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"12"</font>
+	                        }
+	                    ],
+	                    <font color=blue>"name"</font>:  <font color=green>"D16S539"</font>
+	                },
+	                {
+	                    <font color=blue>"allele"</font>: [
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"14"</font>
+	                        },
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"15"</font>
+	                        }
+	                    ],
+	                    <font color=blue>"name"</font>:  <font color=green>"D18S51"</font>
+	                }
+	            ],
+	            <font color=blue>"name"</font>:  <font color=green>"KOEL0126LU#21"</font>
+	        },
+	        {
+	            <font color=blue>"locus"</font>: [
+	                {
+	                    <font color=blue>"allele"</font>: [
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"11"</font>
+	                        },
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"12"</font>
+	                        }
+	                    ],
+	                    <font color=blue>"name"</font>:  <font color=green>"D16S539"</font>
+	                },
+	                {
+	                    <font color=blue>"allele"</font>: [
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"14"</font>
+	                        },
+	                        {
+	                            <font color=blue>"value"</font>:  <font color=green>"15"</font>
+	                        }
+	                    ],
+	                    <font color=blue>"name"</font>:  <font color=green>"D18S51"</font>
+	                }
+	            ],
+	            <font color=blue>"name"</font>:  <font color=green>"CEDU0059FR#07"</font>
+	        }
+	    ],
+	    <font color=blue>"properties"</font>: {
+	        <font color=blue>"property"</font>: [
+	            {
+	                <font color=blue>"name"</font>: <font color=green>"property1"</font>,
+	                <font color=blue>"value"</font>: <font color=green>"value1"</font>
+	            },
+	            {
+	                <font color=blue>"name"</font>: <font color=green>"property2"</font>,
+	                <font color=blue>"value"</font>: <font color=green>"value2"</font>
+	            }
+	        ]
+	    },
+	    <font color=blue>"version"</font>:  <font color=red>1.0</font>
+	}
+        </pre>
     </div>
     
     <div class="appendix">
@@ -1326,7 +1479,7 @@ AS</span> p
     	<p>The following queries can be used when accessing a CODIS database directly:
     	<UL>
     		<LI>Specimen Keys Query
-    		<pre>
+    		<pre class="codesample">
 select S.Spec_CD
 FROM CODIS.dbo.Specimen S
 WHERE S.Spec_Type_CD IN (
@@ -1337,7 +1490,7 @@ order by Spec_CD
 			</pre>
     		</LI>
     		<LI>Specimen Retrieval Query
-    		<pre>
+    		<pre class="codesample">
 SELECT S.Spec_ID as [specimenId], L.Locus, rtrim(PV.PCR_Value) as [allele]
 FROM CODIS.dbo.Specimen S, CODIS.dbo.Locus L, CODIS.dbo.Sizing Z, CODIS.dbo.PCR_Value PV
 WHERE S.Spec_CD = Z.Spec_CD
@@ -1353,13 +1506,13 @@ group by s.spec_id, L.locus, PV.PCR_Value
 			</pre>
     		</LI>
     		<LI>Database Revision Query
-    		<pre>
+    		<pre class="codesample">
 select max(Audit_CD)
 FROM CODIS.dbo.Audit_Trail
 			</pre>
     		</LI>
     	</UL>
-    
+    </div>
     <!--  This code composes the table of contents at the top of the document -->
     <script type="text/javascript">
     	function resolveReferences(references, id, title, targetType) {

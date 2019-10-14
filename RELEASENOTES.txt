@@ -15,6 +15,7 @@ SMARTRANK-281: Fixed a bug that caused searches to fail with an ArrayIndexOutOfB
 SMARTRANK-282: The SmartRankManager API is now public allowing easier integration into other applications.
 SMARTRANK-283: Improved the program's response when the file polling thread terminates unexpectedly in batch mode.
 SMARTRANK-284: Added optional additional properties to search criteria.
+SMARTRANK-285: Search criteria can now be loaded from JSON.
 
 Version 1.0.5
 Release date: 2018-11-23
