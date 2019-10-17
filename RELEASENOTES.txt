@@ -4,8 +4,15 @@ SmartRank Release Notes
 SmartRank allows DNA database searches for individuals whose profiles lead to high LRs in favor of 
 the prosecution hypothesis through a fast and user-friendly GUI.
 
+Version 1.0.7-SNAPSHOT
+Release date: 2019-10-17
+Revision: 53244dc on master
+-------------------------
+SMARTRANK-289: Fixed an issue where sometimes files were incorrectly marked as deleted
+
 Version 1.0.6
-Release date: 2019-10-14
+Release date: 2019-10-11
+Revision: 4d2831b on UNKNOWN
 -------------------------
 SMARTRANK-266: In batch mode added 'Removed' status to signal that a detected XML file was removed before it could be processed.
 SMARTRANK-274: Drastically reduced memory usage when in batch mode.
@@ -21,12 +28,14 @@ SMARTRANK-287: Search criteria can now be saved from the GUI
 SMARTRANK-288: Added support for CSV database files with other than 4 fields per locus 
 
 Version 1.0.5
-Release date: 2018-11-23
+Release date: 2017-11-21
+Revision: 92e976b on master
 -------------------------
 SMARTRANK-264: Added post-processing scripting for batch mode.
 
 Version 1.0.4
 Release date: 2017-06-27
+Revision: 97ea361 on master
 -------------------------
 SMARTRANK-259: When requester ID and/or request time are missing from a search criteria file, the file owner name and creation time are used instead.
 SMARTRANK-260: The current search will now fail properly when a database error occurs.

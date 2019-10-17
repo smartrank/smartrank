@@ -98,28 +98,29 @@ public final class FilePollingThread extends Thread {
             final BatchJobInfo info = (BatchJobInfo) _batchModePanel.getFilesTable().getModel().getValueAt(row, 1);
 
             if (!file.exists()) {
-                info.setStatus(ScanStatus.REMOVED);
-                info.setErrorMessage("This file was detected by SmartRank, but was removed before it could be processed.");
+                if (info.getStatus() != ScanStatus.REMOVED) {
+                    info.setStatus(ScanStatus.REMOVED);
+                    info.setErrorMessage("This file was detected by SmartRank, but was removed before it could be processed.");
+                    LOG.warn("File {} could not be found!", file);
+                }
+                continue;
             }
-            else {
-                final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                try {
-                    if (!EnumSet.of(ScanStatus.PENDING, ScanStatus.INTERRUPTED, ScanStatus.PROCESSING).contains(info.getStatus())) {
-                        final Calendar processedAt = Calendar.getInstance();
-                        processedAt.setTime(sdf.parse(info.getStatusTimestamp()));
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            try {
+                if (!EnumSet.of(ScanStatus.PENDING, ScanStatus.INTERRUPTED, ScanStatus.PROCESSING).contains(info.getStatus())) {
+                    final Calendar processedAt = Calendar.getInstance();
+                    processedAt.setTime(sdf.parse(info.getStatusTimestamp()));
 
+                    final Calendar deleteJobsBeforeThisTime = Calendar.getInstance();
+                    deleteJobsBeforeThisTime.add(Calendar.DAY_OF_MONTH, -SmartRankRestrictions.getBatchJobRetentionDays());
 
-                        final Calendar deleteJobsBeforeThisTime = Calendar.getInstance();
-                        deleteJobsBeforeThisTime.add(Calendar.DAY_OF_MONTH, -SmartRankRestrictions.getBatchJobRetentionDays());
-
-                        if (processedAt.before(deleteJobsBeforeThisTime)) {
-                            _batchModePanel.getFilesTable().removeRow(row);
-                        }
+                    if (processedAt.before(deleteJobsBeforeThisTime)) {
+                        _batchModePanel.getFilesTable().removeRow(row);
                     }
                 }
-                catch (final ParseException e) {
-                    BatchModePanel.LOG.debug("Error decoding status date for {}: {}", file.getName(), info.getStatusTimestamp());
-                }
+            }
+            catch (final ParseException e) {
+                BatchModePanel.LOG.debug("Error decoding status date for {}: {}", file.getName(), info.getStatusTimestamp());
             }
         }
         EventQueue.invokeLater(new Runnable() {
