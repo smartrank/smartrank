@@ -375,7 +375,9 @@ public class BatchModePanel extends SmartRankPanel {
                     LOG.info("Error processing file {}: {}", curFile.getName(), msg);
                     BATCHLOG.info("Result: Failed");
                     BATCHLOG.info("Reason: {}", msg);
-                    getFilesTable().setValueAt(moveFileToDatedFolder(curFile, getFailedFolder()), idx, 0);
+                    synchronized (_messageBus) {
+                        getFilesTable().setValueAt(moveFileToDatedFolder(curFile, getFailedFolder()), idx, 0);
+                    }
                     info.setErrorMessage(msg);
                     info.setStatus(ScanStatus.FAILED);
                     getFilesTable().setValueAt(info, idx, 1);
@@ -383,8 +385,10 @@ public class BatchModePanel extends SmartRankPanel {
                 }
                 else {
                     LOG.info("Starting next job: {}", curFile);
-                    _currentFile = moveFileToFolder(curFile, _processingFolder);
-                    getFilesTable().getModel().setValueAt(_currentFile, idx, 0);
+                    synchronized (_messageBus) {
+                        _currentFile = moveFileToFolder(curFile, _processingFolder);
+                        getFilesTable().getModel().setValueAt(_currentFile, idx, 0);
+                    }
                 }
             }
         }
@@ -497,20 +501,22 @@ public class BatchModePanel extends SmartRankPanel {
     @RavenMessageHandler(SearchCompletedMessage.class)
     @ExecuteOnSwingEventThread
     public void onSearchCompleted(final SearchResults results) {
-        final File movedFile = moveFileToDatedFolder(_currentFile, _succeededFolder);
-        logResults(results);
-        for (int idx = 0; idx < getFilesTable().getModel().getRowCount(); idx++) {
-            if (((File) getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
-                final BatchJobInfo info = (BatchJobInfo) getFilesTable().getValueAt(idx, 1);
-                info.setFileName(movedFile.getAbsolutePath());
-                info.setResults(results);
-                getFilesTable().getModel().setValueAt(info, idx, 1);
-                getFilesTable().getModel().setValueAt(info, idx, 2);
-                getFilesTable().getModel().setValueAt(movedFile, idx, 0);
-                runPostProcessingScript(info);
+        synchronized (_messageBus) {
+            final File movedFile = moveFileToDatedFolder(_currentFile, _succeededFolder);
+            logResults(results);
+            for (int idx = 0; idx < getFilesTable().getModel().getRowCount(); idx++) {
+                if (((File) getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
+                    final BatchJobInfo info = (BatchJobInfo) getFilesTable().getValueAt(idx, 1);
+                    info.setFileName(movedFile.getAbsolutePath());
+                    info.setResults(results);
+                    getFilesTable().getModel().setValueAt(info, idx, 1);
+                    getFilesTable().getModel().setValueAt(info, idx, 2);
+                    getFilesTable().getModel().setValueAt(movedFile, idx, 0);
+                    runPostProcessingScript(info);
+                }
             }
+            searchAgain();
         }
-        searchAgain();
     }
 
     private void runPostProcessingScript(final BatchJobInfo info) {
@@ -545,32 +551,34 @@ public class BatchModePanel extends SmartRankPanel {
     @RavenMessageHandler(SearchAbortedMessage.class)
     @ExecuteOnSwingEventThread
     public void onSearchAborted(final SearchResults results) {
-        File movedFile = null;
-        logResults(results);
-        if (results.isInterrupted()) {
-            if (JOptionPane.NO_OPTION == JOptionPane.showConfirmDialog(this, "Job aborted. Do you want to continue with the next job in the list?", "SmartRank", JOptionPane.YES_NO_OPTION)) {
-                _running.set(false);
+        synchronized (_messageBus) {
+            File movedFile = null;
+            logResults(results);
+            if (results.isInterrupted()) {
+                if (JOptionPane.NO_OPTION == JOptionPane.showConfirmDialog(this, "Job aborted. Do you want to continue with the next job in the list?", "SmartRank", JOptionPane.YES_NO_OPTION)) {
+                    _running.set(false);
+                }
+
+                movedFile = moveFileToFolder(_currentFile, getInputFolder());
+            }
+            else {
+                movedFile = moveFileToDatedFolder(_currentFile, getFailedFolder());
             }
 
-            movedFile = moveFileToFolder(_currentFile, getInputFolder());
-        }
-        else {
-            movedFile = moveFileToDatedFolder(_currentFile, getFailedFolder());
-        }
-
-        for (int idx = 0; idx < getFilesTable().getModel().getRowCount(); idx++) {
-            if (((File) getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
-                final BatchJobInfo info = (BatchJobInfo) getFilesTable().getValueAt(idx, 1);
-                info.setResults(results);
-                info.setFileName(movedFile.getAbsolutePath());
-                getFilesTable().getModel().setValueAt(info, idx, 1);
-                getFilesTable().getModel().setValueAt(info, idx, 2);
-                getFilesTable().getModel().setValueAt(movedFile, idx, 0);
-                runPostProcessingScript(info);
+            for (int idx = 0; idx < getFilesTable().getModel().getRowCount(); idx++) {
+                if (((File) getFilesTable().getModel().getValueAt(idx, 0)).getName().equals(_currentFile.getName())) {
+                    final BatchJobInfo info = (BatchJobInfo) getFilesTable().getValueAt(idx, 1);
+                    info.setResults(results);
+                    info.setFileName(movedFile.getAbsolutePath());
+                    getFilesTable().getModel().setValueAt(info, idx, 1);
+                    getFilesTable().getModel().setValueAt(info, idx, 2);
+                    getFilesTable().getModel().setValueAt(movedFile, idx, 0);
+                    runPostProcessingScript(info);
+                }
             }
-        }
 
-        searchAgain();
+            searchAgain();
+        }
     }
 
     private void logResults(final SearchResults results) {
