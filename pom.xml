@@ -25,6 +25,7 @@
         <version.h2>2.1.210</version.h2>
         <version.fifesoft-rsyntaxtextarea>2.6.1</version.fifesoft-rsyntaxtextarea>
         <version.fifesoft-languagesupport>2.6.0</version.fifesoft-languagesupport>
+        <version.postgresql>42.2.19</version.postgresql>
 
         <version.logback>1.2.0</version.logback>
         <version.miglayout>4.2</version.miglayout>
@@ -279,7 +280,7 @@
         </plugins>
     </build>
     <dependencies>
-	        <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+	    <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
