@@ -54,6 +54,8 @@ import nl.minvenj.nfi.smartrank.io.databases.DatabaseValidationEventListener;
 import nl.minvenj.nfi.smartrank.io.samples.SampleReader;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReader;
 import nl.minvenj.nfi.smartrank.io.searchcriteria.SearchCriteriaReaderFactory;
+import nl.minvenj.nfi.smartrank.io.searchcriteria.locim.SmartRankImportFileReader;
+import nl.minvenj.nfi.smartrank.io.smartrankimport.jaxb.SmartRankImportFile;
 import nl.minvenj.nfi.smartrank.io.statistics.StatisticsReader;
 import nl.minvenj.nfi.smartrank.messages.commands.ClearSearchCriteriaMessage;
 import nl.minvenj.nfi.smartrank.messages.commands.EstimateDropoutMessage;
@@ -755,6 +757,7 @@ public class SmartRankManager {
         parms.setParameterEstimation(false);
         parms.setMaxReturnedResults(SmartRankRestrictions.getMaximumStoredResults());
         parms.setDropoutEstimation(null);
+        parms.setProperties(null);
 
         _messageBus.send(this, new DefenseHypothesisMessage(defenseHypothesis));
         _messageBus.send(this, new ProsecutionHypothesisMessage(prosecutionHypothesis));
@@ -795,6 +798,10 @@ public class SmartRankManager {
         }
     }
 
+    public boolean onLoadSearchCriteria(final SmartRankImportFile criteria) {
+        return onLoadSearchCriteria(new SmartRankImportFileReader(criteria));
+    }
+
     private boolean onLoadSearchCriteria(final SearchCriteriaReader reader) {
         NullUtils.argNotNull(reader, "reader");
         _messageBus.send(this, new ApplicationStatusMessage(ApplicationStatus.LOADING_SEARCH_CRITERIA));
@@ -824,6 +831,8 @@ public class SmartRankManager {
                 _messageBus.send(this, new LRThresholdMessage(reader.getLRThreshold()));
             }
 
+            parms.setProperties(reader.getProperties());
+
             final List<Sample> knownProfiles = reader.getKnownProfiles();
             _messageBus.send(this, new KnownProfilesMessage(knownProfiles));
 
@@ -841,14 +850,22 @@ public class SmartRankManager {
             defenseHypothesis.setStatistics(_messageBus.query(PopulationStatisticsMessage.class));
             defenseHypothesis.setThetaCorrection(_messageBus.query(ThetaMessage.class));
             defenseHypothesis.setDropInProbability(_messageBus.query(DropinMessage.class));
-            defenseHypothesis.setUnknownCount(reader.getHdUnknowns());
+            int hdUnknowns = reader.getHdUnknowns();
+            if(hdUnknowns > SmartRankRestrictions.getMaximumUnknownCount()) {
+                throw new IllegalArgumentException("Illegal number of unknowns for Hd (" + hdUnknowns + "). SmartRank is configured to accept no more than " + SmartRankRestrictions.getMaximumUnknownCount() + " unknowns");
+            }
+            defenseHypothesis.setUnknownCount(hdUnknowns);
             defenseHypothesis.setUnknownDropoutProbability(reader.getHdUnknownDropout());
 
             final ProsecutionHypothesis prosecutionHypothesis = new ProsecutionHypothesis();
             prosecutionHypothesis.setStatistics(_messageBus.query(PopulationStatisticsMessage.class));
             prosecutionHypothesis.setThetaCorrection(_messageBus.query(ThetaMessage.class));
             prosecutionHypothesis.setDropInProbability(_messageBus.query(DropinMessage.class));
-            prosecutionHypothesis.setUnknownCount(reader.getHpUnknowns());
+            int hpUnknowns = reader.getHpUnknowns();
+            if(hpUnknowns > SmartRankRestrictions.getMaximumUnknownCount()) {
+                throw new IllegalArgumentException("Illegal number of unknowns for Hp (" + hpUnknowns + "). SmartRank is configured to accept no more than " + SmartRankRestrictions.getMaximumUnknownCount() + " unknowns");
+            }
+            prosecutionHypothesis.setUnknownCount(hpUnknowns);
             prosecutionHypothesis.setUnknownDropoutProbability(reader.getHpUnknownDropout());
 
             for (final Sample sample : knownProfiles) {

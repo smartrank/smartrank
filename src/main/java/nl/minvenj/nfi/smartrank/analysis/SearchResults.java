@@ -60,6 +60,7 @@ public class SearchResults {
     private final HashMap<ExclusionReason, ExcludedProfileStatistic> _exclusionStats;
     private final Map<String, Map<String, Integer>> _metadataStatistics;
     private final DatabaseConfiguration _config;
+    private boolean _positiveLRsUpdated;
 
     /**
      * Constructor. Creates a {@link SearchResults} object to hold the specified number of results.
@@ -120,12 +121,7 @@ public class SearchResults {
 
             if (ratio > 1) {
                 _positiveLRs.add(lr);
-                Collections.sort(_positiveLRs, new Comparator<LikelihoodRatio>() {
-                    @Override
-                    public int compare(final LikelihoodRatio o1, final LikelihoodRatio o2) {
-                        return -o1.compareTo(o2);
-                    }
-                });
+                _positiveLRsUpdated = true;
                 _resultsOver1++;
             }
         }
@@ -136,8 +132,17 @@ public class SearchResults {
      *
      * @return a {@link Collection} containing the LRs greater than 1 resulting from the search in descending order.
      */
-    public List<LikelihoodRatio> getPositiveLRs() {
-        return _positiveLRs;
+    public synchronized List<LikelihoodRatio> getPositiveLRs() {
+        if (_positiveLRsUpdated) {
+            Collections.sort(_positiveLRs, new Comparator<LikelihoodRatio>() {
+                @Override
+                public int compare(final LikelihoodRatio o1, final LikelihoodRatio o2) {
+                    return -o1.compareTo(o2);
+                }
+            });
+            _positiveLRsUpdated = false;
+        }
+        return Collections.unmodifiableList(_positiveLRs);
     }
 
     /**

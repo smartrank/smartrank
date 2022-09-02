@@ -327,65 +327,65 @@ public class BatchModePanel extends SmartRankPanel {
         }
 
         LOG.debug("Scanning for next file");
-        _currentFile = null;
-        int idx;
-        for (idx = 0; _currentFile == null && idx < getFilesTable().getModel().getRowCount(); idx++) {
-            final BatchJobInfo info = (BatchJobInfo) getFilesTable().getModel().getValueAt(idx, 1);
-            if (info.getStatus() == ScanStatus.PENDING) {
-                info.setStatus(ScanStatus.PROCESSING);
-                getFilesTable().setValueAt(info, idx, 1);
-                getFilesTable().setValueAt(info, idx, 2);
-
-                final File curFile = (File) getFilesTable().getModel().getValueAt(idx, 0);
-
-                String msg = "";
-                if (!curFile.exists()) {
-                    msg = "File does not exist!";
-                }
-                if (msg.isEmpty() && curFile.isDirectory()) {
-                    msg = "Not a file but a directory!";
-                }
-                if (msg.isEmpty() && !curFile.isFile()) {
-                    msg = "Not a normal file!";
-                }
-                if (msg.isEmpty() && !curFile.canRead()) {
-                    msg = "Possible acces conditions problem: file exists and is an actual file, but cannot be read!";
-                }
-
-                if (msg.isEmpty() && _popStatsFilenameField.getText().isEmpty()) {
-                    final SearchCriteriaReader reader = ((BatchJobInfo) getFilesTable().getValueAt(idx, 2)).getReader();
-                    if (reader.getPopulationStatistics() == null) {
-                        msg = "File contains no statistics and no default statistics are configured!";
-                    }
-                }
-
-                BATCHLOG.info("=====================");
-                BATCHLOG.info("File: {}", curFile.getName());
-                BATCHLOG.info("Requested by {}", info.getReader().getRequester());
-
-                String requestTime;
-                if (info.getReader().getRequestDateTime() != null) {
-                    requestTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(info.getReader().getRequestDateTime());
-                }
-                else {
-                    requestTime = "Unknown time";
-                }
-                BATCHLOG.info("Requested at {}", requestTime);
-                if (!msg.isEmpty()) {
-                    LOG.info("Error processing file {}: {}", curFile.getName(), msg);
-                    BATCHLOG.info("Result: Failed");
-                    BATCHLOG.info("Reason: {}", msg);
-                    synchronized (_messageBus) {
-                        getFilesTable().setValueAt(moveFileToDatedFolder(curFile, getFailedFolder()), idx, 0);
-                    }
-                    info.setErrorMessage(msg);
-                    info.setStatus(ScanStatus.FAILED);
+        synchronized (_messageBus) {
+            _currentFile = null;
+            int idx;
+            for (idx = 0; _currentFile == null && idx < getFilesTable().getModel().getRowCount(); idx++) {
+                final BatchJobInfo info = (BatchJobInfo) getFilesTable().getModel().getValueAt(idx, 1);
+                if (info.getStatus() == ScanStatus.PENDING) {
+                    info.setStatus(ScanStatus.PROCESSING);
                     getFilesTable().setValueAt(info, idx, 1);
                     getFilesTable().setValueAt(info, idx, 2);
-                }
-                else {
-                    LOG.info("Starting next job: {}", curFile);
-                    synchronized (_messageBus) {
+
+                    final File curFile = (File) getFilesTable().getModel().getValueAt(idx, 0);
+
+                    String msg = "";
+                    if (!curFile.exists()) {
+                        msg = "File does not exist!";
+                    }
+                    if (msg.isEmpty() && curFile.isDirectory()) {
+                        msg = "Not a file but a directory!";
+                    }
+                    if (msg.isEmpty() && !curFile.isFile()) {
+                        msg = "Not a normal file!";
+                    }
+                    if (msg.isEmpty() && !curFile.canRead()) {
+                        msg = "Possible acces conditions problem: file exists and is an actual file, but cannot be read!";
+                    }
+
+                    if (msg.isEmpty() && _popStatsFilenameField.getText().isEmpty()) {
+                        final SearchCriteriaReader reader = ((BatchJobInfo) getFilesTable().getValueAt(idx, 2)).getReader();
+                        if (reader.getPopulationStatistics() == null) {
+                            msg = "File contains no statistics and no default statistics are configured!";
+                        }
+                    }
+
+                    BATCHLOG.info("=====================");
+                    BATCHLOG.info("File: {}", curFile.getName());
+                    BATCHLOG.info("Requested by {}", info.getReader().getRequester());
+
+                    String requestTime;
+                    if (info.getReader().getRequestDateTime() != null) {
+                        requestTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(info.getReader().getRequestDateTime());
+                    }
+                    else {
+                        requestTime = "Unknown time";
+                    }
+                    BATCHLOG.info("Requested at {}", requestTime);
+                    if (!msg.isEmpty()) {
+                        LOG.info("Error processing file {}: {}", curFile.getName(), msg);
+                        BATCHLOG.info("Result: Failed");
+                        BATCHLOG.info("Reason: {}", msg);
+                        synchronized (_messageBus) {
+                            getFilesTable().setValueAt(moveFileToDatedFolder(curFile, getFailedFolder()), idx, 0);
+                        }
+                        info.setErrorMessage(msg);
+                        info.setStatus(ScanStatus.FAILED);
+                        getFilesTable().setValueAt(info, idx, 1);
+                        getFilesTable().setValueAt(info, idx, 2);
+                    }
+                    else {
+                        LOG.info("Starting next job: {}", curFile);
                         _currentFile = moveFileToFolder(curFile, _processingFolder);
                         getFilesTable().getModel().setValueAt(_currentFile, idx, 0);
                     }
@@ -521,7 +521,7 @@ public class BatchModePanel extends SmartRankPanel {
 
     private void runPostProcessingScript(final BatchJobInfo info) {
         if (SmartRankGUISettings.getBatchModePostProcessingScript().length() > 0) {
-            LOG.info("Starting post processing script");
+            LOG.info("Starting post processing script for {}", info.getFileName());
             final ScriptEngineManager mgr = new ScriptEngineManager();
             final ScriptEngine engine = mgr.getEngineByMimeType("application/javascript");
             engine.put("job", info);

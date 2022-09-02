@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import nl.minvenj.nfi.smartrank.domain.DatabaseConfiguration;
 import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
+import nl.minvenj.nfi.smartrank.utils.QueryPreprocessor;
 
 /**
  * Performs validation of the configured SQL queries.
@@ -57,15 +58,14 @@ final class QueryValidatorThread extends Thread {
 
             checkQueries(_databaseConfiguration);
             SmartRankGUISettings.setDatabaseType(_dlg.getDatabaseType().toString());
+            SmartRankGUISettings.setDatabaseSocketTimeout(_dlg.getSocketTimeout());
+            SmartRankGUISettings.setDatabaseLoginTimeout(_dlg.getLoginTimeout());
             SmartRankGUISettings.setDatabaseHostPort(_dlg.getHostAndPort());
             SmartRankGUISettings.setDatabaseName(_dlg.getDatabaseName());
             SmartRankGUISettings.setDatabaseUsername(_dlg.getUsername());
             SmartRankGUISettings.setDatabaseSpecimenQuery(_dlg.getSampleQuery());
             SmartRankGUISettings.setDatabaseSpecimenKeysQuery(_dlg.getSampleKeysQuery());
             SmartRankGUISettings.setDatabaseRevisionQuery(_dlg.getDatabaseRevisionQuery());
-            SmartRankGUISettings.setDatabaseQuerySpecimenIdColumnIndex(_databaseConfiguration.getSpecimenIdColumnIndex());
-            SmartRankGUISettings.setDatabaseQueryLocusColumnIndex(_databaseConfiguration.getLocusColumnIndex());
-            SmartRankGUISettings.setDatabaseQueryAlleleColumnIndex(_databaseConfiguration.getAlleleColumnIndex());
             SmartRankGUISettings.setDatabaseSpecimenBatchSize(_dlg.getBatchSize());
 
             if (_dlg.isSavePassword()) {
@@ -115,11 +115,12 @@ final class QueryValidatorThread extends Thread {
 
                 Object firstKey = null;
                 Object lastKey = null;
-                if (!_dlg.getSampleKeysQuery().isEmpty()) {
+                final String sampleKeysQuery = QueryPreprocessor.quoteOutVariableLines(_dlg.getSampleKeysQuery());
+                if (!sampleKeysQuery.isEmpty()) {
                     currentQuery = "Specimen Keys";
                     _dlg.stepProgress("Checking keys query");
-                    LOG.info("Checking configured specimen keys query {}", _dlg.getSampleKeysQuery());
-                    final ResultSet sampleKeysResultSet = statement.executeQuery(_dlg.getSampleKeysQuery());
+                    LOG.info("Checking configured specimen keys query {}", sampleKeysQuery);
+                    final ResultSet sampleKeysResultSet = statement.executeQuery(sampleKeysQuery);
                     if (!sampleKeysResultSet.next()) {
                         throw new IllegalArgumentException("Keys query returned no data!");
                     }
@@ -132,9 +133,10 @@ final class QueryValidatorThread extends Thread {
 
                 _dlg.stepProgress("Checking specimen query");
                 currentQuery = "Specimen query";
-                LOG.info("Checking configured specimen query {}", _dlg.getSampleQuery());
 
-                final PreparedStatement ps = con.prepareStatement(_dlg.getSampleQuery());
+                final String sampleQuery = QueryPreprocessor.quoteOutVariableLines(_dlg.getSampleQuery());
+                LOG.info("Checking configured specimen query {}", sampleQuery);
+                final PreparedStatement ps = con.prepareStatement(sampleQuery);
                 if (firstKey != null) {
                     ps.setObject(1, firstKey);
                     ps.setObject(2, lastKey);
@@ -222,9 +224,6 @@ final class QueryValidatorThread extends Thread {
                 }
 
                 config.setSingleRowQuery(singleRowResult);
-                config.setSpecimenIdColumnIndex(idColumn);
-                config.setLocusColumnIndex(locusColumn);
-                config.setAlleleColumnIndex(alleleColumn);
                 SmartRankGUISettings.setDatabaseQueriesValidated(true);
             }
             finally {

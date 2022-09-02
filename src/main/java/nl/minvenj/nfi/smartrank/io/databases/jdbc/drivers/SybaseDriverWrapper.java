@@ -17,6 +17,8 @@
  */
 package nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers;
 
+import static nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.Drivers.SYBASE;
+
 import java.util.Properties;
 
 import nl.minvenj.nfi.smartrank.SmartRank;
@@ -32,7 +34,7 @@ public class SybaseDriverWrapper implements JDBCDriverWrapper {
 
     @Override
     public String toString() {
-        return "Sybase";
+        return SYBASE.getName();
     }
 
     @Override
@@ -52,6 +54,8 @@ public class SybaseDriverWrapper implements JDBCDriverWrapper {
         props.put("password", config.getPassword());
         props.put("appName", "SmartRank");
         props.put("progName", "SmartRank" + SmartRank.getVersion());
+        props.put("socketTimeout", config.getSocketTimeout());
+        props.put("loginTimeout", config.getLoginTimeout());
         return props;
     }
 }

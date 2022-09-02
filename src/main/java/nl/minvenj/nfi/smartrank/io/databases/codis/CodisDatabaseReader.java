@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -216,5 +217,10 @@ public class CodisDatabaseReader implements DatabaseReader, Iterable<Sample> {
     @Override
     public Map<String, Map<String, Integer>> getMetadataStatistics() {
         return new HashMap<>();
+    }
+
+    @Override
+    public Iterator<Sample> iterator(final Properties properties) {
+        return iterator();
     }
 }

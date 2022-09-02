@@ -144,11 +144,10 @@ public class ReportGenerator {
         }
     }
 
-    public void generateAsync(final long dateTime) {
-        new GeneratorThread(dateTime).start();
-    }
-
     public String generateAndWait(final long dateTime) throws InterruptedException {
+        if(!SmartRankRestrictions.isReportGenerationEnabled()) {
+            return "";
+        }
         final GeneratorThread generatorThread = new GeneratorThread(dateTime);
         generatorThread.start();
         generatorThread.join();

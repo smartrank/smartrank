@@ -44,17 +44,18 @@ public class SmartRankGUISettings {
     private static final String DATABASE_TYPE = "jdbc.databaseType";
     private static final String DATABASE_HOSTPORT = "jdbc.hostPort";
     private static final String DATABASE_SCHEMANAME = "jdbc.schemaName";
-    private static final String DATABASE_PASSWORD = "jdbc.userName";
-    private static final String DATABASE_USERNAME = "jdbc.password";
+    private static final String DATABASE_PASSWORD = "jdbc.password";
+    private static final String DATABASE_USERNAME = "jdbc.userName";
+    private static final String DATABASE_CONNECTION_RETRY_COUNT = "jdbc.connection.retry";
+    private static final String DATABASE_CONNECTION_RETRY_TIMEOUT = "jdbc.connection.timeout";
     private static final String DATABASE_QUERY_BATCH_SIZE = "jdbc.query.batchSize";
     private static final String DATABASE_QUERY_SPECIMENS = "jdbc.query.specimens";
     private static final String DATABASE_QUERY_SPECIMENKEYS = "jdbc.query.specimenkeys";
     private static final String DATABASE_QUERY_REVISION = "jdbc.query.revision";
     private static final String DATABASE_QUERIES_VALIDATED = "jdbc.queries.validated";
     private static final String DATABASE_QUERY_SPECIMENS_SINGLEROW = "jdbc.query.specimens.singleRow";
-    private static final String DATABASE_QUERY_SPECIMENID_COLUMN_INDEX = "jdbc.query.columns.specimenId";
-    private static final String DATABASE_QUERY_LOCUS_COLUMN_INDEX = "jdbc.query.columns.locus";
-    private static final String DATABASE_QUERY_ALLELE_COLUMN_INDEX = "jdbc.query.columns.allele";
+    private static final String DATABASE_SOCKET_TIMEOUT = "jdbc.socketTimeout";
+    private static final String DATABASE_LOGIN_TIMEOUT = "jdbc.loginTimeout";
     private static final String BATCHMODE_START_TIME = "batchmode.startTime";
     private static final String BATCHMODE_END_TIME = "batchmode.endTime";
     private static final String BATCHMODE_POSTPROCESSING_SCRIPT = "batchmode.postprocessing";
@@ -63,8 +64,11 @@ public class SmartRankGUISettings {
     private static final String SEARCHCRITERIA_EXPORT_AUTOMATICDROPOUTESTIMATION = "searchcriteria.export.automaticdropoutestimation";
     private static final String SEARCHCRITERIA_EXPORT_USERNAME = "searchcriteria.export.username";
     private static final String SEARCHCRITERIA_EXPORT_PATH = "searchcriteria.export.path";
+    private static final String SETTINGS_UPDATABLE = "settingsUpdatable";
 
     private static String _propertiesFileName = System.getProperty("smartrankProperties");
+
+    private static boolean _settingsLoaded = false;
 
     public static String getLastSelectedDatabaseFileName() {
         return get(LAST_SELECTED_DATABASE_FILENAME, "");
@@ -170,30 +174,6 @@ public class SmartRankGUISettings {
         return Boolean.valueOf(get(DATABASE_QUERIES_VALIDATED, "false"));
     }
 
-    public static void setDatabaseQuerySpecimenIdColumnIndex(final int specimenIdColumnIndex) {
-        set(DATABASE_QUERY_SPECIMENID_COLUMN_INDEX, "" + specimenIdColumnIndex);
-    }
-
-    public static int getDatabaseQuerySpecimenIdColumnIndex() {
-        return Integer.decode(get(DATABASE_QUERY_SPECIMENID_COLUMN_INDEX, "-1"));
-    }
-
-    public static void setDatabaseQueryLocusColumnIndex(final int locusColumnIndex) {
-        set(DATABASE_QUERY_LOCUS_COLUMN_INDEX, "" + locusColumnIndex);
-    }
-
-    public static int getDatabaseQueryLocusColumnIndex() {
-        return Integer.decode(get(DATABASE_QUERY_LOCUS_COLUMN_INDEX, "-1"));
-    }
-
-    public static void setDatabaseQueryAlleleColumnIndex(final int alleleColumnIndex) {
-        set(DATABASE_QUERY_ALLELE_COLUMN_INDEX, "" + alleleColumnIndex);
-    }
-
-    public static int getDatabaseQueryAlleleColumnIndex() {
-        return Integer.decode(get(DATABASE_QUERY_ALLELE_COLUMN_INDEX, "-1"));
-    }
-
     public static void setDatabaseSpecimenQuerySingleRow(final boolean singleRowQuery) {
         set(DATABASE_QUERY_SPECIMENS_SINGLEROW, Boolean.toString(singleRowQuery));
     }
@@ -278,19 +258,22 @@ public class SmartRankGUISettings {
     private static void set(final String key, final String value) {
         load();
         if (!NullUtils.getValue(value, "").equals(PROPERTIES.getProperty(key))) {
-        PROPERTIES.setProperty(key, value);
-        store();
-    }
+            PROPERTIES.setProperty(key, value);
+            store();
+        }
     }
 
     private static void load() {
-        if (_propertiesFileName == null) {
-            if (!load(DEFAULT_PROPERTIES_FILENAME)) {
-                load(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+        // If the settings are not updatable, then only load settings the first time.
+        if (!_settingsLoaded || isUpdatable()) {
+            if (_propertiesFileName == null) {
+                if (!load(DEFAULT_PROPERTIES_FILENAME)) {
+                    load(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+                }
             }
-        }
-        else {
-            load(_propertiesFileName);
+            else {
+                load(_propertiesFileName);
+            }
         }
     }
 
@@ -301,6 +284,7 @@ public class SmartRankGUISettings {
                 LOG.info("Loaded GUI properties from {}", new File(fileName).getAbsolutePath());
             }
             _propertiesFileName = fileName;
+            _settingsLoaded = true;
             return true;
         }
         catch (final FileNotFoundException ex) {
@@ -313,13 +297,15 @@ public class SmartRankGUISettings {
     }
 
     private static void store() {
-        if (_propertiesFileName == null) {
-            if (!store(DEFAULT_PROPERTIES_FILENAME)) {
-                store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+        if (isUpdatable()) {
+            if (_propertiesFileName == null) {
+                if (!store(DEFAULT_PROPERTIES_FILENAME)) {
+                    store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+                }
             }
-        }
-        else {
-            store(_propertiesFileName);
+            else {
+                store(_propertiesFileName);
+            }
         }
     }
 
@@ -333,6 +319,14 @@ public class SmartRankGUISettings {
             LOG.debug("Error writing properties file: \n" + ex.getLocalizedMessage());
         }
         return false;
+    }
+
+    public static boolean isUpdatable() {
+        String value = System.getProperty(SETTINGS_UPDATABLE);
+        if (value == null) {
+            value = PROPERTIES.getProperty(SETTINGS_UPDATABLE, "true");
+        }
+        return Boolean.parseBoolean(value) || PROPERTIES.isEmpty();
     }
 
     public static boolean isExportPopulationStatistics() {
@@ -366,4 +360,29 @@ public class SmartRankGUISettings {
     public static String getExportUserName() {
         return get(SEARCHCRITERIA_EXPORT_USERNAME, "");
     }
+
+    public static int getDatabaseConnectionRetryCount() {
+        return Integer.decode(get(DATABASE_CONNECTION_RETRY_COUNT, "1"));
+    }
+
+    public static int getDatabaseConnectionRetryTimeout() {
+        return Integer.decode(get(DATABASE_CONNECTION_RETRY_TIMEOUT, "30000"));
+    }
+
+    public static int getDatabaseSocketTimeout() {
+        return Integer.decode(get(DATABASE_SOCKET_TIMEOUT, "0"));
+    }
+
+    public static void setDatabaseSocketTimeout(final int timeout) {
+        set(DATABASE_SOCKET_TIMEOUT, "" + timeout);
+    }
+
+    public static int getDatabaseLoginTimeout() {
+        return Integer.decode(get(DATABASE_LOGIN_TIMEOUT, "0"));
+    }
+
+    public static void setDatabaseLoginTimeout(final int timeout) {
+        set(DATABASE_LOGIN_TIMEOUT, "" + timeout);
+    }
+
 }

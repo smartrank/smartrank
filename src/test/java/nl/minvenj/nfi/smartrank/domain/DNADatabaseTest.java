@@ -33,7 +33,8 @@ public class DNADatabaseTest {
             {"database_codis_3records_1error.csv", "CODIS", "SHA-1/3B148EABD20354C6B9316F38F6DBAEE2A69F6EA6", 3, 3, 1},
             {"database_codis_4records_1error_1empty.csv", "CODIS", "SHA-1/8B9DB891FCFABBAF8E26469888E221BC1524DC8A", 4, 3, 1},
             {"database_codis_5002records_lowerascii.csv", "CODIS", "SHA-1/909188332F754E8622882E73F3BFC777401EFE16", 5002, 5002, 0},
-            {"database_codis_2records_utf8withBOM.csv", "CODIS", "SHA-1/7FD3192E2532CCCD7147894DF491408F1C74770B", 2, 2, 0}
+            {"database_codis_2records_utf8withBOM.csv", "CODIS", "SHA-1/7FD3192E2532CCCD7147894DF491408F1C74770B", 2, 2, 0},
+            {"database_codis_generated_300000.csv", "CODIS", "SHA-1/79F4D9A81857EE250B937036F68EEE873A3E28CD", 299534, 299534, 138932}
         });
     }
 
@@ -96,7 +97,7 @@ public class DNADatabaseTest {
         assertEquals("Format was " + db.getFormatName() + " instead of the expected " + _format, _format, db.getFormatName());
         assertEquals("File Hash was " + db.getFileHash() + " instead of the expected " + _fileHash, _fileHash, db.getFileHash());
 
-        final Iterator<Sample> iterator = db.iterator();
+        final Iterator<Sample> iterator = db.iterator(null);
 
         try {
             iterator.remove();
@@ -106,7 +107,7 @@ public class DNADatabaseTest {
             // The sample iterator does not support removal. An exception here is OK
         }
 
-        int count = 0;;
+        int count = 0;
         assertNotNull(iterator);
         while (iterator.hasNext()) {
             final Sample sample = iterator.next();

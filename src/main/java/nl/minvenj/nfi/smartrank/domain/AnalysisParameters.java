@@ -20,6 +20,7 @@ package nl.minvenj.nfi.smartrank.domain;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Properties;
 
 import nl.minvenj.nfi.smartrank.analysis.parameterestimation.DropoutEstimation;
 import nl.minvenj.nfi.smartrank.gui.SmartRankRestrictions;
@@ -32,6 +33,7 @@ public class AnalysisParameters {
     private boolean _calculateHdOnce = true;
     private boolean _automaticParameterEstimationToBePerformed;
     private int _maximumNumberOfResults;
+    private Properties _properties;
 
     public AnalysisParameters() {
         _enabledCrimesceneProfiles = new ArrayList<>();
@@ -106,5 +108,17 @@ public class AnalysisParameters {
 
     public int getMaximumNumberOfResults() {
         return _maximumNumberOfResults;
+    }
+
+    public void setProperties(final Properties props) {
+        _properties = new Properties();
+        _properties.clear();
+        if (props != null) {
+            _properties.putAll(props);
+        }
+    }
+
+    public Properties getProperties() {
+        return _properties;
     }
 }

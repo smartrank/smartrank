@@ -35,11 +35,13 @@ public class LikelihoodRatio implements Comparable<LikelihoodRatio> {
     private static final Logger LOG = LoggerFactory.getLogger(LikelihoodRatio.class);
     private final HashMap<String, Ratio> _ratios = new LinkedHashMap<>();
     private final Sample _profile;
+    private Ratio _overallRatio;
 
     public LikelihoodRatio(final Sample candidateSample, final LocusLikelihoods prP, final LocusLikelihoods prD) {
         _profile = candidateSample;
         for (final String locusName : prP.getLoci()) {
             if (prD.getLocusProbability(locusName) != null) {
+                _overallRatio = null;
                 _ratios.put(locusName, new Ratio(locusName, prP.getLocusProbability(locusName), prD.getLocusProbability(locusName)));
             }
         }
@@ -53,6 +55,7 @@ public class LikelihoodRatio implements Comparable<LikelihoodRatio> {
         if (defense == null) {
             throw new IllegalArgumentException("Defense locus probabilities are null!");
         }
+        _overallRatio = null;
         for (final String locus : prosecution.getLoci()) {
             _ratios.put(locus, new Ratio(locus, prosecution.getLocusProbability(locus), defense.getLocusProbability(locus)));
         }
@@ -81,25 +84,29 @@ public class LikelihoodRatio implements Comparable<LikelihoodRatio> {
     }
 
     public void putRatio(final Ratio ratio) {
+        _overallRatio = null;
         _ratios.put(ratio.getLocusName(), ratio);
     }
 
     public Ratio getOverallRatio() {
-        Double prD = 1.0;
-        Double prP = 1.0;
-        Double r = 1.0;
-        for (final Ratio ratio : _ratios.values()) {
-            if (ratio.getRatio() != null) {
-                r *= ratio.getRatio();
+        if(_overallRatio == null) {
+            Double prD = 1.0;
+            Double prP = 1.0;
+            Double r = 1.0;
+            for (final Ratio ratio : _ratios.values()) {
+                if (ratio.getRatio() != null) {
+                    r *= ratio.getRatio();
+                }
+                if (ratio.getDefenseProbability() != null) {
+                    prD *= ratio.getDefenseProbability();
+                }
+                if (ratio.getProsecutionProbability() != null) {
+                    prP *= ratio.getProsecutionProbability();
+                }
             }
-            if (ratio.getDefenseProbability() != null) {
-                prD *= ratio.getDefenseProbability();
-            }
-            if (ratio.getProsecutionProbability() != null) {
-                prP *= ratio.getProsecutionProbability();
-            }
+            _overallRatio = new Ratio("Overall", prP, prD, r);
         }
-        return new Ratio("Overall", prP, prD, r);
+        return _overallRatio;
     }
 
     /**

@@ -237,14 +237,13 @@ public class ResultsPanel extends SmartRankPanel {
             }
 
             _resultsTable.setRowCount(0);
-            int idx = 1;
-            for (final LikelihoodRatio ratio : _lrs) {
+            for (int idx = 0; idx < _lrs.length && idx < 1000; idx++) {
+                final LikelihoodRatio ratio = _lrs[idx];
                 if ((ratio.getOverallRatio().getRatio() > _lrThreshold)) {
-                    _resultsTable.addRow(new Object[]{idx, ratio.getProfile(), ratio});
+                    _resultsTable.addRow(new Object[]{idx + 1, ratio.getProfile(), ratio});
                     if (ratio.getProfile() == selectedSample) {
                         _resultsTable.setRowSelectionInterval(_resultsTable.getRowCount() - 1, _resultsTable.getRowCount() - 1);
                     }
-                    idx++;
                 }
             }
         }

@@ -29,8 +29,9 @@ import nl.minvenj.nfi.smartrank.io.databases.jdbc.JDBCReader;
 public class DatabaseReaderFactory {
 
     public static DatabaseReader create(final DatabaseConfiguration config) throws MalformedURLException, IOException {
-        if (config.getConnectString().startsWith("jdbc:"))
+        if (config.getConnectString().startsWith("jdbc:")) {
             return new JDBCReader(config);
+        }
         return new CodisDatabaseReader(new File(config.getConnectString()));
     }
 

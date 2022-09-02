@@ -17,6 +17,8 @@
  */
 package nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers;
 
+import static nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.Drivers.H2;
+
 import java.util.Properties;
 
 import nl.minvenj.nfi.smartrank.SmartRank;
@@ -32,7 +34,7 @@ public class H2DriverWrapper implements JDBCDriverWrapper {
 
     @Override
     public String toString() {
-        return "H2";
+        return H2.getName();
     }
 
     @Override
@@ -52,6 +54,7 @@ public class H2DriverWrapper implements JDBCDriverWrapper {
         props.put("password", config.getPassword());
         props.put("appName", "SmartRank");
         props.put("progName", "SmartRank" + SmartRank.getVersion());
+        props.put("maxQueryTimeout", config.getSocketTimeout()*1000);
         return props;
     }
 }

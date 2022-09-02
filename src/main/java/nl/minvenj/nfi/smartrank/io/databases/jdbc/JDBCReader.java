@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Netherlands Forensic Institute
+ * Copyright (C) 2016,2021 Netherlands Forensic Institute
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,7 +20,6 @@ package nl.minvenj.nfi.smartrank.io.databases.jdbc;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
@@ -31,6 +30,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -63,6 +63,7 @@ public class JDBCReader implements DatabaseReader {
     private String _contentHash;
 
     private final Map<String, Map<String, Integer>> _metadataStatistics;
+    private Properties _properties;
 
     public JDBCReader(final DatabaseConfiguration config) throws MalformedURLException {
         _config = config;
@@ -73,7 +74,8 @@ public class JDBCReader implements DatabaseReader {
     }
 
     @Override
-    public Iterator<Sample> iterator() {
+    public Iterator<Sample> iterator(final Properties properties) {
+        _properties = properties;
         return new JDBCSampleIterator(this);
     }
 
@@ -162,10 +164,7 @@ public class JDBCReader implements DatabaseReader {
         if (disconnectIfInvalid()) {
             MessageBus.getInstance().send(this, new PercentReadyMessage(-1));
             MessageBus.getInstance().send(this, new DetailStringMessage("Connecting to database"));
-            LOG.info("Establishing new connection to {}", _config.getConnectString());
-            _connection = DriverManager.getConnection(_config.getConnectString(), _config.getProperties());
-            _connection.setReadOnly(true);
-            _connection.setAutoCommit(false);
+            _connection = JDBCConnectionFactory.connect(_config);
         }
     }
 
@@ -234,7 +233,7 @@ public class JDBCReader implements DatabaseReader {
     public JDBCResultSetChunker getResultSet() throws SQLException {
         connect();
         _metadataStatistics.clear();
-        return new JDBCResultSetChunker(_connection, _config);
+        return new JDBCResultSetChunker(_connection, _config, _properties);
     }
 
     public Sample readSample(final JDBCResultSetChunker resultSet) throws SQLException {
@@ -293,7 +292,7 @@ public class JDBCReader implements DatabaseReader {
             throw new IllegalArgumentException("could not do next");
         }
 
-        final Sample sample = new Sample(resultSet.getString(1).trim());
+        final Sample sample = new Sample(resultSet.getString("specimenId").trim());
 
         int idx = 2;
         while (idx < resultSet.getMetaData().getColumnCount()) {
@@ -331,34 +330,34 @@ public class JDBCReader implements DatabaseReader {
             }
         }
 
-        final Sample sample = new Sample(resultSet.getString(_config.getSpecimenIdColumnIndex()).trim());
+        final Sample sample = new Sample(resultSet.getString("specimenId").trim());
 
         final StringBuilder additionalData = new StringBuilder();
         final ResultSetMetaData metaData = resultSet.getMetaData();
         for (int idx = 1; !validationMode && idx <= metaData.getColumnCount(); idx++) {
-            if (idx != _config.getSpecimenIdColumnIndex() && idx != _config.getLocusColumnIndex() && idx != _config.getAlleleColumnIndex()) {
+            final String metaName = metaData.getColumnLabel(idx);
+            if (metaName!=null && !metaName.equalsIgnoreCase("specimenId") && !metaName.equalsIgnoreCase("allele") && !metaName.equalsIgnoreCase("locus")) {
                 if (additionalData.length() != 0) {
                     additionalData.append(", ");
                 }
-                final String metaName = metaData.getColumnLabel(idx);
                 final String metaValue = resultSet.getString(idx);
-                additionalData.append(metaName).append(": ").append(metaValue);
+                additionalData.append(metaName.replaceAll("nostats", "").trim().replaceAll(" ", "_")).append(": ").append(metaValue);
                 addMetadataStatistics(metaName, metaValue);
             }
-
         }
+        
         sample.setAdditionalData(additionalData.toString());
 
         LOG.debug("Created Sample '{}'", sample.getName());
-        while (!resultSet.isAfterLast() && resultSet.getString(_config.getSpecimenIdColumnIndex()).trim().equalsIgnoreCase(sample.getName())) {
-            final String locusName = resultSet.getString(_config.getLocusColumnIndex()).trim();
+        while (!resultSet.isAfterLast() && resultSet.getString("specimenId").trim().equalsIgnoreCase(sample.getName())) {
+            final String locusName = resultSet.getString("locus").trim();
             Locus locus = sample.getLocus(Locus.normalize(locusName));
             if (locus == null) {
                 locus = new Locus(locusName);
                 sample.addLocus(locus);
             }
 
-            final String alleles = resultSet.getString(_config.getAlleleColumnIndex()).trim();
+            final String alleles = resultSet.getString("allele").trim();
             final String[] splitAlleles = alleles.split(" ");
             for (final String allele : splitAlleles) {
                 if (!validationMode || allele.matches(CodisRecordValidator.VALID_ALLELE_REGEX)) {
@@ -371,20 +370,22 @@ public class JDBCReader implements DatabaseReader {
                 LOG.debug("  ResultSet isAfterLast");
             }
             else {
-                LOG.debug("  Next specimen ID: {}", resultSet.getString(_config.getSpecimenIdColumnIndex()).trim());
+                LOG.debug("  Next specimen ID: {}", resultSet.getString("specimenId").trim());
             }
         }
         return sample;
     }
 
     private void addMetadataStatistics(final String metaName, final String metaValue) {
-        Map<String, Integer> map = _metadataStatistics.get(metaName);
-        if (map == null) {
-            map = new HashMap<>();
-            _metadataStatistics.put(metaName, map);
+        if(!metaName.endsWith("nostats")) {
+            Map<String, Integer> map = _metadataStatistics.get(metaName);
+            if (map == null) {
+                map = new HashMap<>();
+                _metadataStatistics.put(metaName, map);
+            }
+            final Integer count = NullUtils.getValue(map.get(metaValue), new Integer(0));
+            map.put(metaValue, count + 1);
         }
-        final Integer count = NullUtils.getValue(map.get(metaValue), new Integer(0));
-        map.put(metaValue, count + 1);
     }
 
     @Override
@@ -428,5 +429,10 @@ public class JDBCReader implements DatabaseReader {
         }
         catch (final SQLException e) {
         }
+    }
+
+    @Override
+    public Iterator<Sample> iterator() {
+        return iterator(null);
     }
 }
