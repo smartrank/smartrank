@@ -4,6 +4,71 @@ SmartRank Release Notes
 SmartRank allows DNA database searches for individuals whose profiles lead to high LRs in favor of 
 the prosecution hypothesis through a fast and user-friendly GUI.
 
+Version 1.1.1
+Release date: 2022-09-02
+-------------------------
+SMARTRANK-311: Fixed logging of long-running queries
+SMARTRANK-312: Update dependencies: commons-io: 2.4 to 2.7 logback-classic: 1.1.3 to 1.2.0 h2: 1.4.199 to 2.1.120
+
+Version 1.1.0
+Release date: 2021-04-09
+-------------------------
+SMARTRANK-309: Added support for PostgreSQL
+
+Version 1.0.15
+Release date: 2021-02-05
+-------------------------
+SMARTRANK-307: Simplified jdbc configuration
+SMARTRANK-308: Allow disabling statistics for additional fields
+
+Version 1.0.14
+Release date: 2021-01-21
+-------------------------
+SMARTRANK-306: Loading search criteria fails if the number of unknowns for Hp or Hd exceeds the maximum configured value.
+
+Version 1.0.13
+Release date: 20201-01-07
+Revision: 64278e1
+-------------------------
+SMARTRANK-305: Case logging can be disabled.
+
+Version 1.0.12
+Release date: 2020-12-18
+Revision: e3e9577 on Master
+-------------------------
+SMARTRANK-303: Added database connection timeout and login timeout to settings.
+SMARTRANK-304: Added the 'settingsUpdatable' and 'propertiesUpdatable' settings that can prevent smartrank from creating or overwriting settings and restrictions files.
+
+Version 1.0.11
+Release date: 2020-10-19
+Revision: 5b3562a on Master
+-------------------------
+SMARTRANK-300: Added option to suppress report generation
+SMARTRANK-301: Logging a message if a query takes longer than usual. This to signal database problems.
+
+Version 1.0.10
+Release date: 2020-01-23
+Revision: 814daa9 on Master
+-------------------------
+SMARTRANK-296: Fixed storage of DNA database username and password.
+SMARTRANK-298: Fixed a performance issue for searches that result in many LRs >1
+
+Version 1.0.9
+Release date: 2019-11-25
+Revision: ceccf37 on Master
+-------------------------
+SMARTRANK-292: Properties included in search criteria files can now be included in the queries used to get specimens from the database
+SMARTRANK-293: Fixed a problem that could in rare occasions cause the post-processing script to be executed twice on completed jobs
+SMARTRANK-294: Reading profiles from a CSV file is now a little more flexible. The first column in the file can now be 'SampleName' or 'Sample Name' and a leading Byte Order Mark is now automatically skipped. 
+SMARTRANK-295: Implemented connection retry for DNA databases accessed through JDBC
+
+Version 1.0.8
+Release date: 2019-10-21
+Revision: be08434 on UNKNOWN
+-------------------------
+SMARTRANK-290: To facilitate integration into other applications, logback.xml was moved from the root of the classpath. 
+SMARTRANK-291: The api was enhanced to allow search criteria to be supplied through a SmartRankImportFile object.
+
 Version 1.0.7
 Release date: 2019-10-17
 Revision: 9a33f20 on UNKNOWN
