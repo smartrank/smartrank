@@ -57,7 +57,7 @@ public class JDBCSampleIterator implements Iterator<Sample> {
                     LOG.info("Shutting down JDBC reader due to timeout");
                     _reader.close();
                 }
-            };
+            }
         };
 
         watchDog.start();

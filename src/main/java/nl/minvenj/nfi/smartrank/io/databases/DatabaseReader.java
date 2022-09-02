@@ -19,8 +19,10 @@
 package nl.minvenj.nfi.smartrank.io.databases;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import nl.minvenj.nfi.smartrank.analysis.ExcludedProfile;
 import nl.minvenj.nfi.smartrank.domain.Sample;
@@ -37,34 +39,34 @@ public interface DatabaseReader extends Iterable<Sample> {
      * @throws IOException if an error occurs reading from the underlying datasource
      * @throws InterruptedException if the validation process is interrupted
      */
-    public void validate(DatabaseValidationEventListener listener) throws IOException, InterruptedException;
+    void validate(DatabaseValidationEventListener listener) throws IOException, InterruptedException;
 
     /**
      * Counts the number of specimens in the database.
      *
      * @return an integer containing the number of specimens in the database
      */
-    public int getRecordCount();
+    int getRecordCount();
 
     /**
      * Reports a hash value calculated from the database contents
      * @return a String containing the hash value
      */
-    public String getContentHash();
+    String getContentHash();
 
     /**
      * Reports the type of the database.
      *
      * @return a String containing the name of the database format
      */
-    public String getFormatName();
+    String getFormatName();
 
     /**
      * Gets a list of {@link ExcludedProfile}s describing the profiles excluded from the search.
      *
      * @return a {@link List} of {@link ExcludedProfile}s
      */
-    public List<ExcludedProfile> getBadRecordList();
+    List<ExcludedProfile> getBadRecordList();
 
     /**
      * Gets a list of {@link Integer}s describing the number of specimens that were composed of the number of loci equal to the
@@ -72,7 +74,7 @@ public interface DatabaseReader extends Iterable<Sample> {
      *
      * @return a {@link List} of {@link Integer}s
      */
-    public List<Integer> getSpecimenCountPerNumberOfLoci();
+    List<Integer> getSpecimenCountPerNumberOfLoci();
 
     /**
      * Gets a map recording the number of specimens containing a given locus. The key of the map is a String
@@ -80,7 +82,7 @@ public interface DatabaseReader extends Iterable<Sample> {
      *
      * @return a {@link Map} where the key is a {@link String} (locus name) and the value is an {@link Integer} (number of specimens with that locus)
      */
-    public Map<String, Integer> getSpecimenCountsPerLocus();
+    Map<String, Integer> getSpecimenCountsPerLocus();
 
     /**
      * Updates the metadata (e.g. number of specimen counts) for the database. It is at the discretion of the implementor whether to
@@ -88,11 +90,16 @@ public interface DatabaseReader extends Iterable<Sample> {
      *
      * @throws IOException if an error occurs accessing the underlying datastore
      */
-    public void revalidate(DatabaseValidationEventListener listener) throws IOException, InterruptedException;
+    void revalidate(DatabaseValidationEventListener listener) throws IOException, InterruptedException;
+
+    Iterator<Sample> iterator(Properties properties);
+
+    @Override
+    Iterator<Sample> iterator();
 
     /**
      * Gets a map of statistics values for profilemeta data. Can be empty if the selected reader does not support this feature.
      * @return A Map of Maps using Strings as key.
      */
-    public Map<String, Map<String, Integer>> getMetadataStatistics();
+    Map<String, Map<String, Integer>> getMetadataStatistics();
 }

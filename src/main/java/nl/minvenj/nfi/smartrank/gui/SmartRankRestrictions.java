@@ -30,7 +30,6 @@ import nl.minvenj.nfi.smartrank.SmartRank;
 
 public class SmartRankRestrictions {
 
-
     private static final Logger LOG = LoggerFactory.getLogger(SmartRankRestrictions.class);
 
     private static final Properties PROPERTIES = new Properties();
@@ -53,6 +52,7 @@ public class SmartRankRestrictions {
     private static final String PARAMETER_ESTIMATION_DROPOUT_PERCENTILE = "parameterEstimationDropoutPercentile";
     private static final String REPORT_TEMPLATE_FILENAME = "reportTemplateFilename";
     private static final String REPORT_FILENAME = "reportFilename";
+    private static final String REPORT_GENERATION_ENABLED = "reportGenerationEnabled";
     private static final String MAXIMUM_STORED_RESULTS = "maximumStoredResults";
     private static final String MAXIMUM_PATH_LENGTH = "maximumPathLength";
     private static final String SHOW_OPTIMIZATIONS_MENU = "showOptimizationsMenu";
@@ -65,10 +65,13 @@ public class SmartRankRestrictions {
     private static final String IS_WINDOW_CLOSE_BLOCKED_IN_BATCH_MODE = "windowCloseBlockedInBatchMode";
     private static final String BATCH_AUTOSTART_MODE = "batchMode.autoStart";
     private static final String BATCHMODE_JOB_RETENTION_DAYS = "batchmode.retentiondays";
+    private static final String SETTINGS_UPDATABLE = "restrictionsUpdatable";
 
     private static String _propertiesFileName = System.getProperty("smartrankRestrictions");
 
     private static long _loadedDate;
+
+    private static boolean _settingsLoaded;
 
     public static int getMaximumUnknownCount() {
         return getInt(MAXIMUM_UNKNOWN_COUNT, 4);
@@ -190,6 +193,10 @@ public class SmartRankRestrictions {
         return Integer.decode(get(BATCHMODE_JOB_RETENTION_DAYS, "14"));
     }
 
+    public static boolean isReportGenerationEnabled() {
+        return Boolean.parseBoolean(get(REPORT_GENERATION_ENABLED, "true"));
+    }
+
     private static String get(final String key, final String defaultValue) {
         String value = System.getProperty(key);
         if (value == null) {
@@ -210,7 +217,7 @@ public class SmartRankRestrictions {
     }
 
     private static void load() {
-        if ((System.currentTimeMillis() - _loadedDate) > 2000L) {
+        if ((!_settingsLoaded || isUpdatable()) && (System.currentTimeMillis() - _loadedDate) > 2000L) {
             if (_propertiesFileName == null) {
                 if (!load(DEFAULT_PROPERTIES_FILENAME)) {
                     load(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
@@ -230,6 +237,7 @@ public class SmartRankRestrictions {
             }
             PROPERTIES.load(fis);
             _propertiesFileName = fileName;
+            _settingsLoaded = true;
             return true;
         }
         catch (final FileNotFoundException ex) {
@@ -242,13 +250,15 @@ public class SmartRankRestrictions {
     }
 
     private static void store() {
-        if (_propertiesFileName == null) {
-            if (!store(DEFAULT_PROPERTIES_FILENAME)) {
-                store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+        if (isUpdatable()) {
+            if (_propertiesFileName == null) {
+                if (!store(DEFAULT_PROPERTIES_FILENAME)) {
+                    store(System.getProperty("user.home") + File.separatorChar + DEFAULT_PROPERTIES_FILENAME);
+                }
             }
-        }
-        else {
-            store(_propertiesFileName);
+            else {
+                store(_propertiesFileName);
+            }
         }
     }
 
@@ -262,6 +272,14 @@ public class SmartRankRestrictions {
             LOG.debug("Error writing properties file: \n" + ex.getLocalizedMessage());
         }
         return false;
+    }
+
+    public static boolean isUpdatable() {
+        String value = System.getProperty(SETTINGS_UPDATABLE);
+        if (value == null) {
+            value = PROPERTIES.getProperty(SETTINGS_UPDATABLE, "true");
+        }
+        return Boolean.parseBoolean(value) || PROPERTIES.isEmpty();
     }
 
     private static double getDouble(final String key, final double defaultValue) {
@@ -289,5 +307,4 @@ public class SmartRankRestrictions {
 
     private SmartRankRestrictions() {
     }
-
 }

@@ -20,7 +20,6 @@ package nl.minvenj.nfi.smartrank.io.searchcriteria.locim;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -71,7 +70,7 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
     private final HashMap<String, Double> _hdContributors;
     private final UnknownDonorDefinition _hdUnknowns;
     private final UnknownDonorDefinition _hpUnknowns;
-    private final String _fileName;
+    private String _fileName;
     private String _resultLocation;
     private double _candidateDropout;
     private double _dropin;
@@ -93,7 +92,7 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
         public Double _dropout = 0.0;
     }
 
-    public SmartRankImportFileReader(final String fileName, final String criteria) throws IOException {
+    private SmartRankImportFileReader() {
         _samples = new ArrayList<>();
         _profiles = new ArrayList<>();
         _hpContributors = new HashMap<>();
@@ -101,19 +100,29 @@ public class SmartRankImportFileReader implements SearchCriteriaReader {
         _hdUnknowns = new UnknownDonorDefinition();
         _hpUnknowns = new UnknownDonorDefinition();
         _resultLocation = "";
+        _fileName = "";
         _candidateDropout = 0.0;
-        _fileName = fileName;
         _properties = new Properties();
+    }
+
+    public SmartRankImportFileReader(final String fileName, final String criteria) throws IOException {
+        this();
+        _fileName = fileName;
 
         try (HashingReader reader = new HashingReader(new BufferedReader(new StringReader(criteria)))) {
-            readFile(reader);
+            extractCriteria(JAXB.unmarshal(reader, SmartRankImportFile.class));
             setHashes(reader.getHash());
         }
     }
 
-    private void readFile(final Reader reader) {
+    public SmartRankImportFileReader(final SmartRankImportFile criteria) {
+        this();
+        extractCriteria(criteria);
+        setHashes("");
+    }
+
+    private void extractCriteria(final SmartRankImportFile importFile) {
         final HashMap<String, Sample> specimens = new HashMap<>();
-        final SmartRankImportFile importFile = JAXB.unmarshal(reader, SmartRankImportFile.class);
 
         _userId = importFile.getUserid();
         if (_userId == null) {

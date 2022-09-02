@@ -18,7 +18,6 @@
 package nl.minvenj.nfi.smartrank.io.databases.jdbc;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -27,6 +26,7 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -42,11 +42,15 @@ import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.messages.status.DetailStringMessage;
 import nl.minvenj.nfi.smartrank.raven.NullUtils;
 import nl.minvenj.nfi.smartrank.raven.messages.MessageBus;
+import nl.minvenj.nfi.smartrank.utils.Average;
+import nl.minvenj.nfi.smartrank.utils.QueryPreprocessor;
 
 public class JDBCResultSetChunker implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(JDBCResultSetChunker.class);
     private static final ExecutorService SERVICE = Executors.newFixedThreadPool(2);
+    private static final double QUERY_DURATION_OUTLIER_FACTOR = 10;
+    private static final int MINIMUM_NUMBER_OF_QUERIES = 20;
 
     private List<Object> _ids;
     private ResultSet _resultSet;
@@ -58,8 +62,11 @@ public class JDBCResultSetChunker implements AutoCloseable {
     private long _numberOfSpecimens;
     private String _contentHash;
     private final BlockingQueue<Future<ResultSet>> _futures;
+    private String _specimenQuery;
+    private Average _averageDuration;
 
     private class ResultSetFetcher implements Callable<ResultSet> {
+
         private final Object _fromKey;
         private final Object _toKey;
 
@@ -71,23 +78,31 @@ public class JDBCResultSetChunker implements AutoCloseable {
         @Override
         public ResultSet call() throws Exception {
             LOG.info("Executing query with ID between {} and {}", _fromKey, _toKey);
-            final Connection conn = DriverManager.getConnection(_config.getConnectString(), _config.getProperties());
-            final PreparedStatement statement = conn.prepareStatement(SmartRankGUISettings.getDatabaseSpecimenQuery());
+            long start = System.currentTimeMillis();
+            final Connection conn = JDBCConnectionFactory.connect(_config);
+            final PreparedStatement statement = conn.prepareStatement(_specimenQuery);
             statement.setObject(1, _fromKey);
             statement.setObject(2, _toKey);
             final ResultSet resultSet = statement.executeQuery();
-            LOG.info("Query executed.");
+            long duration = System.currentTimeMillis()-start;
+            if(_averageDuration.size()>MINIMUM_NUMBER_OF_QUERIES && duration>_averageDuration.get()*QUERY_DURATION_OUTLIER_FACTOR) {
+                LOG.error("Query took longer than expected! (from={}, to={}) executed in {} ms, when the average over {} queries was {} ms.", _fromKey, _toKey, duration, _averageDuration.size(), _averageDuration.get());
+            } else {
+                LOG.info("Query (from={}, to={}) executed in {} ms.", _fromKey, _toKey, duration);
+            }
+            _averageDuration.add(duration);
             return resultSet;
         }
     }
 
-    public JDBCResultSetChunker(final Connection connection, final DatabaseConfiguration config) throws SQLException {
+    public JDBCResultSetChunker(final Connection connection, final DatabaseConfiguration config, final Properties properties) throws SQLException {
         _connection = connection;
-        _config = config;
-        _futures = new ArrayBlockingQueue<>(2);
+        _futures = new ArrayBlockingQueue<>(4);
         _curPos = 0;
+        _config = config;
+        _averageDuration = new Average();
 
-        initQueries();
+        initQueries(properties);
         requestNextBatch();
         requestNextBatch();
     }
@@ -143,13 +158,14 @@ public class JDBCResultSetChunker implements AutoCloseable {
         requestNextBatch();
     }
 
-    private void initQueries() throws SQLException {
+    private void initQueries(final Properties properties) throws SQLException {
         // If we have a query that obtains the list of keys, perform that query now.
-        if (!NullUtils.getValue(_config.getSpecimenKeyQuery(), "").trim().isEmpty()) {
-            LOG.info("Getting specimen IDs using query: {}", _config.getSpecimenKeyQuery());
+        final String specimenKeysQuery = QueryPreprocessor.process(NullUtils.getValue(_config.getSpecimenKeyQuery(), "").trim(), properties);
+        if (!specimenKeysQuery.isEmpty()) {
+            LOG.info("Getting specimen IDs using query: {}", specimenKeysQuery);
             MessageBus.getInstance().send(this, new DetailStringMessage("Getting Specimen keys"));
             try (Statement st = _connection.createStatement()) {
-                final ResultSet idSet = st.executeQuery(_config.getSpecimenKeyQuery());
+                final ResultSet idSet = st.executeQuery(specimenKeysQuery);
 
                 _ids = new ArrayList<>();
                 while (idSet.next()) {
@@ -162,9 +178,10 @@ public class JDBCResultSetChunker implements AutoCloseable {
         }
 
         _contentHash = "";
-        if (!NullUtils.getValue(_config.getDatabaseRevisionQuery(), "").trim().isEmpty()) {
+        final String revisionQuery = QueryPreprocessor.process(NullUtils.getValue(_config.getDatabaseRevisionQuery(), "").trim(), properties);
+        if (!revisionQuery.isEmpty()) {
             try (Statement statement = _connection.createStatement()) {
-                final ResultSet resultSet = statement.executeQuery(_config.getDatabaseRevisionQuery());
+                final ResultSet resultSet = statement.executeQuery(revisionQuery);
                 if (!resultSet.next()) {
                     LOG.error("Could not obtain database revision!");
                     _contentHash = "could not be determined";
@@ -177,6 +194,8 @@ public class JDBCResultSetChunker implements AutoCloseable {
                 LOG.error("Error getting database revision!", e);
             }
         }
+
+        _specimenQuery = QueryPreprocessor.process(_config.getSpecimenQuery(), properties);
     }
 
     public long getNumberOfSpecimens() {
@@ -206,6 +225,11 @@ public class JDBCResultSetChunker implements AutoCloseable {
         return string;
     }
 
+    public String getString(String columnName) throws SQLException {
+        final String string = _resultSet.getString(columnName);
+        return string;
+    }
+    
     public boolean isAfterLast() throws SQLException {
         try {
             updateResultSet(true);
@@ -234,4 +258,5 @@ public class JDBCResultSetChunker implements AutoCloseable {
         }
         return _resultSet.getMetaData();
     }
+
 }

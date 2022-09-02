@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import nl.minvenj.nfi.smartrank.analysis.ExcludedProfile;
 import nl.minvenj.nfi.smartrank.io.databases.DatabaseReader;
@@ -137,8 +138,8 @@ public class DNADatabase {
      *
      * @return an {@link Iterator} over the {@link Sample}s in the database
      */
-    public Iterator<Sample> iterator() {
-        return _reader.iterator();
+    public Iterator<Sample> iterator(final Properties properties) {
+        return _reader.iterator(properties);
     }
 
     /**

@@ -26,11 +26,10 @@ public class DatabaseConfiguration {
     private final File _file;
     private final String _specimenQuery;
     private boolean _singleRowQuery;
-    private int _specimenIdColumnIndex;
-    private int _alleleColumnIndex;
-    private int _locusColumnIndex;
     private final String _databaseRevisionQuery;
     private final String _specimenKeyQuery;
+    private int _socketTimeout;
+    private int _loginTimeout;
 
     /**
      * Constructor for describing a connection to a DNA database located in a DBMS.
@@ -186,57 +185,35 @@ public class DatabaseConfiguration {
     }
 
     /**
-     * Gets the index for the column in the resultset of the specimen query where the specimen ID can be found.
-     *
-     * @return the 1-based index of the column containing the specimen ID
+     * Gets the amount of time to wait (in seconds) for a server response before timing out.
+     * 
+     * @return The amount of time to wait (in seconds) for a server response before timing out.
      */
-    public int getSpecimenIdColumnIndex() {
-        return _specimenIdColumnIndex;
+    public int getSocketTimeout() {
+        return _socketTimeout;
     }
 
     /**
-     * Sets the index for the column in the resultset of the specimen query where the specimen ID can be found.
-     *
-     * @param index the 1-based index of the column containing the specimen ID
+     * @param socketTimeout the amount of time to wait (in seconds) for a server response before timing out.
      */
-    public void setSpecimenIdColumnIndex(final int index) {
-        _specimenIdColumnIndex = index;
+    public void setSocketTimeout(int socketTimeout) {
+        _socketTimeout = socketTimeout;
     }
 
     /**
-     * Gets the index for the column in the resultset of the specimen query where the allele value can be found.
-     *
-     * @return the 1-based index of the column containing the specimen ID
+     * Gets the amount of time to wait (in seconds) for a successful connection before timing out.
+     * 
+     * @return The amount of time to wait (in seconds) for a successful connection before timing out.
      */
-    public int getAlleleColumnIndex() {
-        return _alleleColumnIndex;
+    public int getLoginTimeout() {
+        return _loginTimeout;
     }
 
     /**
-     * Sets the index for the column in the resultset of the specimen query where the allele value can be found.
-     *
-     * @param index the 1-based index of the column containing the allele value
+     * @param socketTimeout The amount of time to wait (in seconds) for a successful connection before timing out.
      */
-    public void setAlleleColumnIndex(final int index) {
-        _alleleColumnIndex = index;
-    }
-
-    /**
-     * Gets the index for the column in the resultset of the specimen query where the locus name can be found.
-     *
-     * @return the 1-based index of the column containing the locus name
-     */
-    public int getLocusColumnIndex() {
-        return _locusColumnIndex;
-    }
-
-    /**
-     * Sets the index for the column in the resultset of the specimen query where the locus name can be found.
-     *
-     * @param index the 1-based index of the column containing the locus name
-     */
-    public void setLocusColumnIndex(final int index) {
-        _locusColumnIndex = index;
+    public void setLoginTimeout(int loginTimeout) {
+        _loginTimeout = loginTimeout;
     }
 
     /**

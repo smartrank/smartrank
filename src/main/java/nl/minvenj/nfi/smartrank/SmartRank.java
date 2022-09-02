@@ -17,6 +17,7 @@
  */
 package nl.minvenj.nfi.smartrank;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -33,7 +34,9 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.status.Status;
 import ch.qos.logback.core.util.StatusPrinter;
+import nl.minvenj.nfi.smartrank.analysis.CaseLogger;
 import nl.minvenj.nfi.smartrank.cli.SmartRankCLI;
 
 public class SmartRank {
@@ -48,6 +51,7 @@ public class SmartRank {
             _log.info("Starting SmartRank Version {}", getRevision());
             _log.info("Max memory: {} bytes, {} MB", Runtime.getRuntime().maxMemory(), Runtime.getRuntime().maxMemory() / 1048576);
             _log.info("Log configuration read from {}", logConfigLocation);
+            _log.info("Case logging is {}", CaseLogger.isEnabled()?"enabled":"disabled");
             final ArrayList<String> javaProperties = new ArrayList<>();
             final Enumeration<?> propertyNames = System.getProperties().propertyNames();
             while (propertyNames.hasMoreElements()) {
@@ -81,7 +85,7 @@ public class SmartRank {
 
     private static String setupLogging() {
         // By default, logging configuration is read from here.
-        String configLocation = SmartRank.class.getResource("/logback.xml").toString();
+        String configLocation = "logback defaults";
         final File configFile = new File(System.getProperty("loggingConfigurationFile", "./logback.xml"));
 
         if (configFile.exists() && configFile.canRead()) {
@@ -93,27 +97,27 @@ public class SmartRank {
             // Call context.reset() to clear any previous configuration, e.g. default configuration
             context.reset();
             try {
-                // try to configure using the logback.,xml in the application directory
+                // try to configure using the logback.xml in the application directory
                 configurator.doConfigure(configFile);
                 configLocation = configFile.getAbsolutePath();
             }
             catch (final JoranException je) {
-                try {
-                    // try to configure using the logback.,xml in the jar
-                    configurator.doConfigure(SmartRank.class.getResourceAsStream("/logback.xml"));
-                    configLocation = SmartRank.class.getResource("/logback.xml").toString();
-                    JOptionPane.showMessageDialog(null, "<html>Logging configuration file could not be read:<br>  <i>" + configFile.getAbsolutePath() + "</i><br>The error was: <b>" + je.getMessage() + "</b><br>Reverted to default configuration");
-                }
-                catch (final JoranException e) {
-                    try {
-                        configurator.doConfigure(configurator.recallSafeConfiguration());
-                        configLocation = "recalled safe configuration";
+                if (!GraphicsEnvironment.isHeadless()) {
+                    final StringBuilder sb = new StringBuilder();
+                    for (final Status status : context.getStatusManager().getCopyOfStatusList()) {
+                        if (status.getLevel() == Status.ERROR) {
+                            StatusPrinter.buildStr(sb, "", status);
+                        }
                     }
-                    catch (final JoranException e1) {
-                        JOptionPane.showMessageDialog(null, "<html>Logging configuration files in " + configFile.getAbsolutePath() + " and default configuration were both corrupt: " + je.getMessage() + "\nLogging will not be available.");
-                        // Even the default configuration was not safe. Bugger.
-                        e1.printStackTrace();
+                    String message = sb.toString();
+                    final int end = message.indexOf("\n");
+                    if (end >= 0) {
+                        message = message.substring(0, end);
                     }
+                    message = message.replaceAll("-", "<br>");
+                    message = message.replaceAll("\\s([A-Z][a-z])", "<br>$1");
+                    JOptionPane.showMessageDialog(null,
+                                                  "<html>Logging configuration corrupt!<br>File: <b>" + configFile.getAbsolutePath() + "</b><br>Message: <i>" + je.getMessage() + "</i><br><code>" + message);
                 }
             }
             StatusPrinter.printInCaseOfErrorsOrWarnings(context);

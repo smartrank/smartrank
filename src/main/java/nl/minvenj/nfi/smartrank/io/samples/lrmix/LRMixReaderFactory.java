@@ -21,38 +21,31 @@ package nl.minvenj.nfi.smartrank.io.samples.lrmix;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.regex.Pattern;
 
 import nl.minvenj.nfi.smartrank.io.samples.SampleFileReader;
 import nl.minvenj.nfi.smartrank.io.samples.SampleFileReaderFactory;
 
 public class LRMixReaderFactory implements SampleFileReaderFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LRMixFileReader.class);
-
-    private static final byte[] LRMIX_SIGNATURE_BYTES = {
-        (byte) 0x53, (byte) 0x61, (byte) 0x6D, (byte) 0x70, (byte) 0x6C, (byte) 0x65,
-        (byte) 0x4E, (byte) 0x61, (byte) 0x6D, (byte) 0x65
-    };
+    private static final Pattern HEADER_PATTERN = Pattern.compile("^.?Sample\\s*Name.*", Pattern.CASE_INSENSITIVE);
 
     @Override
-    public boolean accepts(File file) {
+    public boolean accepts(final File file) {
         try {
             try (FileInputStream is = new FileInputStream(file)) {
-                byte[] line = new byte[10];
+                final byte[] line = new byte[20];
                 is.read(line);
-                return Arrays.equals(line, LRMIX_SIGNATURE_BYTES);
+                final String stringData = new String(line).replaceAll("\0xFEFF", "");
+                return HEADER_PATTERN.matcher(stringData).matches();
             }
-        } catch (IOException ex) {
+        } catch (final IOException ex) {
             return false;
         }
     }
 
     @Override
-    public SampleFileReader create(File file) {
+    public SampleFileReader create(final File file) {
         return new LRMixFileReader(file);
     }
 

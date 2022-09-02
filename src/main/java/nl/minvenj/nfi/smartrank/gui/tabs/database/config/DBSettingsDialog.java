@@ -55,10 +55,14 @@ import nl.minvenj.nfi.smartrank.gui.SmartRankGUISettings;
 import nl.minvenj.nfi.smartrank.gui.utils.UndoDecorator;
 import nl.minvenj.nfi.smartrank.io.databases.jdbc.JDBCDriverWrapper;
 import nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.H2DriverWrapper;
+import nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.PostgreSQLDriverWrapper;
 import nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.SQLServerDriverWrapper;
 import nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.SybaseDriverWrapper;
+import javax.swing.SwingConstants;
 
 public class DBSettingsDialog extends JDialog implements DocumentListener {
+
+    private static final long serialVersionUID = 5824009307935394871L;
 
     private static final Logger LOG = LoggerFactory.getLogger(DBSettingsDialog.class);
 
@@ -82,14 +86,18 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
 
     private DatabaseConfiguration _databaseConfig;
     private boolean _ok;
-
+    private JLabel _socketTimeoutLabel;
+    private JSpinner _socketTimeoutSpinner;
+    private JLabel _loginTimeoutLabel;
+    private JSpinner _loginTimeoutSpinner;
+    
     public DBSettingsDialog(final JFrame owner, final boolean autoConnect) {
         super(owner, ModalityType.APPLICATION_MODAL);
         setTitle("SmartRank Database Settings");
         setBounds(100, 100, 550, 491);
         getContentPane().setLayout(new MigLayout("", "[183.00px,grow][183.00px,grow]", "[172.00px,grow][33px]"));
 
-        final JPanel contentPanel = new JPanel(new MigLayout("", "[][122.00,grow,fill]", "[][][][][][][15.00][104.00,grow][25.00]"));
+        final JPanel contentPanel = new JPanel(new MigLayout("", "[][122.00,fill][122.00,grow,fill][122.00,grow,fill]", "[][][][][][][][15.00][104.00,grow][25.00]"));
         contentPanel.setName("contentPanel");
         contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         getContentPane().add(contentPanel, "cell 0 0 2 1,grow");
@@ -126,10 +134,25 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
             }
         });
         buttonPane.add(_cancelButton);
+        
+        _socketTimeoutLabel = new JLabel("Socket Timeout");
+        contentPanel.add(_socketTimeoutLabel, "cell 0 5,alignx right");
+        
+        _socketTimeoutSpinner = new JSpinner();
+        _socketTimeoutSpinner.setModel(new SpinnerNumberModel(SmartRankGUISettings.getDatabaseSocketTimeout(), new Integer(0), null, new Integer(1)));
+        contentPanel.add(_socketTimeoutSpinner, "cell 1 5,growx");
+        
+        _loginTimeoutLabel = new JLabel("Login Timeout");
+        _loginTimeoutLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        contentPanel.add(_loginTimeoutLabel, "cell 2 5,alignx right");
+        
+        _loginTimeoutSpinner = new JSpinner();
+        _loginTimeoutSpinner.setModel(new SpinnerNumberModel(SmartRankGUISettings.getDatabaseLoginTimeout(), new Integer(0), null, new Integer(1)));
+        contentPanel.add(_loginTimeoutSpinner, "cell 3 5");
 
         final JTabbedPane queriesTabbedPane = new JTabbedPane(JTabbedPane.TOP);
         queriesTabbedPane.setName("queriesTabbedPane");
-        contentPanel.add(queriesTabbedPane, "cell 0 7 2 1,grow");
+        contentPanel.add(queriesTabbedPane, "cell 0 8 4 1,grow");
 
         final JPanel sampleKeysQueryPanel = new JPanel(new MigLayout("", "[grow][20%]", "[][grow][]"));
         sampleKeysQueryPanel.setName("sampleKeysQueryPanel");
@@ -183,19 +206,19 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
         _errorLabel.setFont(new Font("Tahoma", Font.BOLD, 11));
         _errorLabel.setForeground(Color.WHITE);
         _errorLabel.setBackground(Color.RED);
-        contentPanel.add(_errorLabel, "cell 0 8 2 1,growx");
+        contentPanel.add(_errorLabel, "cell 0 9 4 1,growx");
 
         final JLabel dbTypeLabel = new JLabel("Database Type");
         contentPanel.add(dbTypeLabel, "cell 0 0,alignx trailing");
 
-        _databaseTypeCombo = new JComboBox<>(new JDBCDriverWrapper[]{new SQLServerDriverWrapper(), new SybaseDriverWrapper(), new H2DriverWrapper()});
+        _databaseTypeCombo = new JComboBox<>(new JDBCDriverWrapper[]{new SQLServerDriverWrapper(), new SybaseDriverWrapper(), new H2DriverWrapper(), new PostgreSQLDriverWrapper()});
         _databaseTypeCombo.setName("databaseType");
         for (int idx = 0; idx < _databaseTypeCombo.getModel().getSize(); idx++) {
             if (_databaseTypeCombo.getModel().getElementAt(idx).toString().equalsIgnoreCase(SmartRankGUISettings.getDatabaseType())) {
                 _databaseTypeCombo.setSelectedIndex(idx);
             }
         }
-        contentPanel.add(_databaseTypeCombo, "cell 1 0,growx");
+        contentPanel.add(_databaseTypeCombo, "cell 1 0 3 1,growx");
 
         _hostPortLabel = new JLabel("Host:Port");
         _hostPortLabel.setName("hostPortLabel");
@@ -206,7 +229,7 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
         _hostPortTextField.setColumns(10);
         _hostPortTextField.getDocument().addDocumentListener(this);
         UndoDecorator.register(_hostPortTextField);
-        contentPanel.add(_hostPortTextField, "cell 1 1,growx");
+        contentPanel.add(_hostPortTextField, "cell 1 1 3 1,growx");
 
         contentPanel.add(new JLabel("Database Name"), "cell 0 2,alignx trailing");
 
@@ -214,25 +237,25 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
         _databaseName.setName("databaseName");
         _databaseName.setColumns(10);
         UndoDecorator.register(_databaseName);
-        contentPanel.add(_databaseName, "cell 1 2,growx");
+        contentPanel.add(_databaseName, "cell 1 2 3 1,growx");
 
         contentPanel.add(new JLabel("Username"), "cell 0 3,alignx trailing");
         _usernameTextField = new JTextField(SmartRankGUISettings.getDatabaseUsername());
         _usernameTextField.setName("userName");
         _usernameTextField.setColumns(10);
         UndoDecorator.register(_usernameTextField);
-        contentPanel.add(_usernameTextField, "cell 1 3,growx");
+        contentPanel.add(_usernameTextField, "cell 1 3 3 1,growx");
 
         contentPanel.add(new JLabel("Password"), "cell 0 4,alignx trailing");
         _passwordField = new JPasswordField(SmartRankGUISettings.getDatabasePassword());
         _passwordField.setName("password");
-        contentPanel.add(_passwordField, "cell 1 4,growx");
+        contentPanel.add(_passwordField, "cell 1 4 3 1,growx");
         _savePasswordCheckbox = new JCheckBox("Save password (insecure!)");
         _savePasswordCheckbox.setName("savePassword");
-        contentPanel.add(_savePasswordCheckbox, "cell 1 5");
+        contentPanel.add(_savePasswordCheckbox, "cell 1 6 3 1");
 
-        contentPanel.add(new JSeparator(), "flowx,cell 0 6 2 1");
-        contentPanel.add(new JSeparator(), "cell 1 6");
+        contentPanel.add(new JSeparator(), "flowx,cell 0 7 4 1");
+        contentPanel.add(new JSeparator(), "cell 1 7 3 1");
 
         // Trigger update of the error string and connect button based on the initial settings
         insertUpdate(null);
@@ -246,9 +269,8 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
         // Compose a database config object
         final DatabaseConfiguration databaseConfiguration = getDBConfig();
         databaseConfiguration.setSingleRowQuery(SmartRankGUISettings.isSingleRowSpecimenQuery());
-        databaseConfiguration.setSpecimenIdColumnIndex(SmartRankGUISettings.getDatabaseQuerySpecimenIdColumnIndex());
-        databaseConfiguration.setLocusColumnIndex(SmartRankGUISettings.getDatabaseQueryLocusColumnIndex());
-        databaseConfiguration.setAlleleColumnIndex(SmartRankGUISettings.getDatabaseQueryAlleleColumnIndex());
+        databaseConfiguration.setSocketTimeout(SmartRankGUISettings.getDatabaseSocketTimeout());
+        databaseConfiguration.setLoginTimeout(SmartRankGUISettings.getDatabaseLoginTimeout());
 
         // Let the selected wrapper validate the settings
         try {
@@ -422,5 +444,13 @@ public class DBSettingsDialog extends JDialog implements DocumentListener {
     @Override
     public void changedUpdate(final DocumentEvent e) {
         insertUpdate(e);
+    }
+
+    public int getLoginTimeout() {
+        return (Integer)_loginTimeoutSpinner.getValue();
+    }
+    
+    public int getSocketTimeout() {
+        return (Integer)_socketTimeoutSpinner.getValue();
     }
 }

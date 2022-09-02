@@ -207,7 +207,7 @@ public class SmartRankAnalysis extends Thread {
             final Thread t = new Thread() {
                 @Override
                 public void run() {
-                    final File outputFolder = new File(reportName).getParentFile();
+                    final File outputFolder = new File(reportName.isEmpty()?_caseLogger.getFilename():reportName).getParentFile();
                     String profileName = "";
                     try {
                         final List<LikelihoodRatio> positiveLRs = new ArrayList<>(searchResults.getPositiveLRs());
@@ -249,7 +249,7 @@ public class SmartRankAnalysis extends Thread {
     private int iterateOverSpecimens(final ProsecutionHypothesis hp, final DefenseHypothesis hd, final DNADatabase db, final SearchResults searchResults, final AnalysisParameters parameters, final LocusLikelihoods prD) throws InterruptedException {
         LocusLikelihoods localPrD = prD;
         int specimenCount = 0;
-        final Iterator<Sample> samplesIterator = db.iterator();
+        final Iterator<Sample> samplesIterator = db.iterator(parameters.getProperties());
         while (!_interrupted && !isInterrupted() && samplesIterator.hasNext()) {
             final Sample candidateSample = samplesIterator.next();
             LOG.debug("Handling sample {}", candidateSample);

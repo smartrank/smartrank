@@ -17,6 +17,8 @@
  */
 package nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers;
 
+import static nl.minvenj.nfi.smartrank.io.databases.jdbc.drivers.Drivers.SQLSERVER;
+
 import java.util.Properties;
 
 import nl.minvenj.nfi.smartrank.SmartRank;
@@ -32,7 +34,7 @@ public class SQLServerDriverWrapper implements JDBCDriverWrapper {
 
     @Override
     public String toString() {
-        return "SQLServer";
+        return SQLSERVER.getName();
     }
 
     @Override
@@ -51,6 +53,8 @@ public class SQLServerDriverWrapper implements JDBCDriverWrapper {
         props.put("user", config.getUserName());
         props.put("password", config.getPassword());
         props.put("appName", "SmartRank");
+        props.put("socketTimeout", config.getSocketTimeout());
+        props.put("loginTimeout", config.getLoginTimeout());
         props.put("progName", "SmartRank" + SmartRank.getVersion());
         return props;
     }
